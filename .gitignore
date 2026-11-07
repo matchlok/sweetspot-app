@@ -3,7 +3,8 @@
 .env.*
 !.env.example
 
-# data/private/ holds the Muse export (strava.db etc.). Tracked only while the repo is private.
+# Personal data (Muse export, Strava-derived). Never commit.
+data/private/
 
 # Dependencies and builds
 node_modules/
