@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today, light</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2f3a9e}a:hover{color:#1f2873}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f5f4f0; color: #16171a; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; font-variant-numeric: tabular-nums">
+  <div style="padding: 28px 20px 0; display: flex; justify-content: space-between; align-items: center">
+    <span style="font-size: 13px; font-weight: 600">Sat, Nov 7</span>
+    <span style="font-size: 12px; color: #55585f">Readiness <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #1f9a6c; margin-left: 4px"></span> Green</span>
+  </div>
+
+  <div style="padding: 36px 20px 0; display: flex; flex-direction: column; gap: 4px">
+    <span style="font-family: 'Space Grotesk', Inter, sans-serif; font-size: 96px; font-weight: 600; line-height: 0.95; letter-spacing: -0.03em">2:00</span>
+    <span style="font-family: 'Space Grotesk', Inter, sans-serif; font-size: 26px; font-weight: 600">Long ride, outside</span>
+    <span style="font-size: 15px; color: #55585f; margin-top: 4px">Zone 2 · best window 11:00 – 2:00</span>
+  </div>
+
+  <div style="margin: 28px 20px 0; display: flex; flex-direction: column; gap: 6px">
+    <span style="font-size: 11px; color: #55585f; letter-spacing: 0.06em; text-transform: uppercase">Temperature</span>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; align-items: end; height: 54px">
+      <div style="height: 30%; background: #c9ccd4; border-radius: 2px"></div>
+      <div style="height: 38%; background: #c9ccd4; border-radius: 2px"></div>
+      <div style="height: 52%; background: #c9ccd4; border-radius: 2px"></div>
+      <div style="height: 70%; background: #3d4bc4; border-radius: 2px"></div>
+      <div style="height: 84%; background: #3d4bc4; border-radius: 2px"></div>
+      <div style="height: 92%; background: #3d4bc4; border-radius: 2px"></div>
+      <div style="height: 80%; background: #c9ccd4; border-radius: 2px"></div>
+      <div style="height: 58%; background: #c9ccd4; border-radius: 2px"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #55585f">
+      <span>7a · 41°</span><span>11a–2p · 52–55°</span><span>sunset 4:52</span>
+    </div>
+  </div>
+
+  <div style="margin: 28px 20px 0; border-top: 1px solid #dcdad3; padding-top: 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; justify-content: space-between; font-size: 14px">
+      <span>Week</span><span><span style="font-weight: 600">1h 50m</span> <span style="color: #55585f">/ 3h 30m</span></span>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 14px">
+      <span>Easy</span><span style="color: #1f7a56; font-weight: 500">On track after today</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 14px">
+      <span>Quality</span><span style="color: #a3560c; font-weight: 500">8 of 12–30 min</span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <div style="padding: 0 20px 28px; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px">
+    <button style="height: 50px; border: 0; border-radius: 10px; background: #16171a; color: #f5f4f0; font: 600 15px Inter, system-ui, sans-serif">Locked in</button>
+    <a href="Replan.dc.html" style="height: 50px; border: 1px solid #c9c7bf; border-radius: 10px; color: #16171a; font: 500 14px Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; text-decoration: none">Move</a>
+    <button style="height: 50px; border: 1px solid #c9c7bf; border-radius: 10px; background: transparent; color: #16171a; font: 500 14px Inter, system-ui, sans-serif">Skip</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

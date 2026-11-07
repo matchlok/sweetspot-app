@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Calendar, month</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow:hidden;background:transparent}
+.dark{--bg:#08090c;--card:#13151c;--card-bd:#262a36;--card-sh:inset 0 1px 0 rgba(255,255,255,.05);--card2:#0f1116;--card2-bd:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--dim:#4f5262;--track:#1d2029;--nav:#0d0f14;--btn2-bd:#2f3240;--accent:#7c8cf8;--accent-ink:#0a0b14;--accent-soft:#1a1d33;--accent-soft-ink:#c9cffc;--accent-bd:#3d4680;--plan:#4b5490;--plan-fill:rgba(124,140,248,.06);--ext:#3d4680;--band:#4a4128;--z1:#5b5f6e;--z2:#7c8cf8;--z3:#5fd0a4;--z4:#e8bd62;--z5:#ee7480;--z3-ink:#8fe0bd;--z4-ink:#e8bd62;--ok-bg:#11231c;--ok-bd:#1f4a39;--ok-ink:#8fe0bd;--g2:0 0 6px rgba(124,140,248,.7);--g3:0 0 6px rgba(95,208,164,.7);--g4:0 0 6px rgba(232,189,98,.7);--g5:0 0 6px rgba(238,116,128,.7);--glow-bar:0 0 10px rgba(124,140,248,.35);--fab-sh:0 6px 20px rgba(124,140,248,.35);--sun:#e8bd62;--today:#1a1d33;--wall:linear-gradient(180deg,#2b3242 0%,#1a1e28 100%);--lock-ink:#f2f3f7;--lock-sub:#cfd3de;--notif:rgba(240,242,248,.86);--hint:#aab0bf}
+.light{--bg:#f2f3f7;--card:#ffffff;--card-bd:#e1e3ea;--card-sh:0 1px 2px rgba(20,24,40,.05),0 8px 24px rgba(20,24,40,.06);--card2:#fafbfc;--card2-bd:#e4e6ec;--text:#14161f;--text2:#3d4152;--muted:#6b6f80;--dim:#b6b9c4;--track:#e8eaf0;--nav:#ffffff;--btn2-bd:#d6d9e1;--accent:#4f5fe8;--accent-ink:#ffffff;--accent-soft:#ebedfe;--accent-soft-ink:#3442c4;--accent-bd:#c3c9fa;--plan:#9aa4f2;--plan-fill:rgba(79,95,232,.05);--ext:#bcc3f8;--band:#ead49a;--z1:#a3a7b4;--z2:#5b6cf0;--z3:#1fa874;--z4:#e3a51c;--z5:#e4505f;--z3-ink:#13764f;--z4-ink:#a87405;--ok-bg:#e2f5ec;--ok-bd:#bde6d3;--ok-ink:#13764f;--g2:none;--g3:none;--g4:none;--g5:none;--glow-bar:none;--fab-sh:0 6px 16px rgba(79,95,232,.3);--sun:#d99a10;--today:#eef0fe;--wall:linear-gradient(180deg,#e4e9f4 0%,#c9d3e6 100%);--lock-ink:#14161f;--lock-sub:#3d4152;--notif:rgba(255,255,255,.78);--hint:#4d5466}
+.frame{width:390px;height:844px;overflow:hidden}
+.screen{width:390px;height:844px;overflow:hidden;position:relative;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+.island{display:none}
+.status{height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 48px;font-size:16px;font-weight:600;color:var(--text);position:relative;z-index:4}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--text);opacity:.85;z-index:5}
+a{color:var(--accent)}
+</style>
+</helmet>
+<div class="dark frame"><div class="screen">
+<div class="island"></div>
+<div class="status"><span>6:14</span><span style="display: flex; gap: 6px; align-items: center"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4 6.9a6 6 0 0 1 8 0"></path><circle cx="8" cy="9.8" r="1" fill="currentColor"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="currentColor" opacity=".4"></rect><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="currentColor" opacity=".5"></path></svg></span></div>
+  <div style="padding: 6px 20px 0; display: flex; justify-content: space-between; align-items: center">
+    <span style="font-size: 18px; font-weight: 700">November</span>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: var(--card); border: 1px solid var(--card-bd); border-radius: 10px; padding: 3px">
+      <a href="Week.dc.html" style="padding: 7px 14px; border-radius: 7px; color: var(--muted); font-size: 13px; text-decoration: none; text-align: center">Week</a>
+      <a href="Month.dc.html" style="padding: 7px 14px; border-radius: 7px; background: var(--accent-soft); color: var(--accent-soft-ink); font-size: 13px; font-weight: 600; text-decoration: none; text-align: center">Month</a>
+    </div>
+  </div>
+  <p style="margin: 8px 20px 0; font-size: 14px; color: var(--text2); line-height: 1.45">Three a week, every week so far. That's the habit. Keep it.</p>
+
+  <div style="margin: 16px 12px 0; background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px; padding: 12px 10px; box-shadow: var(--card-sh)">
+    <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)) 40px; gap: 4px; font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 6px">
+      <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span><span>hrs</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{weeks}}" as="wk" hint-placeholder-count="6">
+        <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)) 40px; gap: 4px">
+          <sc-for list="{{wk.days}}" as="d" hint-placeholder-count="7">
+            <div style="{{d.cell}}">
+              <span style="{{d.num}}">{{d.n}}</span>
+              <sc-if value="{{d.done}}" hint-placeholder-val="{{false}}">
+                <div style="display: flex; flex-direction: column; gap: 1px; width: 100%; height: {{d.h}}">
+                  <div style="flex: 1; background: var(--z4); border-radius: 2px 2px 0 0"></div>
+                  <div style="flex: 1; background: var(--z3)"></div>
+                  <div style="flex: 5; background: var(--z2); border-radius: 0 0 2px 2px"></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{d.planned}}" hint-placeholder-val="{{false}}">
+                <div style="width: 100%; height: {{d.h}}; box-sizing: border-box; border: 1px dashed var(--plan); border-radius: 3px"></div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <span style="{{wk.totStyle}}">{{wk.tot}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="margin: 16px 20px 0; display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: var(--muted)">
+    <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z2)"></span>Z2</span>
+    <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z3)"></span>Z3</span>
+    <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z4)"></span>Z4</span>
+    <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z5)"></span>Z5+</span>
+    <span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 8px; border: 1px dashed var(--plan); border-radius: 2px"></span>planned</span>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+  <nav style="background: var(--nav); border-top: 1px solid var(--card2-bd); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; padding: 8px 0 28px">
+    <a href="Main.dc.html" aria-label="Home" style="display: flex; justify-content: center; padding: 10px 0">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>
+    </a>
+    <a href="Replan.dc.html" aria-label="Change the plan" style="justify-self: center; width: 56px; height: 56px; margin-top: -26px; border-radius: 18px; background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 5px var(--bg), var(--fab-sh)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4"></path><path d="M3 8h13a4 4 0 0 1 4 4"></path><path d="M17 20l4-4-4-4"></path><path d="M21 16H8a4 4 0 0 1-4-4"></path></svg>
+    </a>
+    <a href="Month.dc.html" aria-label="Calendar" style="display: flex; justify-content: center; padding: 10px 0">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+    </a>
+  </nav>
+
+<div class="homebar"></div>
+</div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+  // Sample data. Mon-start weeks; Nov 1 2026 is a Sunday. Minutes per day.
+  const rides = { '2026-10-27': 60, '2026-10-29': 45, '2026-10-31': 90, '2026-11-03': 60, '2026-11-05': 50 };
+  const planned = { '2026-11-07': 120, '2026-11-10': 60, '2026-11-12': 45, '2026-11-14': 120, '2026-11-17': 60, '2026-11-19': 45, '2026-11-21': 120, '2026-11-24': 60, '2026-11-28': 90, '2026-12-01': 60 };
+  const weeks = [];
+  let d = new Date(Date.UTC(2026, 9, 26));
+  for (let w = 0; w < 6; w++) {
+    const days = [];
+    let mins = 0, plan = 0;
+    for (let i = 0; i < 7; i++) {
+      const key = d.toISOString().slice(0, 10);
+      const inMonth = d.getUTCMonth() === 10;
+      const today = key === '2026-11-07';
+      const done = rides[key] || 0;
+      const p = planned[key] || 0;
+      mins += done; plan += p;
+      days.push({
+        n: d.getUTCDate(),
+        done: done > 0,
+        planned: p > 0,
+        h: Math.round(((done || p) / 120) * 26) + 'px',
+        cell: 'height: 52px; box-sizing: border-box; padding: 4px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; background: ' + (today ? 'var(--today)' : 'var(--card2)') + '; border: 1px solid ' + (today ? 'var(--accent)' : 'var(--card2-bd)'),
+        num: 'font-size: 11px; font-weight: ' + (today ? '700' : '500') + '; color: ' + (inMonth ? 'var(--text)' : 'var(--dim)')
+      });
+      d = new Date(d.getTime() + 86400000);
+    }
+    const hrs = mins / 60;
+    const tot = mins ? (Math.round(hrs * 10) / 10) + 'h' : (plan ? (Math.round(plan / 6) / 10) + '' : '');
+    weeks.push({ days, tot, totStyle: 'align-self: center; text-align: right; font-size: 12px; font-weight: ' + (mins ? '600' : '400') + '; color: ' + (mins ? 'var(--text)' : 'var(--muted)') });
+  }
+  return { weeks };
+}
+}
+</script>
+</body>
+</html>

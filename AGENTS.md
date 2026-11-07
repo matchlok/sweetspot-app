@@ -24,27 +24,19 @@ Plan: [docs/plans/TECHNICAL-PLAN.md](docs/plans/TECHNICAL-PLAN.md).
 
 Update when a step finishes or a decision is made.
 
-- **Phase:** 0 done (2026-11-07). Next is a Phase 1 v0 slice: local weekly zone scorecard.
-- **Done (2026-11-07):** Muse export in `data/private/` (strava-db-export.json, week-plans-export.json); reference script at `reference/muse/strava_tracker.py` (read-only reference, don't edit). Training calendar readable via the Google Calendar connector (owner access). HR `categorize()` reproduces all 23 stored categories.
-- **Next steps (pick up here):**
-  1. Check `pnpm -v` (else use corepack). Scaffold the pnpm workspace: `packages/engine` (TypeScript strict, Vitest) and `apps/web` (Next.js App Router). Ask before any global install.
-  2. Port `categorize()` from `reference/muse/strava_tracker.py` into the engine. Test it against the 23 stored categories in `data/private/strava-db-export.json` (`tables.activity_zones` joined to `activities`). Then port `zone_scorecard()` and `weekly_zone_rows()` with the `ZONE_BANDS` from that script.
-  3. v0 page on localhost: weekly stacked time-in-zone bars against the scorecard bands. History comes from the Muse export, and rides from 2026-10-08 on come from intervals.icu. `scripts/spike/intervals-spike.mjs` shows the API shape: `icu_hr_zone_times` is 7 values in seconds, and Z5+Z6+Z7 count as Z5. Use Recharts unless Narji prefers Visx.
-  4. Later: nightly sync into Postgres, calendar reader/writer, login, readiness light (plan phases 1+).
+- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Next: decide the stack, then a Phase 1 v0 slice.
+- **Next steps (pick up here):** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md).
+  1. Decide the app stack: native SwiftUI plus a TypeScript engine on a server, or a SvelteKit PWA. Do this in party mode with Winston, Sally and John, and first verify whether iOS web push supports action buttons. The Next.js/Recharts choice in the plan is reopened, because Narji doesn't want a stock React app. Record the result as `docs/decisions/0001-app-stack.md`.
+  2. Check `pnpm -v` (otherwise use corepack). Scaffold `packages/engine` (TypeScript strict, Vitest), which works with either stack. Ask before any global install.
+  3. Port `categorize()` from `reference/muse/strava_tracker.py` and test it against the 23 stored categories in `data/private/strava-db-export.json` (`tables.activity_zones` joined to `activities`). Then port `zone_scorecard()` and `weekly_zone_rows()` with the `ZONE_BANDS` from that script. API shape is in `scripts/spike/intervals-spike.mjs`: `icu_hr_zone_times` is 7 values in seconds, and Z5+Z6+Z7 count as Z5.
+  4. Build a v0 Home screen in the chosen stack, fed by real engine data. Use the dark tokens from `docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
-- **Decided (2026-11-07):** renamed from Project Icarus to Sweetspot; domain sweetspot.bike (to register; verified unregistered 2026-11-07); public repo name `sweetspot-app` (confirm unused on GitHub). Folder renamed to `sweetspot-app` (done 2026-11-07).
-- **Decided (2026-11-06):** new project; intervals.icu as the primary data source (HealthKit later, maybe); TypeScript everywhere except a possible SwiftUI app; Claude API spend approved at roughly $5/mo; Apple Developer account deferred until the iOS phase.
-- **Done (2026-11-07):** BMAD v6.12.4 installed (`bmm` module, claude-code skills in `.claude/skills/`, config in `_bmad/`, output in `_bmad-output/`). Checked git history: `data/private/` was never committed and is gitignored, so there was nothing to purge.
-- **Decided (2026-11-07):** single public repo `sweetspot-app` (already created on GitHub; no remote added locally yet). Personal data stays out via `data/private/` in `.gitignore`.
-- **Done (2026-11-07):** Phase 0 spike script `scripts/spike/intervals-spike.mjs` (run with `node --env-file=.env.local ...`). Auth works. The account returned 0 activities for the last 30 days, so no data source is connected yet (Strava link, or Garmin/Wahoo direct). Its default cycling settings differ from Muse: FTP 195 (Muse 190), LTHR 177, HR zone tops 142/158/165/176/181/186/195 (Muse Z2 120-139, Z4 160-178, Z5 179+). Raw output in `data/private/intervals-spike.json`.
-- **Done (2026-11-07):** Garmin Connect linked directly to intervals.icu (Strava kept). Re-ran the spike: 5 activities in 30 days, all `GARMIN_CONNECT`, full records with HR zone times. Phase 0 data-access question resolved. Source rule: Garmin direct, never Strava-only.
-- **Decided (2026-11-07):** intervals.icu is the only place zones and FTP live. No local zone or FTP settings anywhere in the repo; the app reads them from intervals.icu (per-activity `icu_hr_zones`/`icu_ftp`, plus `/sport-settings` when needed). Current cycling values, set to match Muse today: FTP 190, HR zone tops 119/139/159/178/193/194/195 (intervals.icu rejects equal tops, so Z6/Z7 are 1 bpm slivers; the engine treats Z5+ as Z5+Z6+Z7). 2026-11-07 is the zone/FTP change event: rides before it keep their old zones and are not reclassified. Pre-change values are in `data/private/intervals-sport-settings-backup.json`.
-- **Decided (2026-11-07):** zones change over time, and that's normal. The engine takes each ride's stored zones as correct for its date, with no flags or reconciliation across changes. Muse-era history comes from the export, not intervals.icu.
-- **Open:** auth library. Add the GitHub remote and push when ready.
+
+Full history (done, decided, open): [docs/STATUS.md](docs/STATUS.md). Add new entries there; keep only the phase and next action here.
 
 ## Folders
 
-- `docs/plans/` plans. `docs/decisions/NNNN-<slug>.md` decision records, each gets a line in "Current status".
+- `docs/plans/` plans. `docs/decisions/NNNN-<slug>.md` decision records, each gets a line in `docs/STATUS.md`.
 - `data/private/` the Muse export and personal data. Never commit it to a public repo.
 - App code (`apps/`, `packages/`) is created in Phase 1, not before.
 

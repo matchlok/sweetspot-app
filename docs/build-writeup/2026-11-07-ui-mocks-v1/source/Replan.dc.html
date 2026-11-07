@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Move it</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#a9aef8}a:hover{color:#c9ccfb}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0d0e12; color: #e7e8ee; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; font-variant-numeric: tabular-nums">
+  <div style="padding: 24px 20px 0; display: flex; align-items: center; gap: 12px">
+    <a href="Main.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid #2a2c36; border-radius: 10px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e7e8ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="display: flex; flex-direction: column">
+      <span style="font-size: 17px; font-weight: 600">Move the long ride</span>
+      <span style="font-size: 12px; color: #9a9cab">2h Z2 · outdoor preferred</span>
+    </div>
+  </div>
+
+  <div style="margin: 20px 20px 0; display: flex; flex-wrap: wrap; gap: 6px">
+    <span style="font-size: 11px; padding: 5px 9px; border: 1px solid #2a2c36; border-radius: 999px; color: #c4c6d2">Family cal: Sun 9–12 busy</span>
+    <span style="font-size: 11px; padding: 5px 9px; border: 1px solid #2a2c36; border-radius: 999px; color: #c4c6d2">You usually ride Sat/Sun late morning</span>
+    <span style="font-size: 11px; padding: 5px 9px; border: 1px solid #2a2c36; border-radius: 999px; color: #c4c6d2">Below 40°F → trainer</span>
+  </div>
+
+  <div style="margin: 18px 20px 0; display: flex; flex-direction: column; gap: 10px">
+    <div style="border: 1px solid #8b92f5; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; background: #12131c">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 16px; font-weight: 600">Sun 1:00 – 3:00 pm</span>
+        <span style="font-size: 12px; color: #8fe0bd">Best fit</span>
+      </div>
+      <span style="font-size: 13px; color: #c4c6d2; line-height: 1.45">After the family block. 58°F, light wind, done 1h 50m before sunset.</span>
+      <button style="height: 44px; border: 0; border-radius: 10px; background: #8b92f5; color: #0b0b18; font: 600 15px Inter, system-ui, sans-serif">Move here</button>
+    </div>
+
+    <div style="border: 1px solid #2a2c36; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 16px; font-weight: 600">Tue 3:00 pm · trainer 75 min</span>
+        <span style="font-size: 12px; color: #e8bd62">Costs something</span>
+      </div>
+      <span style="font-size: 13px; color: #c4c6d2; line-height: 1.45">Shorter and indoors. Pushes the 2×8 threshold to Wednesday, back to back with Thursday.</span>
+      <button style="height: 44px; border: 1px solid #2f3240; border-radius: 10px; background: transparent; color: #e7e8ee; font: 500 15px Inter, system-ui, sans-serif">Move here</button>
+    </div>
+
+    <div style="border: 1px dashed #3a3d4a; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 16px; font-weight: 600">Skip it</span>
+      <span style="font-size: 13px; color: #c4c6d2; line-height: 1.45">The week still passes on easy minutes. You'd be at 2h 40m, inside your floor.</span>
+      <button style="height: 44px; border: 1px solid #2f3240; border-radius: 10px; background: transparent; color: #e7e8ee; font: 500 15px Inter, system-ui, sans-serif">Skip, no guilt</button>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+  <span style="padding: 0 20px 28px; font-size: 12px; color: #9a9cab; line-height: 1.45">Nothing moves until you tap. Your calendar updates after you pick.</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

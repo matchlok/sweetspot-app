@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today, dark</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#a9aef8}a:hover{color:#c9ccfb}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0d0e12; color: #e7e8ee; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; font-variant-numeric: tabular-nums">
+  <div style="padding: 28px 20px 0; display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 12px; color: #9a9cab; letter-spacing: 0.04em; text-transform: uppercase">Saturday · Nov 7</span>
+      <span style="font-size: 15px; font-weight: 600">Sweetspot</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #2a2c36; border-radius: 999px; padding: 6px 12px">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #5fd0a4; box-shadow: 0 0 6px rgba(95,208,164,.6)"></span>
+      <span style="font-size: 12px; font-weight: 500">Ready</span>
+    </div>
+  </div>
+
+  <div style="padding: 28px 20px 0; display: flex; flex-direction: column; gap: 6px">
+    <span style="font-size: 13px; color: #9a9cab">Today</span>
+    <h1 style="margin: 0; font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em">Long ride, outside</h1>
+    <span style="font-size: 15px; color: #c4c6d2">2h 00m · Zone 2 · 11:00 – 2:00</span>
+  </div>
+
+  <div style="margin: 20px 20px 0; border: 1px solid #23252e; border-radius: 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+    <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #23252e">
+      <span style="font-size: 11px; color: #9a9cab">7 am</span>
+      <span style="font-size: 17px; font-weight: 600">41°F</span>
+    </div>
+    <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #23252e">
+      <span style="font-size: 11px; color: #9a9cab">Window</span>
+      <span style="font-size: 17px; font-weight: 600; color: #8fe0bd">52–55°F</span>
+    </div>
+    <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 11px; color: #9a9cab">Sunset</span>
+      <span style="font-size: 17px; font-weight: 600">4:52</span>
+    </div>
+  </div>
+
+  <div style="margin: 24px 20px 0; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <span style="font-size: 13px; color: #9a9cab">This week</span>
+      <span style="font-size: 13px"><span style="font-weight: 600">1h 50m</span> <span style="color: #9a9cab">of 3h 30m</span></span>
+    </div>
+    <div style="height: 8px; border-radius: 4px; background: #1d1f27; display: flex; overflow: hidden">
+      <div style="width: 52%; background: #8b92f5"></div>
+      <div style="width: 34%; background: repeating-linear-gradient(90deg, #3b3f66 0 4px, transparent 4px 7px)"></div>
+    </div>
+    <span style="font-size: 12px; color: #9a9cab">Today's ride takes you to 3h 50m. Easy is covered after this.</span>
+  </div>
+
+  <div style="margin: 20px 20px 0; border: 1px solid #3a3424; background: #17150f; border-radius: 12px; padding: 14px; display: flex; gap: 12px; align-items: flex-start">
+    <span style="width: 8px; height: 8px; margin-top: 6px; flex-shrink: 0; border-radius: 50%; background: #e8bd62"></span>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 14px; font-weight: 600">Needs attention: quality</span>
+      <span style="font-size: 13px; color: #c4c6d2; line-height: 1.45">8 of 12–30 min. Tuesday's 2×8 threshold on the trainer closes it.</span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <div style="padding: 0 20px 16px; display: flex; flex-direction: column; gap: 10px">
+    <button style="height: 50px; border: 0; border-radius: 12px; background: #8b92f5; color: #0b0b18; font: 600 16px Inter, system-ui, sans-serif">Locked in</button>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <a href="Replan.dc.html" style="height: 46px; border: 1px solid #2f3240; border-radius: 12px; color: #e7e8ee; font: 500 15px Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; text-decoration: none">Move it</a>
+      <button style="height: 46px; border: 1px solid #2f3240; border-radius: 12px; background: transparent; color: #e7e8ee; font: 500 15px Inter, system-ui, sans-serif">Not today</button>
+    </div>
+  </div>
+
+  <nav style="border-top: 1px solid #1f2129; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 10px 0 22px">
+    <a href="Main.dc.html" style="text-align: center; font-size: 12px; font-weight: 600; color: #e7e8ee; text-decoration: none; padding: 8px 0">Today</a>
+    <a href="Week.dc.html" style="text-align: center; font-size: 12px; color: #9a9cab; text-decoration: none; padding: 8px 0">Week</a>
+    <a href="Replan.dc.html" style="text-align: center; font-size: 12px; color: #9a9cab; text-decoration: none; padding: 8px 0">Plan</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

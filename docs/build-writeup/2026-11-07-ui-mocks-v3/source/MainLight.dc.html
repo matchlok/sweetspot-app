@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow:hidden;background:transparent}
+.dark{--bg:#08090c;--card:#13151c;--card-bd:#262a36;--card-sh:inset 0 1px 0 rgba(255,255,255,.05);--card2:#0f1116;--card2-bd:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--dim:#4f5262;--track:#1d2029;--nav:#0d0f14;--btn2-bd:#2f3240;--accent:#7c8cf8;--accent-ink:#0a0b14;--accent-soft:#1a1d33;--accent-soft-ink:#c9cffc;--accent-bd:#3d4680;--plan:#4b5490;--plan-fill:rgba(124,140,248,.06);--ext:#3d4680;--band:#4a4128;--z1:#5b5f6e;--z2:#7c8cf8;--z3:#5fd0a4;--z4:#e8bd62;--z5:#ee7480;--z3-ink:#8fe0bd;--z4-ink:#e8bd62;--ok-bg:#11231c;--ok-bd:#1f4a39;--ok-ink:#8fe0bd;--g2:0 0 6px rgba(124,140,248,.7);--g3:0 0 6px rgba(95,208,164,.7);--g4:0 0 6px rgba(232,189,98,.7);--g5:0 0 6px rgba(238,116,128,.7);--glow-bar:0 0 10px rgba(124,140,248,.35);--fab-sh:0 6px 20px rgba(124,140,248,.35);--sun:#e8bd62;--today:#1a1d33;--wall:linear-gradient(180deg,#2b3242 0%,#1a1e28 100%);--lock-ink:#f2f3f7;--lock-sub:#cfd3de;--notif:rgba(240,242,248,.86);--hint:#aab0bf}
+.light{--bg:#f2f3f7;--card:#ffffff;--card-bd:#e1e3ea;--card-sh:0 1px 2px rgba(20,24,40,.05),0 8px 24px rgba(20,24,40,.06);--card2:#fafbfc;--card2-bd:#e4e6ec;--text:#14161f;--text2:#3d4152;--muted:#6b6f80;--dim:#b6b9c4;--track:#e8eaf0;--nav:#ffffff;--btn2-bd:#d6d9e1;--accent:#4f5fe8;--accent-ink:#ffffff;--accent-soft:#ebedfe;--accent-soft-ink:#3442c4;--accent-bd:#c3c9fa;--plan:#9aa4f2;--plan-fill:rgba(79,95,232,.05);--ext:#bcc3f8;--band:#ead49a;--z1:#a3a7b4;--z2:#5b6cf0;--z3:#1fa874;--z4:#e3a51c;--z5:#e4505f;--z3-ink:#13764f;--z4-ink:#a87405;--ok-bg:#e2f5ec;--ok-bd:#bde6d3;--ok-ink:#13764f;--g2:none;--g3:none;--g4:none;--g5:none;--glow-bar:none;--fab-sh:0 6px 16px rgba(79,95,232,.3);--sun:#d99a10;--today:#eef0fe;--wall:linear-gradient(180deg,#e4e9f4 0%,#c9d3e6 100%);--lock-ink:#14161f;--lock-sub:#3d4152;--notif:rgba(255,255,255,.78);--hint:#4d5466}
+.frame{width:390px;height:844px;overflow:hidden}
+.screen{width:390px;height:844px;overflow:hidden;position:relative;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+.island{display:none}
+.status{height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 48px;font-size:16px;font-weight:600;color:var(--text);position:relative;z-index:4}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--text);opacity:.85;z-index:5}
+a{color:var(--accent)}
+</style>
+</helmet>
+<div class="light frame"><div class="screen">
+<div class="island"></div>
+<div class="status"><span>6:12</span><span style="display: flex; gap: 6px; align-items: center"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0"></path><path d="M4 6.9a6 6 0 0 1 8 0"></path><circle cx="8" cy="9.8" r="1" fill="currentColor"></circle></svg><svg width="27" height="13" viewBox="0 0 27 13" fill="none" aria-hidden="true"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="currentColor" opacity=".4"></rect><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"></rect><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="currentColor" opacity=".5"></path></svg></span></div>
+  <div style="padding: 6px 20px 0; display: flex; justify-content: space-between; align-items: center">
+    <span style="font-size: 13px; color: var(--muted)">Saturday, Nov 7</span>
+    <div style="display: flex; align-items: center; gap: 8px; background: var(--ok-bg); border: 1px solid var(--ok-bd); border-radius: 999px; padding: 6px 12px">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z3); box-shadow: var(--g3)"></span>
+      <span style="font-size: 12px; font-weight: 600; color: var(--ok-ink)">Fresh</span>
+    </div>
+  </div>
+
+  <div style="margin: 14px 12px 0; background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px; padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--card-sh)">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em">Long and easy today.</h1>
+      <span style="font-size: 14px; color: var(--text2); line-height: 1.45">Two hours in Zone 2. If you can't talk in full sentences, back off.</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; height: 26px; gap: 2px; align-items: end">
+        <div style="flex: 10; height: 40%; background: var(--z1); border-radius: 3px"></div>
+        <div style="flex: 100; height: 70%; background: var(--z2); border-radius: 3px; box-shadow: var(--glow-bar)"></div>
+        <div style="flex: 10; height: 40%; background: var(--z1); border-radius: 3px"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted)"><span>10 warm-up</span><span>Z2 · 120–139 bpm · 1h 40m</span><span>10 cool</span></div>
+    </div>
+    <div style="border-top: 1px solid var(--card-bd); padding-top: 12px; display: flex; gap: 10px; align-items: center">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      <span style="font-size: 13px; line-height: 1.4">Wait until 11. It's 41° now, 55° by 1 pm. Back well before the 4:52 sunset.</span>
+    </div>
+  </div>
+
+  <div style="margin: 22px 20px 0; display: flex; justify-content: space-between; align-items: baseline">
+    <span style="font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase">This week</span>
+    <span style="font-size: 13px"><span style="font-weight: 600">1h 50m</span> <span style="color: var(--muted)">of 3h 30m</span></span>
+  </div>
+
+  <div style="margin: 10px 12px 0; background: var(--card2); border: 1px solid var(--card2-bd); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: grid; grid-template-columns: 82px minmax(0, 1fr) 64px; gap: 10px; align-items: center">
+      <span style="font-size: 13px; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z2); box-shadow: var(--g2)"></span>Z2 Easy</span>
+      <div style="position: relative; height: 6px; background: var(--track); border-radius: 3px"><div style="width: 54%; height: 100%; background: var(--z2); border-radius: 3px"></div><div style="position: absolute; left: 54%; top: 0; width: 46%; height: 100%; background: repeating-linear-gradient(90deg, var(--ext) 0 3px, transparent 3px 6px)"></div></div>
+      <span style="font-size: 12px; text-align: right"><span style="font-weight: 600">1h 21</span><span style="color: var(--muted)"> /2h30</span></span>
+    </div>
+    <div style="display: grid; grid-template-columns: 82px minmax(0, 1fr) 64px; gap: 10px; align-items: center">
+      <span style="font-size: 13px; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z3); box-shadow: var(--g3)"></span>Z3 Tempo</span>
+      <div style="height: 6px; background: var(--track); border-radius: 3px"><div style="width: 22%; height: 100%; background: var(--z3); border-radius: 3px"></div></div>
+      <span style="font-size: 12px; text-align: right; font-weight: 600">13 min</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 82px minmax(0, 1fr) 64px; gap: 10px; align-items: center">
+      <span style="font-size: 13px; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--z4); box-shadow: var(--g4)"></span>Z4–5 Hard</span>
+      <div style="position: relative; height: 6px; background: var(--track); border-radius: 3px"><div style="position: absolute; left: 40%; width: 60%; top: -3px; bottom: -3px; border: 1px solid var(--band); border-radius: 4px"></div><div style="width: 27%; height: 100%; background: linear-gradient(90deg, var(--z4) 70%, var(--z5) 70%); border-radius: 3px"></div></div>
+      <span style="font-size: 12px; text-align: right"><span style="font-weight: 600; color: var(--z4-ink)">8</span><span style="color: var(--muted)"> /12–30</span></span>
+    </div>
+    <p style="margin: 2px 0 0; font-size: 13px; line-height: 1.5; color: var(--text2)">Hard minutes are light, and that's fine. Tuesday's 2×8 on the trainer fixes it. Keep today honest and don't chase the hills.</p>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <div style="padding: 0 12px 12px; display: grid; grid-template-columns: 2fr 1fr; gap: 8px">
+    <button style="height: 50px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font: 600 15px Inter, system-ui, sans-serif">Locked in</button>
+    <button style="height: 50px; border: 1px solid var(--btn2-bd); border-radius: 12px; background: var(--card); color: var(--text); font: 500 15px Inter, system-ui, sans-serif">Not today</button>
+  </div>
+  <nav style="background: var(--nav); border-top: 1px solid var(--card2-bd); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; padding: 8px 0 28px">
+    <a href="MainLight.dc.html" aria-label="Home" style="display: flex; justify-content: center; padding: 10px 0">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>
+    </a>
+    <a href="ReplanLight.dc.html" aria-label="Change the plan" style="justify-self: center; width: 56px; height: 56px; margin-top: -26px; border-radius: 18px; background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 5px var(--bg), var(--fab-sh)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4"></path><path d="M3 8h13a4 4 0 0 1 4 4"></path><path d="M17 20l4-4-4-4"></path><path d="M21 16H8a4 4 0 0 1-4-4"></path></svg>
+    </a>
+    <a href="WeekLight.dc.html" aria-label="Calendar" style="display: flex; justify-content: center; padding: 10px 0">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+    </a>
+  </nav>
+
+<div class="homebar"></div>
+</div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
