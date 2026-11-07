@@ -29,7 +29,6 @@ Updated 2026-11-07, after the UI brainstorm. Keep "Next steps" in [AGENTS.md](..
 ## You
 
 - Check who owns the Training calendar. Its events were created by the Muse agent account, so make sure ownership sits with an account that survives turning Muse off.
-- Add the GitHub remote for `sweetspot-app` and push when you're ready. Nothing has been pushed yet.
 
 ## Findings to keep in mind
 
