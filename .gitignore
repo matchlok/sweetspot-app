@@ -1,0 +1,18 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# data/private/ holds the Muse export (strava.db etc.). Tracked only while the repo is private.
+
+# Dependencies and builds
+node_modules/
+.next/
+dist/
+__pycache__/
+.venv/
+
+# Local editor / OS
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
