@@ -1,4 +1,4 @@
-# Project Icarus — technical plan
+# Sweetspot — technical plan
 
 Drafted 2026-11-06. Status: draft for review. Decisions behind it are in [AGENTS.md](../../AGENTS.md) "Current status".
 
