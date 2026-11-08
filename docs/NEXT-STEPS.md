@@ -28,7 +28,7 @@ Updated 2026-11-07, after the UI brainstorm. Keep "Next steps" in [AGENTS.md](..
 
 ## You
 
-- Check who owns the Training calendar. Its events were created by the Muse agent account, so make sure ownership sits with an account that survives turning Muse off.
+- Nothing open. The Training calendar belongs to a Gmail account Narji owns for his agents, so it survives turning Muse off (confirmed 2026-11-08).
 
 ## Findings to keep in mind
 
