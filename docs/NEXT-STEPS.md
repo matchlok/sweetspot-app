@@ -6,18 +6,14 @@ Updated 2026-11-07, after the UI brainstorm. Keep "Next steps" in [AGENTS.md](..
 
 - Phase 0 is done: intervals.icu access works, Garmin syncs to it directly, and zones and FTP are set there.
 - The UI direction is set in [build-writeup/2026-11-07-ui-mocks-v3](build-writeup/2026-11-07-ui-mocks-v3/README.md): a dark theme; a phone-only app; a 6:05 am push as the front door; and Home · [Change the plan] · Calendar.
-- The stack in [the technical plan](plans/TECHNICAL-PLAN.md) (Next.js, with Recharts or Visx) was written before the UI work and is now open again. Narji doesn't want "basic React like every AI app", and the app is phone-only, which leaves the Next.js web dashboard with no clear role.
+- The stack is decided (2026-11-08): native SwiftUI plus a TypeScript engine. This replaces the Next.js/Recharts choice in [the technical plan](plans/TECHNICAL-PLAN.md).
 
 ## Next session
 
-1. **Decide the app stack** with Winston, the BMAD architect, in party mode alongside Sally and John. Record the decision as `docs/decisions/0001-app-stack.md`. The candidates:
-   - **Native SwiftUI app plus a TypeScript engine on a server.** Gives action buttons on the notification ("Locked in / Move it / Not today"), widgets, and HealthKit. Costs the $99/yr Apple Developer account, which is deferred: ask before creating it.
-   - **SvelteKit PWA** with hand-drawn SVG or D3 charts. No App Store needed. Tapping the notification opens the app.
-   - First, verify whether iOS web push supports action buttons. This is still unverified, and it decides between the two.
-   - Either way, the engine stays TypeScript, and the dark tokens in `build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css` become the app's design tokens.
-2. **Scaffold the engine,** which works with either stack. Check `pnpm -v` (otherwise use corepack), then create a pnpm workspace with `packages/engine` (TypeScript strict, Vitest). Ask before any global install.
+1. **App stack: decided 2026-11-08.** Native SwiftUI plus a TypeScript engine on a server, phone only. See [decisions/0001-app-stack.md](decisions/0001-app-stack.md). Ask before creating the Apple Developer account.
+2. **Scaffold the engine,** Check `pnpm -v` (otherwise use corepack), then create a pnpm workspace with `packages/engine` (TypeScript strict, Vitest). Ask before any global install.
 3. **Port `categorize()`** from `reference/muse/strava_tracker.py` and test it against the 23 stored categories in `data/private/strava-db-export.json`. Then port `zone_scorecard()` and `weekly_zone_rows()`. These produce the numbers behind the Home ledger and the Calendar zone table.
-4. **Build a v0 Home screen in the chosen stack,** fed by real data from the engine. This replaces the old "v0 page on localhost" step.
+4. **Build a v0 Home screen in SwiftUI,** fed by real data from the engine. This replaces the old "v0 page on localhost" step.
 
 ## Later
 
