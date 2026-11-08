@@ -13,7 +13,7 @@ Updated 2026-11-07, after the UI brainstorm. Keep "Next steps" in [AGENTS.md](..
 1. **App stack: decided 2026-11-08.** Native SwiftUI plus a TypeScript engine on a server, phone only. See [decisions/0001-app-stack.md](decisions/0001-app-stack.md). Ask before creating the Apple Developer account.
 2. **Engine scaffold: done 2026-11-08.** pnpm workspace, `packages/engine` (TypeScript strict, Vitest).
 3. **Port: done except the golden check.** `categorize()`, `weeklyZoneRows()` and `zoneScorecard()` are ported with unit tests. The golden test against the 23 stored categories (`packages/engine/test/muse-golden.test.ts`) skips in the cloud because `data/private/` isn't there. **Run `pnpm test` on your Mac** to confirm it passes, and fix the test's field names if the export differs from the Muse schema.
-4. **Next: an intervals.icu adapter** (fetch activities, map `icu_hr_zone_times` and power zones into the engine's types), then a small API and a throwaway web Home screen in `apps/poc-web/` (see the POC plan in the 2026-11-08 chat), before the SwiftUI build. Eventually: build a v0 Home screen in SwiftUI, fed by real data from the engine. This replaces the old "v0 page on localhost" step.
+4. **Adapter: written 2026-11-08** (`packages/engine/src/intervals.ts`, tested on fixtures only; power-zone shape and `device_watts` are unverified against live data). **Next:** run it on your Mac against real intervals.icu data, then a small API and a throwaway web Home screen in `apps/poc-web/` (see the POC plan in the 2026-11-08 chat), before the SwiftUI build. Eventually: build a v0 Home screen in SwiftUI, fed by real data from the engine. This replaces the old "v0 page on localhost" step.
 
 ## Later
 
