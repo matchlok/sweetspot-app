@@ -24,11 +24,11 @@ Plan: [docs/plans/TECHNICAL-PLAN.md](docs/plans/TECHNICAL-PLAN.md).
 
 Update when a step finishes or a decision is made.
 
-- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Stack decided 2026-11-08: native SwiftUI plus a TypeScript engine ([decision](docs/decisions/0001-app-stack.md)). Next: scaffold the engine, then a Phase 1 v0 slice.
+- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Stack decided 2026-11-08: native SwiftUI plus a TypeScript engine ([decision](docs/decisions/0001-app-stack.md)). Engine scaffolded in `packages/engine` (2026-11-08). Next: intervals.icu adapter, then a throwaway web POC Home screen.
 - **Next steps (pick up here):** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md).
   1. ~~Decide the app stack~~ Done: SwiftUI app + TypeScript engine on a server, phone only (`docs/decisions/0001-app-stack.md`).
-  2. Check `pnpm -v` (otherwise use corepack). Scaffold `packages/engine` (TypeScript strict, Vitest), which works with either stack. Ask before any global install.
-  3. Port `categorize()` from `reference/muse/strava_tracker.py` and test it against the 23 stored categories in `data/private/strava-db-export.json` (`tables.activity_zones` joined to `activities`). Then port `zone_scorecard()` and `weekly_zone_rows()` with the `ZONE_BANDS` from that script. API shape is in `scripts/spike/intervals-spike.mjs`: `icu_hr_zone_times` is 7 values in seconds, and Z5+Z6+Z7 count as Z5.
+  2. ~~Scaffold `packages/engine`~~ Done. `pnpm test` runs Vitest; the Muse golden test needs `data/private/` so it only runs locally.
+  3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Confirm the golden test passes on a machine with `data/private/`. Next: the intervals.icu adapter (API shape in `scripts/spike/intervals-spike.mjs`).
   4. Build a v0 Home screen in the chosen stack, fed by real engine data. Use the dark tokens from `docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
