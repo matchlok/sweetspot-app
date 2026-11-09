@@ -25,8 +25,10 @@ describe("categorize (heartrate)", () => {
 });
 
 describe("categorize (power)", () => {
-  it("counts Z5+Z6+Z7 as vo2", () => {
-    expect(categorize("power", min(10, 20, 5, 5, 2, 2, 1))).toBe("vo2");
+  it("vo2 is Z5 only; Z6/Z7 (anaerobic, neuromuscular) don't count", () => {
+    expect(categorize("power", min(10, 20, 5, 5, 5, 0, 0))).toBe("vo2");
+    expect(categorize("power", min(10, 20, 5, 5, 2, 2, 1))).toBe("endurance"); // 5 min Z5+Z6+Z7, only 2 in Z5
+    expect(categorize("power", min(10, 20, 5, 5, 0, 8, 4))).toBe("endurance");
   });
   it("sweet spot is Z4 plus half of Z3", () => {
     expect(categorize("power", min(10, 20, 8, 6, 0, 0, 0))).toBe("sweet_spot");
@@ -37,7 +39,7 @@ describe("categorize (power)", () => {
 describe("categorizeActivity", () => {
   it("prefers power over heartrate", () => {
     const r = categorizeActivity({
-      power: min(10, 20, 5, 5, 2, 2, 1),
+      power: min(10, 20, 5, 5, 6, 0, 0),
       heartrate: min(30, 40, 5, 2, 0, 0, 0),
     });
     expect(r).toEqual({ category: "vo2", source: "power" });
