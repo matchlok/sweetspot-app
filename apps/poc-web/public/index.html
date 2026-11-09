@@ -69,12 +69,12 @@ function zoneRow(name, color, glow, min, target, kind) {
     let html = `<div class="row"><span class="note">${dayName(d.today)}</span><span class="note">live · intervals.icu</span></div>`;
     html += `<h2 class="row"><span class="label">This week</span><span style="font-size:13px"><b>${fmt(totalMin)}</b> <span class="tag">ridden · ${d.rides.length} rides</span></span></h2>`;
     if (cur) {
+      const hrRides = cur.rides - cur.powerRides;
       html += `<div class="card2">
-        ${zoneRow("Z1–2 Easy", "var(--z2)", "var(--g2)", cur.easyMin, b.easyMin, "floor")}
-        ${zoneRow("Z3 Tempo", "var(--z3)", "var(--g3)", cur.z3Min, null, "watch")}
-        ${zoneRow("Z4–5 Hard", "var(--z4)", "var(--g4)", cur.qualityMin, [b.qualityMin, b.qualityMax], "band")}
-        ${cur.tempoDrift ? `<p class="note" style="color:var(--text2)">Tempo is running ahead of easy time. Worth a look, your call.</p>` : ""}
-        <p class="note">Minutes are heart-rate time-in-zone. Targets are the normal-week bands; the plan isn't connected yet, so recovery weeks aren't recognised.</p>
+        ${zoneRow("Endurance", "var(--z2)", "var(--g2)", cur.enduranceMin, null, "watch")}
+        ${zoneRow("Sweet spot", "var(--z4)", "var(--g4)", cur.ssMin, null, "watch")}
+        ${zoneRow("VO2", "var(--z5)", "#ee748099 0 0 6px", cur.vo2Min, null, "watch")}
+        <p class="note">Endurance is Z2+Z3. Sweet spot is 88–94% FTP, power rides only${hrRides ? ` (${hrRides} HR-only ride${hrRides > 1 ? "s" : ""} not counted)` : ""}. VO2 is Z5 only. Each ride uses power when it has it, otherwise heart rate. Targets will come from the plan once it's connected.</p>
       </div>`;
     }
     html += `<h2><span class="label">Rides this week</span></h2><div class="card2" style="gap:0;padding:6px 16px">`;
@@ -82,8 +82,8 @@ function zoneRow(name, color, glow, min, target, kind) {
       ? d.rides.map((r) => `<div class="ride"><span>${dayName(r.date)}</span><span>${r.minutes} min <span class="tag">· ${label(r.category)}${r.source ? " (" + (r.source === "power" ? "power" : "HR") + ")" : ""}</span></span></div>`).join("")
       : `<p class="note" style="padding:10px 0">No rides yet this week.</p>`;
     html += `</div><h2><span class="label">Last 4 weeks</span></h2><div class="card2" style="gap:0;padding:6px 16px">
-      <div class="hist head"><span>Week of</span><span>Easy</span><span>Z3</span><span>Z4–5</span></div>`;
-    html += d.scores.map((s) => `<div class="hist"><span>${dayName(s.start).replace(/^\w+, /,"")}${s.inProgress ? " ·now" : ""}</span><span>${fmt(s.easyMin)}</span><span>${Math.round(s.z3Min)}m</span><span>${Math.round(s.qualityMin)}m</span></div>`).join("");
+      <div class="hist head"><span>Week of</span><span>Endur.</span><span>SS</span><span>VO2</span></div>`;
+    html += d.scores.map((s) => `<div class="hist"><span>${dayName(s.start).replace(/^\w+, /,"")}${s.inProgress ? " ·now" : ""}</span><span>${fmt(s.enduranceMin)}</span><span>${Math.round(s.ssMin)}m</span><span>${Math.round(s.vo2Min)}m</span></div>`).join("");
     html += `</div>`;
     app.innerHTML = html;
   } catch (e) {

@@ -48,6 +48,8 @@ export interface RideZones {
   heartrate?: number[];
   /** Seven power zone seconds, or undefined without sensor power. */
   power?: number[];
+  /** Seconds at 88-94% FTP (overlaps power Z3/Z4); undefined without power. */
+  sweetSpotSeconds?: number;
   category: Category;
   categorySource: ZoneSource | null;
 }
@@ -60,6 +62,13 @@ function hrZones(a: IntervalsActivity): number[] | undefined {
   // Z1..Z7 as returned; time past Z7 doesn't exist. Z5+Z6+Z7 fold happens in the scorecard.
   const seven = [0, 1, 2, 3, 4, 5, 6].map((i) => nonNeg(z[i]));
   return seven.some((s) => s > 0) ? seven : undefined;
+}
+
+/** Seconds in intervals.icu's "SS" entry (88-94% FTP), which overlaps Z3/Z4. */
+function sweetSpotSeconds(a: IntervalsActivity): number | undefined {
+  if (a.device_watts === false || !Array.isArray(a.icu_zone_times)) return undefined;
+  const e = a.icu_zone_times.find((x) => typeof x === "object" && x && x.id === "SS");
+  return typeof e === "object" && e ? nonNeg(e.secs) : undefined;
 }
 
 function powerZones(a: IntervalsActivity): number[] | undefined {
@@ -97,6 +106,7 @@ export function mapActivity(a: IntervalsActivity): RideZones | null {
     movingSeconds: nonNeg(a.moving_time),
     heartrate,
     power,
+    sweetSpotSeconds: power ? sweetSpotSeconds(a) : undefined,
     category,
     categorySource: source,
   };
@@ -106,9 +116,12 @@ export function mapActivities(raw: readonly IntervalsActivity[]): RideZones[] {
   return raw.flatMap((a) => mapActivity(a) ?? []);
 }
 
-/** Shape the scorecard expects. Rides without HR zones stay out of the HR totals. */
+/** Shape the scorecard expects. It prefers power per ride and falls back to HR. */
 export function toActivityZones(rides: readonly RideZones[]): ActivityZones[] {
-  return rides.map((r) => ({ date: r.date, heartrate: r.heartrate }));
+  return rides.map((r) => ({ date: r.date, heartrate: r.heartrate,
+    power: r.power,
+    sweetSpotSeconds: r.sweetSpotSeconds,
+  }));
 }
 
 export type Fetcher = (url: string, init: { headers: Record<string, string> }) => Promise<{

@@ -24,6 +24,8 @@ describe("mapActivity", () => {
     const inOrder = mapActivity({ ...ride, icu_zone_times: live });
     const shuffled = mapActivity({ ...ride, icu_zone_times: [...live].reverse() });
     expect(inOrder?.power).toEqual([667, 1849, 644, 82, 9, 24, 0]);
+    expect(inOrder?.sweetSpotSeconds).toBe(209);
+    expect(toActivityZones([inOrder!])[0]?.sweetSpotSeconds).toBe(209);
     expect(shuffled?.power).toEqual(inOrder?.power);
   });
   it("prefers sensor power; ignores estimated power", () => {
@@ -31,7 +33,7 @@ describe("mapActivity", () => {
       type: "Ride",
       start_date_local: "2026-11-03T06:10:00",
       icu_hr_zone_times: min(30, 40, 5, 2, 0, 0, 0),
-      icu_zone_times: [600, 1200, 300, 300, 120, 120, 60].map((secs, i) => ({ id: `Z${i + 1}`, secs })),
+      icu_zone_times: [600, 1200, 300, 300, 360, 120, 60].map((secs, i) => ({ id: `Z${i + 1}`, secs })),
     };
     expect(mapActivity({ ...base, device_watts: true })).toMatchObject({ category: "vo2", categorySource: "power" });
     expect(mapActivity({ ...base, device_watts: false })).toMatchObject({ category: "endurance", categorySource: "heartrate" });
@@ -46,9 +48,21 @@ describe("mapActivity", () => {
     expect(mapActivity({ type: "WeightTraining", start_date_local: "2026-11-03T06:00:00" })).toBeNull();
     expect(mapActivity({ type: "Ride", start_date_local: "2026-11-03T06:00:00", _note: "STRAVA" })).toBeNull();
   });
-  it("rides without HR zones stay out of scorecard input", () => {
+  it("rides without zones stay out of scorecard input", () => {
     const r = mapActivity({ type: "Ride", start_date_local: "2026-11-04T10:00:00" })!;
-    expect(toActivityZones([r])).toEqual([{ date: "2026-11-04", heartrate: undefined }]);
+    expect(toActivityZones([r])).toEqual([{ date: "2026-11-04", heartrate: undefined, power: undefined }]);
+  });
+  it("passes sensor power to the scorecard and drops estimated power", () => {
+    const base = {
+      type: "Ride",
+      start_date_local: "2026-11-03T06:10:00",
+      icu_hr_zone_times: min(30, 40, 5, 2, 0, 0, 0),
+      icu_zone_times: [600, 1200, 300, 300, 120, 120, 60].map((secs, i) => ({ id: `Z${i + 1}`, secs })),
+    };
+    const [withPower] = toActivityZones([mapActivity({ ...base, device_watts: true })!]);
+    expect(withPower?.power).toEqual([600, 1200, 300, 300, 120, 120, 60]);    const [estimated] = toActivityZones([mapActivity({ ...base, device_watts: false })!]);
+    expect(estimated?.power).toBeUndefined();
+    expect(estimated?.heartrate).toBeDefined();
   });
 });
 

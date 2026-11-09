@@ -5,7 +5,8 @@
  * power: 7 zones. Sweet spot (~88-94% FTP) straddles upper Z3 and Z4.
  * heartrate: zones are the athlete's, as stored. HR lags on short intervals,
  * so VO2 is a few minutes in Z5, or a small Z5 dose on top of a big Z4+Z5 total.
- * intervals.icu returns 7 values; Z5+Z6+Z7 count as Z5 for HR bands.
+ * intervals.icu returns 7 values. VO2 is Z5 only for both sources: Z6 and Z7 are
+ * anaerobic and neuromuscular (Coggan), not aerobic VO2 work.
  */
 export type ZoneSource = "power" | "heartrate";
 export type Category = "vo2" | "sweet_spot" | "endurance" | "unknown";
@@ -22,7 +23,8 @@ export function categorize(source: ZoneSource, zoneSeconds: ZoneSeconds): Catego
   const at = (i: number) => m[i] ?? 0;
 
   if (source === "power") {
-    const vo2Min = at(4) + at(5) + at(6); // Z5+Z6+Z7
+    // Z5 only. Z6 (anaerobic) and Z7 (neuromuscular) are not aerobic VO2 work.
+    const vo2Min = at(4);
     const ssMin = at(3) + 0.5 * at(2); // Z4 + half of Z3
     if (vo2Min >= 5) return "vo2";
     if (ssMin >= 10) return "sweet_spot";
