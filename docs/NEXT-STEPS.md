@@ -1,6 +1,6 @@
 # Next steps
 
-Updated 2026-11-07, after the UI brainstorm. Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Updated 2026-11-08, after the goal system and calendar connection. Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
 ## Where we are
 
@@ -8,7 +8,20 @@ Updated 2026-11-07, after the UI brainstorm. Keep "Next steps" in [AGENTS.md](..
 - The UI direction is set in [build-writeup/2026-11-07-ui-mocks-v3](build-writeup/2026-11-07-ui-mocks-v3/README.md): a dark theme; a phone-only app; a 6:05 am push as the front door; and Home · [Change the plan] · Calendar.
 - The stack is decided (2026-11-08): native SwiftUI plus a TypeScript engine. This replaces the Next.js/Recharts choice in [the technical plan](plans/TECHNICAL-PLAN.md).
 
-## Next session
+## Next session (2026-11-08 update, pick up here)
+
+State: goal system built and tested (`packages/engine/src/targets.ts`, 44 tests pass); Home shows goal bars with hit state; the Google Calendar "Training" calendar is readable and writable through the service account (verified: calendar id queried directly, tz America/Denver, access writer, 8 recurring all-day events in two weeks: Lift B Mon, Sweet Spot or VO2 Tue, Lift A Thu, Endurance Sat). Targets in `DEFAULT_PROGRAM` are placeholders (90 / 20 +2 / 8 +1; threshold off).
+
+1. **Rule to confirm with Narjit:** judge a goal only in weeks where the plan has a session that serves it (e.g. VO2 only on VO2 weeks). Off weeks carry the target over and count as neither hit nor miss, so the 3-week recovery streak isn't broken.
+2. **Calendar reader** in the engine: expand recurring series, map titles to session kinds (lift_upper "Lift B", lift_lower "Lift A", sweet_spot, vo2, endurance, easy_spin), check against the Muse export. Events are all-day, so the app places them in time itself.
+3. **Strength goals:** 1 lower + 1 upper per week, done or missed only (no weights or reps). Read `WeightTraining` activities from intervals.icu (the adapter ignores them today); intervals.icu can't tell upper from lower, so match each lift to the planned lift on that day.
+4. **Programming screen and calendar day sheet** (design first): edit goal modes, steps and starting targets; "What changed?" (cooked, short on time, extra time, free text). Day sheet: past = view only, except reshuffle the rest of the week for a missed day in the current week; today and future = Move, Swap, Skip with knock-on effects shown first. Shuffle rule: no heavy lower lift the day before a quality ride.
+5. **Fatigue metrics:** show Form (CTL minus ATL), ramp rate and weekly load from intervals.icu wellness; ramp rate could trigger an early recovery week. HRV, resting HR and sleep are null (Garmin isn't sending them).
+6. **Prediction:** predict whether Narjit will be performant (complete intervals at prescribed power) given the planned workouts, not whether he'll do them. Log and score every prediction.
+7. Get real starting targets and step sizes from Narjit; define threshold's start.
+8. Housekeeping: `apps/poc-web/README.md` still describes the old "normal band" scoring. Stop the POC server (port 5174) when done.
+
+## Earlier next steps (mostly done)
 
 1. **App stack: decided 2026-11-08.** Native SwiftUI plus a TypeScript engine on a server, phone only. See [decisions/0001-app-stack.md](decisions/0001-app-stack.md). Ask before creating the Apple Developer account.
 2. **Engine scaffold: done 2026-11-08.** pnpm workspace, `packages/engine` (TypeScript strict, Vitest).

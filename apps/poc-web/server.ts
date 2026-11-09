@@ -15,6 +15,9 @@ import {
   fetchRides,
   mondayOf,
   toActivityZones,
+  DEFAULT_PROGRAM,
+  programState,
+  type GoalMinutes,
   weeklyZoneRows,
   zoneScorecard,
 } from "../../packages/engine/src/index";
@@ -36,13 +39,18 @@ async function home() {
   if (!env.INTERVALS_API_KEY || !env.INTERVALS_ATHLETE_ID) throw new Error("intervals.icu env vars missing");
   const today = denverToday();
   const monday = mondayOf(today);
-  const oldest = addDays(monday, -21); // this week + 3 back
+  const oldest = DEFAULT_PROGRAM.startWeek < addDays(monday, -21) ? DEFAULT_PROGRAM.startWeek : addDays(monday, -21);
   const rides = await fetchRides(
     { apiKey: env.INTERVALS_API_KEY, athleteId: env.INTERVALS_ATHLETE_ID },
     oldest,
     today,
   );
-  const weeks = weeklyZoneRows(toActivityZones(rides), today, 4);
+  const weeksBack = Math.max(4, Math.round((Date.parse(monday) - Date.parse(oldest)) / 604800000) + 1);
+  const weeks = weeklyZoneRows(toActivityZones(rides), today, weeksBack);
+  const actuals = new Map<string, Partial<GoalMinutes>>(
+    weeks.map((w) => [w.start, { endurance: w.enduranceSeconds / 60, sweetSpot: w.ssSeconds / 60, threshold: w.z4 / 60, vo2: w.vo2Seconds / 60 }]),
+  );
+  const program = programState(DEFAULT_PROGRAM, actuals, monday);
   // The plan isn't connected yet, so every week is scored against the normal band.
   const planKinds = new Map(weeks.map((w) => [w.start, new Set(["assumed-normal"])]));
   const scores = zoneScorecard(weeks, planKinds, today);
@@ -50,7 +58,10 @@ async function home() {
     today,
     weekStart: monday,
     bands: ZONE_BANDS.normal,
-    scores,
+    scores: scores.slice(0, 4),
+    actuals: Object.fromEntries(actuals),
+    program,
+    goals: DEFAULT_PROGRAM.goals,
     weeks,
     rides: rides
       .filter((r) => r.date >= monday)

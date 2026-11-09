@@ -29,6 +29,17 @@ h2{margin:22px 8px 10px}
 .hist{display:grid;grid-template-columns:70px 1fr 1fr 1fr;gap:6px;font-size:12px;padding:6px 0;border-top:1px solid var(--card-bd)}
 .hist:first-of-type{border-top:0}
 .hist.head{color:var(--muted)}
+.fill.hit{box-shadow:0 0 8px currentColor}
+.chk{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;margin-right:4px;vertical-align:-2px}
+.chk svg{width:9px;height:9px}
+.zone.hit .val span{color:var(--text2)}
+.prog{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.wk{border:1px solid var(--card-bd);border-radius:12px;padding:10px 8px;font-size:12px;line-height:1.5;text-align:center}
+.wk.now{border-color:var(--accent);background:var(--card)}
+.wk.rec{border-style:dashed}
+.wk .t{font-size:11px;color:var(--muted);margin-bottom:4px}
+.hist{grid-template-columns:62px 1fr 1fr 1fr}
+.ok{color:var(--z3)}
 .err{color:var(--z5);font-size:14px}
 </style>
 </head>
@@ -40,22 +51,25 @@ const dayName = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const label = (c) => ({ endurance:"Endurance", sweet_spot:"Sweet spot", vo2:"VO2", unknown:"Unknown" }[c] || c);
 
-function zoneRow(name, color, glow, min, target, kind) {
-  // kind: "floor" => progress toward easyMin; "watch" => no target; "band" => [lo,hi]
-  let track, val;
-  if (kind === "floor") {
-    const pct = Math.min(100, (min / target) * 100);
-    track = `<div class="track"><div class="fill" style="width:${pct}%;background:${color}"></div></div>`;
-    val = `<b>${fmt(min)}</b><span> /${fmt(target)}</span>`;
-  } else if (kind === "band") {
-    const [lo, hi] = target, scale = hi * 1.4;
-    track = `<div class="track"><div class="band" style="left:${lo/scale*100}%;width:${(hi-lo)/scale*100}%"></div><div class="fill" style="width:${Math.min(100,min/scale*100)}%;background:${color}"></div></div>`;
-    val = `<b style="color:var(--z4-ink)">${Math.round(min)}</b><span> /${lo}–${hi}</span>`;
-  } else {
-    track = `<div class="track"><div class="fill" style="width:${Math.min(100,min/60*100)}%;background:${color}"></div></div>`;
-    val = `<b>${Math.round(min)} min</b>`;
-  }
-  return `<div class="zone"><span class="name"><span class="dot" style="background:${color};box-shadow:${glow}"></span>${name}</span>${track}<span class="val">${val}</span></div>`;
+const CHECK = (c) => `<span class="chk" style="background:${c}"><svg viewBox="0 0 12 12" fill="none" stroke="#08090c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.5l2.3 2.3 4.7-5"/></svg></span>`;
+
+// A goal row: bar fills toward the weekly target. At 100% the bar glows and a check replaces the fraction.
+function goalRow(name, color, glow, min, target) {
+  const hit = min >= target;
+  const pct = Math.min(100, (min / target) * 100);
+  const val = hit
+    ? `${CHECK(color)}<b>${fmt(min)}</b><span> /${fmt(target)}</span>`
+    : `<b>${fmt(min)}</b><span> /${fmt(target)}</span>`;
+  return `<div class="zone${hit ? " hit" : ""}"><span class="name"><span class="dot" style="background:${color};box-shadow:${glow}"></span>${name}</span>
+    <div class="track"><div class="fill${hit ? " hit" : ""}" style="width:${pct}%;background:${color};color:${color}"></div></div>
+    <span class="val">${val}</span></div>`;
+}
+
+// History cell: actual vs target, check when hit. Weeks with no target show the actual alone.
+function histCell(actual, target, color) {
+  const a = Math.round(actual);
+  if (target == null) return `<span>${a}m</span>`;
+  return a >= target ? `<span style="color:${color}">${a}/${target} ✓</span>` : `<span>${a}<span class="tag">/${target}</span></span>`;
 }
 
 (async () => {
@@ -68,22 +82,31 @@ function zoneRow(name, color, glow, min, target, kind) {
     const b = d.bands;
     let html = `<div class="row"><span class="note">${dayName(d.today)}</span><span class="note">live · intervals.icu</span></div>`;
     html += `<h2 class="row"><span class="label">This week</span><span style="font-size:13px"><b>${fmt(totalMin)}</b> <span class="tag">ridden · ${d.rides.length} rides</span></span></h2>`;
-    if (cur) {
+    const GOALS = [
+      ["endurance", "Endurance", "var(--z2)", "var(--g2)"],
+      ["sweetSpot", "Sweet spot", "var(--z4)", "var(--g4)"],
+      ["threshold", "Threshold", "var(--z4)", "var(--g4)"],
+      ["vo2", "VO2", "var(--z5)", "0 0 6px rgba(238,116,128,.7)"],
+    ].filter(([k]) => d.goals[k].mode !== "off");
+    const pw = d.program.current;
+    if (cur && pw) {
+      const a = d.actuals[d.weekStart] || {};
       const hrRides = cur.rides - cur.powerRides;
+      html += `<div class="row" style="margin:0 8px 10px"><span class="note">${pw.isRecovery ? "Recovery week" : "This week's targets"}</span></div>`;
       html += `<div class="card2">
-        ${zoneRow("Endurance", "var(--z2)", "var(--g2)", cur.enduranceMin, null, "watch")}
-        ${zoneRow("Sweet spot", "var(--z4)", "var(--g4)", cur.ssMin, null, "watch")}
-        ${zoneRow("VO2", "var(--z5)", "#ee748099 0 0 6px", cur.vo2Min, null, "watch")}
-        <p class="note">Endurance is Z2+Z3. Sweet spot is 88–94% FTP, power rides only${hrRides ? ` (${hrRides} HR-only ride${hrRides > 1 ? "s" : ""} not counted)` : ""}. VO2 is Z5 only. Each ride uses power when it has it, otherwise heart rate. Targets will come from the plan once it's connected.</p>
+        ${GOALS.map(([k, n, c, g]) => goalRow(n, c, g, a[k] || 0, pw.targets[k])).join("")}
+        ${GOALS.filter(([k]) => d.goals[k].mode === "progress" && (a[k] || 0) > pw.targets[k] * 1.25 && k !== "endurance").map(([, n]) => `<p class="note" style="color:var(--text2)">${n} is done for the week. Anything more is just fatigue.</p>`).join("")}
+        <p class="note">Bars fill to the week's target and glow when you hit it. Sweet spot is 88–94% FTP, power rides only${hrRides ? ` (${hrRides} HR-only ride${hrRides > 1 ? "s" : ""} not counted)` : ""}.</p>
       </div>`;
     }
     html += `<h2><span class="label">Rides this week</span></h2><div class="card2" style="gap:0;padding:6px 16px">`;
     html += d.rides.length
       ? d.rides.map((r) => `<div class="ride"><span>${dayName(r.date)}</span><span>${r.minutes} min <span class="tag">· ${label(r.category)}${r.source ? " (" + (r.source === "power" ? "power" : "HR") + ")" : ""}</span></span></div>`).join("")
       : `<p class="note" style="padding:10px 0">No rides yet this week.</p>`;
+    const cols = `grid-template-columns:62px repeat(${GOALS.length},1fr)`;
     html += `</div><h2><span class="label">Last 4 weeks</span></h2><div class="card2" style="gap:0;padding:6px 16px">
-      <div class="hist head"><span>Week of</span><span>Endur.</span><span>SS</span><span>VO2</span></div>`;
-    html += d.scores.map((s) => `<div class="hist"><span>${dayName(s.start).replace(/^\w+, /,"")}${s.inProgress ? " ·now" : ""}</span><span>${fmt(s.enduranceMin)}</span><span>${Math.round(s.ssMin)}m</span><span>${Math.round(s.vo2Min)}m</span></div>`).join("");
+      <div class="hist head" style="${cols}"><span>Week of</span>${GOALS.map(([, n]) => `<span>${n.replace("Endurance", "Endur.").replace("Sweet spot", "SS")}</span>`).join("")}</div>`;
+    html += d.scores.map((s) => { const pwk = d.program.weeks.find((w) => w.start === s.start); const a = d.actuals[s.start] || {}; return `<div class="hist" style="${cols}"><span>${dayName(s.start).replace(/^\w+, /,"")}${s.inProgress ? " ·now" : ""}</span>${GOALS.map(([k, , c]) => histCell(a[k] || 0, pwk && pwk.targets[k], c)).join("")}</div>`; }).join("");
     html += `</div>`;
     app.innerHTML = html;
   } catch (e) {
