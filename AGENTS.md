@@ -28,7 +28,7 @@ Update when a step finishes or a decision is made.
 - **Next steps (pick up here):** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md).
   1. ~~Decide the app stack~~ Done: SwiftUI app + TypeScript engine on a server, phone only (`docs/decisions/0001-app-stack.md`).
   2. ~~Scaffold `packages/engine`~~ Done. `pnpm test` runs Vitest; the Muse golden test needs `data/private/` so it only runs locally.
-  3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Confirm the golden test passes on a machine with `data/private/`. Adapter written in `packages/engine/src/intervals.ts` (fixtures only; check against real data).
+  3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Golden test passes locally. Adapter in `packages/engine/src/intervals.ts` is checked against live data (2026-11-08); next is a spot-check of the HR-only `vo2` rides.
   4. Build a v0 Home screen in the chosen stack, fed by real engine data. Use the dark tokens from `docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
