@@ -24,12 +24,13 @@ Plan: [docs/plans/TECHNICAL-PLAN.md](docs/plans/TECHNICAL-PLAN.md).
 
 Update when a step finishes or a decision is made.
 
-- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Stack decided 2026-11-08: native SwiftUI plus a TypeScript engine ([decision](docs/decisions/0001-app-stack.md)). Engine scaffolded in `packages/engine` (2026-11-08). Next: intervals.icu adapter, then a throwaway web POC Home screen.
+- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Stack decided 2026-11-08: native SwiftUI plus a TypeScript engine ([decision](docs/decisions/0001-app-stack.md)). Engine scaffolded in `packages/engine` (2026-11-08). Goal system (progress/hold/off, auto-recovery) and the web POC Home are built; the Training Google Calendar is connected through the service account (2026-11-08). Next: calendar reader, strength goals, Programming and day-sheet screens.
 - **Next steps (pick up here):** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md).
   1. ~~Decide the app stack~~ Done: SwiftUI app + TypeScript engine on a server, phone only (`docs/decisions/0001-app-stack.md`).
   2. ~~Scaffold `packages/engine`~~ Done. `pnpm test` runs Vitest; the Muse golden test needs `data/private/` so it only runs locally.
   3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Golden test passes locally. Adapter in `packages/engine/src/intervals.ts` is checked against live data (2026-11-08); next is a spot-check of the HR-only `vo2` rides.
-  4. Build a v0 Home screen in the chosen stack, fed by real engine data. Use the dark tokens from `docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css`.
+  4. Pick up at the top of [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md) (2026-11-08 update): calendar reader, lift goals, Programming screen, fatigue metrics.
+  5. Build a v0 Home screen in the chosen stack, fed by real engine data. Use the dark tokens from `docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
 Full history (done, decided, open): [docs/STATUS.md](docs/STATUS.md). Add new entries there; keep only the phase and next action here.
