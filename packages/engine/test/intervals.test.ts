@@ -14,12 +14,24 @@ describe("mapActivity", () => {
     });
     expect(r).toMatchObject({ date: "2026-11-03", category: "sweet_spot", categorySource: "heartrate" });
   });
+  it("reads power zones by id, ignoring the SS entry and entry order", () => {
+    // Shape from live intervals.icu data (2026-11-08): Z1..Z7 plus "SS".
+    const live = [
+      { id: "Z1", secs: 667 }, { id: "Z2", secs: 1849 }, { id: "Z3", secs: 644 }, { id: "Z4", secs: 82 },
+      { id: "Z5", secs: 9 }, { id: "Z6", secs: 24 }, { id: "Z7", secs: 0 }, { id: "SS", secs: 209 },
+    ];
+    const ride = { type: "Ride", start_date_local: "2026-11-04T06:10:00", device_watts: true as const };
+    const inOrder = mapActivity({ ...ride, icu_zone_times: live });
+    const shuffled = mapActivity({ ...ride, icu_zone_times: [...live].reverse() });
+    expect(inOrder?.power).toEqual([667, 1849, 644, 82, 9, 24, 0]);
+    expect(shuffled?.power).toEqual(inOrder?.power);
+  });
   it("prefers sensor power; ignores estimated power", () => {
     const base = {
       type: "Ride",
       start_date_local: "2026-11-03T06:10:00",
       icu_hr_zone_times: min(30, 40, 5, 2, 0, 0, 0),
-      icu_zone_times: [{ id: "Z1", secs: 600 }, { secs: 1200 }, { secs: 300 }, { secs: 300 }, { secs: 120 }, { secs: 120 }, { secs: 60 }],
+      icu_zone_times: [600, 1200, 300, 300, 120, 120, 60].map((secs, i) => ({ id: `Z${i + 1}`, secs })),
     };
     expect(mapActivity({ ...base, device_watts: true })).toMatchObject({ category: "vo2", categorySource: "power" });
     expect(mapActivity({ ...base, device_watts: false })).toMatchObject({ category: "endurance", categorySource: "heartrate" });

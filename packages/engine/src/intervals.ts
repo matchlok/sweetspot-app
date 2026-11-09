@@ -10,6 +10,8 @@ import type { ActivityZones } from "./scorecard";
  * understood on 2026-11-08. UNVERIFIED against live data: `icu_zone_times`
  * (power) shape and whether `device_watts` marks real sensor power. Re-check
  * against data/private/intervals-spike.json.
+ * Checked on live data 2026-11-08: `icu_zone_times` is id-keyed Z1..Z7 plus an
+ * "SS" entry; `device_watts` is true or null, never false, on 20 rides.
  */
 
 export interface IntervalsActivity {
@@ -64,8 +66,20 @@ function powerZones(a: IntervalsActivity): number[] | undefined {
   if (a.device_watts === false) return undefined; // estimated power is not a zone source
   const z = a.icu_zone_times;
   if (!Array.isArray(z) || z.length === 0) return undefined;
-  const secs = z.map((e) => (typeof e === "number" ? nonNeg(e) : nonNeg(e?.secs)));
-  const seven = [0, 1, 2, 3, 4, 5, 6].map((i) => secs[i] ?? 0);
+  // Live data (checked 2026-11-08) is [{id:"Z1",secs}, ..., {id:"Z7",secs}, {id:"SS",secs}]:
+  // 8 entries, the extra "SS" overlaps Z3/Z4. Read by id so order and extras can't shift zones.
+  const byId = new Map<string, number>();
+  for (const e of z) {
+    if (typeof e === "object" && e && typeof e.id === "string") byId.set(e.id, nonNeg(e.secs));
+  }
+  const seven =
+    byId.has("Z1")
+      ? [1, 2, 3, 4, 5, 6, 7].map((n) => byId.get(`Z${n}`) ?? 0)
+      : // Plain seconds or id-less entries: positional, first seven only.
+        [0, 1, 2, 3, 4, 5, 6].map((i) => {
+          const e = z[i];
+          return typeof e === "number" ? nonNeg(e) : nonNeg(e?.secs);
+        });
   return seven.some((s) => s > 0) ? seven : undefined;
 }
 

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sweetspot POC</title>
+<style>
+/* Dark tokens copied from docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css */
+:root{--bg:#08090c;--card:#13151c;--card-bd:#262a36;--card-sh:inset 0 1px 0 rgba(255,255,255,.05);--card2:#0f1116;--card2-bd:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--track:#1d2029;--band:#4a4128;--accent:#7c8cf8;--z1:#5b5f6e;--z2:#7c8cf8;--z3:#5fd0a4;--z4:#e8bd62;--z5:#ee7480;--z4-ink:#e8bd62;--ok-ink:#8fe0bd;--g2:0 0 6px rgba(124,140,248,.7);--g3:0 0 6px rgba(95,208,164,.7);--g4:0 0 6px rgba(232,189,98,.7)}
+*{box-sizing:border-box}
+body{margin:0;background:#000;display:flex;justify-content:center;font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;color:var(--text)}
+main{width:100%;max-width:390px;min-height:100vh;background:var(--bg);padding:20px 12px 28px}
+.row{display:flex;justify-content:space-between;align-items:baseline}
+.label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.card{background:var(--card);border:1px solid var(--card-bd);border-radius:16px;padding:16px;box-shadow:var(--card-sh)}
+.card2{background:var(--card2);border:1px solid var(--card2-bd);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.zone{display:grid;grid-template-columns:82px minmax(0,1fr) 72px;gap:10px;align-items:center}
+.zone .name{font-size:13px;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%}
+.track{position:relative;height:6px;background:var(--track);border-radius:3px}
+.fill{height:100%;border-radius:3px}
+.band{position:absolute;top:-3px;bottom:-3px;border:1px solid var(--band);border-radius:4px}
+.val{font-size:12px;text-align:right}.val b{font-weight:600}.val span{color:var(--muted)}
+.note{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
+.ride{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid var(--card-bd)}
+.ride:first-child{border-top:0}
+.tag{color:var(--muted)}
+h2{margin:22px 8px 10px}
+.hist{display:grid;grid-template-columns:70px 1fr 1fr 1fr;gap:6px;font-size:12px;padding:6px 0;border-top:1px solid var(--card-bd)}
+.hist:first-of-type{border-top:0}
+.hist.head{color:var(--muted)}
+.err{color:var(--z5);font-size:14px}
+</style>
+</head>
+<body>
+<main id="app"><p class="note">Loading live data…</p></main>
+<script>
+const fmt = (min) => { const m = Math.round(min); return m >= 60 ? `${Math.floor(m/60)}h ${String(m%60).padStart(2,"0")}` : `${m} min`; };
+const dayName = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const label = (c) => ({ endurance:"Endurance", sweet_spot:"Sweet spot", vo2:"VO2", unknown:"Unknown" }[c] || c);
+
+function zoneRow(name, color, glow, min, target, kind) {
+  // kind: "floor" => progress toward easyMin; "watch" => no target; "band" => [lo,hi]
+  let track, val;
+  if (kind === "floor") {
+    const pct = Math.min(100, (min / target) * 100);
+    track = `<div class="track"><div class="fill" style="width:${pct}%;background:${color}"></div></div>`;
+    val = `<b>${fmt(min)}</b><span> /${fmt(target)}</span>`;
+  } else if (kind === "band") {
+    const [lo, hi] = target, scale = hi * 1.4;
+    track = `<div class="track"><div class="band" style="left:${lo/scale*100}%;width:${(hi-lo)/scale*100}%"></div><div class="fill" style="width:${Math.min(100,min/scale*100)}%;background:${color}"></div></div>`;
+    val = `<b style="color:var(--z4-ink)">${Math.round(min)}</b><span> /${lo}–${hi}</span>`;
+  } else {
+    track = `<div class="track"><div class="fill" style="width:${Math.min(100,min/60*100)}%;background:${color}"></div></div>`;
+    val = `<b>${Math.round(min)} min</b>`;
+  }
+  return `<div class="zone"><span class="name"><span class="dot" style="background:${color};box-shadow:${glow}"></span>${name}</span>${track}<span class="val">${val}</span></div>`;
+}
+
+(async () => {
+  const app = document.getElementById("app");
+  try {
+    const d = await (await fetch("/api/home")).json();
+    if (d.error) throw new Error(d.error);
+    const cur = d.scores.find((s) => s.start === d.weekStart);
+    const totalMin = d.rides.reduce((a, r) => a + r.minutes, 0);
+    const b = d.bands;
+    let html = `<div class="row"><span class="note">${dayName(d.today)}</span><span class="note">live · intervals.icu</span></div>`;
+    html += `<h2 class="row"><span class="label">This week</span><span style="font-size:13px"><b>${fmt(totalMin)}</b> <span class="tag">ridden · ${d.rides.length} rides</span></span></h2>`;
+    if (cur) {
+      html += `<div class="card2">
+        ${zoneRow("Z1–2 Easy", "var(--z2)", "var(--g2)", cur.easyMin, b.easyMin, "floor")}
+        ${zoneRow("Z3 Tempo", "var(--z3)", "var(--g3)", cur.z3Min, null, "watch")}
+        ${zoneRow("Z4–5 Hard", "var(--z4)", "var(--g4)", cur.qualityMin, [b.qualityMin, b.qualityMax], "band")}
+        ${cur.tempoDrift ? `<p class="note" style="color:var(--text2)">Tempo is running ahead of easy time. Worth a look, your call.</p>` : ""}
+        <p class="note">Minutes are heart-rate time-in-zone. Targets are the normal-week bands; the plan isn't connected yet, so recovery weeks aren't recognised.</p>
+      </div>`;
+    }
+    html += `<h2><span class="label">Rides this week</span></h2><div class="card2" style="gap:0;padding:6px 16px">`;
+    html += d.rides.length
+      ? d.rides.map((r) => `<div class="ride"><span>${dayName(r.date)}</span><span>${r.minutes} min <span class="tag">· ${label(r.category)}${r.source ? " (" + (r.source === "power" ? "power" : "HR") + ")" : ""}</span></span></div>`).join("")
+      : `<p class="note" style="padding:10px 0">No rides yet this week.</p>`;
+    html += `</div><h2><span class="label">Last 4 weeks</span></h2><div class="card2" style="gap:0;padding:6px 16px">
+      <div class="hist head"><span>Week of</span><span>Easy</span><span>Z3</span><span>Z4–5</span></div>`;
+    html += d.scores.map((s) => `<div class="hist"><span>${dayName(s.start).replace(/^\w+, /,"")}${s.inProgress ? " ·now" : ""}</span><span>${fmt(s.easyMin)}</span><span>${Math.round(s.z3Min)}m</span><span>${Math.round(s.qualityMin)}m</span></div>`).join("");
+    html += `</div>`;
+    app.innerHTML = html;
+  } catch (e) {
+    app.innerHTML = `<p class="err">Couldn't load: ${esc(e.message)}</p>`;
+  }
+})();
+</script>
+</body>
+</html>
