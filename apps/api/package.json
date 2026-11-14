@@ -6,6 +6,7 @@
   "main": "src/app.ts",
   "scripts": {
     "dev": "node --env-file=../../.env.local --import tsx src/dev.ts",
+    "smoke": "node --env-file=../../.env.local --import tsx src/smoke.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -4,17 +4,21 @@ import { COOKIE, SESSION_DAYS, readSession, signSession, verifyPassphrase } from
 import type { Env } from "./env";
 import { fail } from "./errors";
 import type { LoginStore } from "./store";
+import type { DataDeps } from "./data";
+import { cronRoutes, readRoutes } from "./routes/read";
 
 export interface Deps {
   env: Env;
   logins: LoginStore;
+  /** Absent in the auth-only tests. */
+  data?: DataDeps;
 }
 
 const MAX_FAILURES = 5;
 const WINDOW_MS = 60_000;
 
 export function createApp(deps: Deps) {
-  const { env, logins } = deps;
+  const { env, logins, data } = deps;
   const app = new Hono().basePath("/api");
 
   const cookieOpts = {
@@ -81,6 +85,11 @@ export function createApp(deps: Deps) {
   });
 
   app.get("/auth/me", (c) => c.json(c.get("session" as never)));
+
+  if (data) {
+    app.route("/", readRoutes(data));
+    app.route("/cron", cronRoutes(data));
+  }
 
   return app;
 }
