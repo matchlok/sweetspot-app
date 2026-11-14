@@ -48,7 +48,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
    - Strength goals: read `WeightTraining` activities in the adapter, match each lift to the planned lift that day, and count sessions per type against a 0 to 7 target.
    - Not-logged detection: a planned session with nothing logged becomes `not_logged` after the day ends (Muse used a 21:00 local guard).
    - Fatigue: Form (CTL minus ATL), ramp rate and weekly load from intervals.icu wellness.
-2. **Day options** (`options.ts`, the rule gate pulled forward from Phase 2)
+2. **Day options. DONE 2026-11-13** (branch `engine-plan-goals-fatigue`, 96 tests; see [STATUS](STATUS.md)) (`options.ts`, the rule gate pulled forward from Phase 2)
    - Given the week's sessions, one session and an action, return the candidate days, what else moves, and each rule's result, in the `DayOptions` shape.
    - Rules for the first version: no heavy lower lift the day before a quality ride; nothing in the past moves; completed sessions don't move; the long ride keeps the weekend slot unless overridden.
    - Test cases from the Muse history (the Week 4 reshuffle, Oct 26 to Nov 1) and the v4 scenario.
