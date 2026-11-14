@@ -62,12 +62,23 @@ export interface ProgramWeek {
   /** True once the week is over (a week in progress is not judged yet). */
   completed: boolean;
   isRecovery: boolean;
-  /** This week's target minutes for each tracked goal (mode != off). */
+  /** This week's target minutes for each tracked goal that the plan serves this week. */
   targets: Partial<GoalMinutes>;
+  /** Tracked goals the plan has no session for this week. Not judged, target carries over. */
+  notPlanned: GoalKey[];
   /** Judged goals only: true if the week's actual met the target. Completed weeks only. */
   hit: Partial<Record<GoalKey, boolean>>;
   /** Consecutive all-hit weeks going into this week. */
   streakBefore: number;
+}
+
+export interface NextWeekProjection {
+  start: string;
+  isRecovery: boolean;
+  targets: Partial<GoalMinutes>;
+  notPlanned: GoalKey[];
+  /** Full targets that apply when each unplanned goal returns (what "Back Nov 17 at 22 min" shows). */
+  carried: GoalMinutes;
 }
 
 export interface ProgramState {
@@ -78,18 +89,59 @@ export interface ProgramState {
    * Targets for next week if this week's goals are all hit, so the Programming
    * view can show what's coming. Reflects recovery if the streak earns one.
    */
-  nextIfHit: { start: string; isRecovery: boolean; targets: Partial<GoalMinutes> } | null;
+  nextIfHit: NextWeekProjection | null;
+}
+
+/**
+ * A goal edit. It applies from `effectiveWeek` (a Monday) on. Weeks before it
+ * keep the targets they were judged against. `start` resets the full target
+ * to that value in the effective week; `mode` and `stepMin` change how later
+ * weeks are judged and stepped.
+ */
+export interface GoalChange {
+  effectiveWeek: string;
+  goal: GoalKey;
+  change: Partial<GoalConfig>;
+}
+
+export interface ProgramOptions {
+  /**
+   * Monday -> goals the plan has a session for that week. A goal missing from
+   * a week's set is not judged that week: no hit, no miss, no step-up, and
+   * its target carries over. A week with no entry (no plan data) counts as
+   * everything planned.
+   */
+  planned?: ReadonlyMap<string, ReadonlySet<GoalKey>>;
+  changes?: readonly GoalChange[];
 }
 
 function weeksBetween(a: string, b: string): number {
   return Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / (7 * 24 * 3600 * 1000));
 }
 
-const active = (p: Program): GoalKey[] => GOAL_KEYS.filter((g) => p.goals[g].mode !== "off");
+type Goals = Record<GoalKey, GoalConfig>;
 
-function weekTargetsFor(p: Program, full: GoalMinutes, recovery: boolean): Partial<GoalMinutes> {
+const tracked = (g: Goals): GoalKey[] => GOAL_KEYS.filter((k) => g[k].mode !== "off");
+
+function applyChanges(goals: Goals, full: GoalMinutes, changes: readonly GoalChange[], week: string) {
+  for (const c of changes) {
+    if (c.effectiveWeek !== week) continue;
+    goals[c.goal] = { ...goals[c.goal], ...c.change };
+    if (c.change.start !== undefined) full[c.goal] = c.change.start;
+  }
+}
+
+function plannedSplit(goals: Goals, planned: ProgramOptions["planned"], week: string) {
+  const set = planned?.get(week);
+  const on: GoalKey[] = [];
+  const off: GoalKey[] = [];
+  for (const k of tracked(goals)) (!set || set.has(k) ? on : off).push(k);
+  return { on, off };
+}
+
+function weekTargetsFor(p: Program, goals: Goals, full: GoalMinutes, recovery: boolean, on: GoalKey[]): Partial<GoalMinutes> {
   const out: Partial<GoalMinutes> = {};
-  for (const g of active(p)) out[g] = recovery ? Math.max(1, Math.round(full[g] * p.recoveryFactor)) : full[g];
+  for (const g of on) out[g] = recovery ? Math.max(1, Math.round(full[g] * p.recoveryFactor)) : full[g];
   return out;
 }
 
@@ -100,63 +152,81 @@ function weekTargetsFor(p: Program, full: GoalMinutes, recovery: boolean): Parti
  * stored and nothing is hand-edited.
  *
  * Rules:
+ * - A goal is judged only in weeks where the plan has a session for it
+ *   (`options.planned`). An unplanned week counts as neither a hit nor a miss
+ *   and carries the target over.
  * - A completed week where a progress goal was hit raises that goal by its
  *   stepMin. A miss repeats the same target. Each goal is judged separately.
- * - A streak counts weeks where every progress goal was hit. When it reaches
- *   `recoveryAfter`, the next week is a recovery week (reduced targets, not
- *   judged, no step-ups) and the streak resets. Any miss resets the streak,
- *   so a recovery week taken naturally just restarts the count.
+ * - A streak counts weeks where every judged progress goal was hit. When it
+ *   reaches `recoveryAfter`, the next week is a recovery week (reduced
+ *   targets, not judged, no step-ups) and the streak resets. Any miss resets
+ *   the streak. A week with no judged progress goal leaves the streak alone.
  * - Hold goals keep one target and don't affect the streak.
+ * - Goal changes apply from their effective week on (`options.changes`).
  */
 export function programState(
   p: Program,
   actuals: ReadonlyMap<string, Partial<GoalMinutes>>,
   currentWeekStart: string,
+  options: ProgramOptions = {},
 ): ProgramState {
   const n = weeksBetween(p.startWeek, currentWeekStart);
   if (n < 0) return { weeks: [], current: null, nextIfHit: null };
+  const changes = options.changes ?? [];
 
+  const goals = { ...p.goals } as Goals;
   const full = {} as GoalMinutes;
-  for (const g of GOAL_KEYS) full[g] = p.goals[g].start;
+  for (const g of GOAL_KEYS) full[g] = goals[g].start;
   let streak = 0;
   const weeks: ProgramWeek[] = [];
 
   for (let i = 0; i <= n; i++) {
     const start = addDays(p.startWeek, 7 * i);
+    applyChanges(goals, full, changes, start);
     const completed = i < n;
     const isRecovery = p.recoveryAfter > 0 && streak >= p.recoveryAfter;
-    const targets = weekTargetsFor(p, full, isRecovery);
+    const { on, off } = plannedSplit(goals, options.planned, start);
+    const targets = weekTargetsFor(p, goals, full, isRecovery, on);
     const hit: Partial<Record<GoalKey, boolean>> = {};
-    const row: ProgramWeek = { start, completed, isRecovery, targets, hit, streakBefore: streak };
+    const row: ProgramWeek = { start, completed, isRecovery, targets, notPlanned: off, hit, streakBefore: streak };
     weeks.push(row);
     if (!completed) break;
 
     const a = actuals.get(start) ?? {};
-    for (const g of active(p)) hit[g] = (a[g] ?? 0) >= (targets[g] as number);
+    for (const g of on) hit[g] = (a[g] ?? 0) >= (targets[g] as number);
 
     if (isRecovery) {
       streak = 0; // resume at the same targets; they were already stepped up
       continue;
     }
-    const progressGoals = GOAL_KEYS.filter((g) => p.goals[g].mode === "progress");
-    for (const g of progressGoals) if (hit[g]) full[g] += p.goals[g].stepMin;
-    const allHit = progressGoals.length > 0 && progressGoals.every((g) => hit[g]);
-    streak = allHit ? streak + 1 : 0;
+    const judged = on.filter((g) => goals[g].mode === "progress");
+    for (const g of judged) if (hit[g]) full[g] += goals[g].stepMin;
+    if (judged.length > 0) streak = judged.every((g) => hit[g]) ? streak + 1 : 0;
   }
 
   const current = weeks[weeks.length - 1]!;
   // Project next week assuming this one is hit.
-  let nextIfHit: ProgramState["nextIfHit"] = null;
+  const nextStart = addDays(current.start, 7);
+  const ngoals = { ...goals } as Goals;
+  const nf = { ...full };
+  let nextStreak = current.streakBefore;
   if (!current.isRecovery) {
-    const nf = { ...full };
-    for (const g of GOAL_KEYS) if (p.goals[g].mode === "progress") nf[g] += p.goals[g].stepMin;
-    const hasProgress = GOAL_KEYS.some((g) => p.goals[g].mode === "progress");
-    const nextStreak = hasProgress ? current.streakBefore + 1 : 0;
-    const rec = p.recoveryAfter > 0 && nextStreak >= p.recoveryAfter;
-    nextIfHit = { start: addDays(current.start, 7), isRecovery: rec, targets: weekTargetsFor(p, nf, rec) };
+    const judged = GOAL_KEYS.filter((g) => !current.notPlanned.includes(g) && goals[g].mode === "progress");
+    for (const g of judged) nf[g] += goals[g].stepMin;
+    nextStreak = judged.length > 0 ? current.streakBefore + 1 : current.streakBefore;
   } else {
-    nextIfHit = { start: addDays(current.start, 7), isRecovery: false, targets: weekTargetsFor(p, full, false) };
+    nextStreak = 0;
   }
+  applyChanges(ngoals, nf, changes, nextStart);
+  const rec = p.recoveryAfter > 0 && nextStreak >= p.recoveryAfter;
+  const { on, off } = plannedSplit(ngoals, options.planned, nextStart);
+  const nextIfHit: NextWeekProjection = {
+    start: nextStart,
+    isRecovery: rec,
+    targets: weekTargetsFor(p, ngoals, nf, rec, on),
+    notPlanned: off,
+    carried: nf,
+  };
   return { weeks, current, nextIfHit };
 }
 
