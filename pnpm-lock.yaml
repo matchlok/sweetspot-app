@@ -8,6 +8,40 @@ importers:
 
   .: {}
 
+  apps/api:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.0
+        version: 1.19.19(hono@4.13.18)
+      '@sweetspot/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@sweetspot/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@neondatabase/serverless@1.2.0)
+      hono:
+        specifier: ^4.6.0
+        version: 4.13.18
+      jose:
+        specifier: ^5.9.0
+        version: 5.10.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.5)
+
   packages/db:
     dependencies:
       '@neondatabase/serverless':
@@ -637,6 +671,12 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@hono/node-server@1.19.19':
+    resolution: {integrity: sha512-Fy9R7PACOzHU9LDpfnuzVyuVYevKQRcEG2mZhmfc+DRdmayEd3RVfa2XOt2IgGcPNgA77Yk63KBszepcMFK5Ng==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
+
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
 
@@ -683,66 +723,79 @@ packages:
     resolution: {integrity: sha512-HtLgXBqjF1Ampt9eJjzSmoGDvNb4LP8Y2aPXQZeQ5qhyExXLmoXJB9Jfm/nPi/8fJ3UFn4sZ7pQKyr8V+oTN8g==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.68.0':
     resolution: {integrity: sha512-q51xJyqjaqCNtDjYD7xNVwsPa2TcVfAIBeP6E20wicKZ6XYp8Taz9SUPYhIENojAQIAoV7cO3mUdMUgWYEAuhQ==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.68.0':
     resolution: {integrity: sha512-wejnVabl92oFC/o4sr/EEJuJZMHtMq4C+LBIPphN4EUiVHe9qvZNw+biqhVHpX2ggs1+Z3ugXGwJxT+qhyaaYQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.68.0':
     resolution: {integrity: sha512-tyu+hrsCWHHqV6+2tligV/recJH+HVvNV2Sp4nS1C+MKQPkNXRovKIzyHy0V0xXjm6igCLgsT2vTky5CvWP37g==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.68.0':
     resolution: {integrity: sha512-5gjJNglKDfgs3OmnGi/RVZQPhEfRoCIHxwSAP9ngmdnxreu0Vl9lI4gxmFBXOhKdftpS82xRdc/7Dp5/A1F0qg==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-loong64-musl@4.68.0':
     resolution: {integrity: sha512-2IBxTUds33rFYwOIEyf77wfW8WQThwiQQ1ofXSraZQG7PiIq7BnQBf/ge0qEI/Ny/2cSc7SKkGO/wUDqmYXqTg==}
     cpu: [loong64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-ppc64-gnu@4.68.0':
     resolution: {integrity: sha512-mE/Pj2PPTZIVHkNNuHq+eYoU3td8LCm73zjrXoBWkNlnuULJS2l/fxwgGPpN4WUCNZgKZ1IXwrnnETPyOcWPmg==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-musl@4.68.0':
     resolution: {integrity: sha512-dYuykUkAiTv+RQdP3Ib47XcFiImkBWiRpTGSQWAMfZPQyoQYGe8Je4IUeZYNUQWIojmRCUnt5xsH4BbUb2uqSw==}
     cpu: [ppc64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-riscv64-gnu@4.68.0':
     resolution: {integrity: sha512-OnPDDFXLqJewY56T6ow8sA4wuzbqlliD7QJgkrx2KX+pWOpjI3usYXgB0pwK3nsgTF2odCw9IuJs0Uis/jy2qA==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.68.0':
     resolution: {integrity: sha512-CqoQf06cK0brrRfDqH7Mt8G4MdteFGbjBdC61zEMaSVna6xo6QMUixa9bAkAD4a92g3ElPbQAkLMUzdf+Lk8dg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.68.0':
     resolution: {integrity: sha512-LPHNmE8GwiyELGLUTkqj4zsP1YEHzGdtwnKxAcdP/swsNxXsfxPtpe5nrD/KGxr136xPB+eWv2r/SGj9md0pnQ==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.68.0':
     resolution: {integrity: sha512-GDOmvgephpRCNyNGRQOZh0KD2gTyRVM1Bb1iOo759xeCUpCAoRCmJioOOSu2MwyWfNOocGd0V5I9vYLfteC6/A==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.68.0':
     resolution: {integrity: sha512-HADRxkvl5eg3hbemCmv81UwTfdQy/CiSJDOabLE+p5tpm3OTjuRtzpLXy5zPfGY9FQD4Qv7qHptXmG/YjmNmyw==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openbsd-x64@4.68.0':
     resolution: {integrity: sha512-iERrpqu1VEfyX736HLKiXRbwGDkCV/iybARY/mn14KcI6oKhJGBx1e+bU+g+umTKghtiGSPaHkwwpII4/N3RjA==}
@@ -977,6 +1030,13 @@ packages:
 
   get-tsconfig@4.14.3:
     resolution: {integrity: sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA==}
+
+  hono@4.13.18:
+    resolution: {integrity: sha512-H9q/E1XizaWstJxUW881dmLxEj+t/TrGGnyxINkm4+sK0qUwsMtFdo2BWI9Vs3cIS19MU6b6iCijoUoEf4f3DA==}
+    engines: {node: '>=16.9.0'}
+
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
@@ -1436,6 +1496,10 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
+  '@hono/node-server@1.19.19(hono@4.13.18)':
+    dependencies:
+      hono: 4.13.18
+
   '@jridgewell/sourcemap-codec@1.6.0': {}
 
   '@neondatabase/serverless@1.2.0': {}
@@ -1720,6 +1784,10 @@ snapshots:
   get-tsconfig@4.14.3:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  hono@4.13.18: {}
+
+  jose@5.10.0: {}
 
   loupe@3.2.1: {}
 
