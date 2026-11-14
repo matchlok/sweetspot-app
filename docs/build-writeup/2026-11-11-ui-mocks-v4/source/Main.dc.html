@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+.s{width:390px;height:844px;background:#08090c;color:#e7e8ee;font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+.body{flex:1;padding:56px 16px 0;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.card{background:#13151c;border:1px solid #262a36;border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+a.card{display:block;text-decoration:none;color:#e7e8ee}
+.lbl{font-size:12px;color:#8d90a0;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.row{display:flex;align-items:center;justify-content:space-between}
+.track{height:8px;border-radius:4px;background:#1d2029;overflow:hidden;margin-top:8px}
+.fill{height:8px;border-radius:4px}
+.nav{height:84px;flex-shrink:0;background:#0d0f14;border-top:1px solid #1d2029;display:flex;padding-top:8px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#8d90a0;text-decoration:none}
+.tab.on{color:#c9cffc}
+.g{margin-top:12px}
+.n{font-size:15px;font-weight:600}
+.f{font-size:15px;color:#c4c6d2}
+.nudge{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;box-sizing:border-box;margin-top:10px;padding:6px 10px 6px 12px;border-radius:12px;background:#0f1116;border:1px solid #262a36;color:#c4c6d2;font-size:13px;line-height:1.35;text-decoration:none}
+.k{font-size:13px;font-weight:600;color:#c4c6d2;margin-top:2px}
+.ks{font-size:12px;color:#8d90a0;margin-top:1px}
+</style>
+</helmet>
+<div class="s">
+<div class="body">
+<div class="row">
+<div>
+<div style="font-size:24px;font-weight:700">Tuesday</div>
+<div style="font-size:14px;color:#8d90a0;margin-top:2px">Nov 10 · week 2 of the program</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;background:#11231c;border:1px solid #1f4a39;color:#8fe0bd;border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600"><span style="width:8px;height:8px;border-radius:4px;background:#5fd0a4;box-shadow:0 0 6px rgba(95,208,164,.7)"></span>Good to go</div>
+</div>
+
+<a class="card" href="DayFuture.dc.html" style="border-color:#3d4680;background:#1a1d33">
+<div class="row" style="gap:12px">
+<div>
+<div class="lbl" style="color:#c9cffc">Today</div>
+<div style="font-size:20px;font-weight:700;margin-top:6px">VO2 Max Intervals, trail</div>
+<div style="font-size:14px;color:#c4c6d2;margin-top:4px">About 1 hr. The week's target is 8 min in Z5.</div>
+</div>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" role="img" aria-label="Move, swap or skip" style="flex-shrink:0"><path d="M9 5l7 7-7 7" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+</a>
+
+<div class="card">
+<div class="lbl">This week</div>
+<div class="g" style="margin-top:12px">
+<div class="row"><span class="n">Endurance</span><span class="f">0 <span style="color:#8d90a0">/90 min</span></span></div>
+<div class="track"><div class="fill" style="width:0%;background:#7c8cf8"></div></div>
+</div>
+<div class="g">
+<div class="row"><span class="n">VO2</span><span class="f">0 <span style="color:#8d90a0">/8 min</span></span></div>
+<div class="track"><div class="fill" style="width:0%;background:#ee7480"></div></div>
+</div>
+<div class="g">
+<div class="row"><span class="n">Upper lift</span><span class="f">0 <span style="color:#8d90a0">/1</span></span></div>
+<div class="track"><div class="fill" style="width:0%;background:#c4c6d2"></div></div>
+<a class="nudge" href="DayMissed.dc.html"><span>Still open from Monday. Wed or Fri fits.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M9 5l7 7-7 7" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</div>
+<div class="g">
+<div class="row"><span class="n">Lower lift</span><span class="f">0 <span style="color:#8d90a0">/1</span></span></div>
+<div class="track"><div class="fill" style="width:0%;background:#c4c6d2"></div></div>
+</div>
+<div class="g" style="border-top:1px solid #1d2029;padding-top:12px">
+<div style="font-size:14px;font-weight:600;color:#8d90a0">Sweet spot</div>
+<div style="font-size:13px;color:#8d90a0;margin-top:2px">Not planned this week. Back Nov 17 at 22 min.</div>
+</div>
+</div>
+
+<div class="card">
+<div class="lbl">Fatigue</div>
+<div style="display:flex;gap:10px;margin-top:10px">
+<div style="flex:1"><div style="font-size:22px;font-weight:700">−8</div><div class="k">Form</div><div class="ks">freshness</div></div>
+<div style="flex:1"><div style="font-size:22px;font-weight:700">+3.1</div><div class="k">Ramp</div><div class="ks">points per week</div></div>
+<div style="flex:1"><div style="font-size:22px;font-weight:700">142</div><div class="k">Load</div><div class="ks">this week so far</div></div>
+</div>
+<div style="font-size:13px;color:#c4c6d2;margin-top:10px;line-height:1.4">Form is in your usual range. VO2 is on.</div>
+</div>
+</div>
+
+<div class="nav">
+<a class="tab on" href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Home</a>
+<a class="tab" href="Calendar.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Calendar</a>
+<a class="tab" href="Programming.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h9M18 7h1M5 17h1M10 17h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="2" stroke="currentColor" stroke-width="1.8"/></svg>Programming</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Day sheet, missed</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+.s{width:390px;height:844px;background:#08090c;color:#e7e8ee;font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;position:relative;overflow:hidden;box-sizing:border-box}
+.ghost{position:absolute;inset:0;padding:56px 16px 0;opacity:.35;font-size:24px;font-weight:700}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#13151c;border:1px solid #262a36;border-radius:24px 24px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -12px 40px rgba(0,0,0,.6)}
+.grab{width:40px;height:5px;border-radius:3px;background:#2f3240;align-self:center}
+.lbl{font-size:12px;color:#8d90a0;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;box-sizing:border-box;text-align:left;font-family:inherit;color:#e7e8ee;background:#0f1116;border:1px solid #1d2029;border-radius:14px;padding:12px 14px}
+.opt.pick{border-color:#3d4680;background:#1a1d33}
+.radio{width:18px;height:18px;border-radius:9px;box-sizing:border-box;border:2px solid #4f5262;flex-shrink:0;margin-top:1px}
+.radio.on{border:5px solid #7c8cf8;background:#0a0b14}
+.ot{display:block;flex:1}
+.oh{display:block;font-size:15px;font-weight:600}
+.eff{display:block;font-size:13px;color:#c4c6d2;margin-top:4px;line-height:1.4}
+.did{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f1116;border:1px solid #1d2029;border-radius:14px;padding:8px 8px 8px 14px;font-size:14px;color:#c4c6d2;line-height:1.35}
+.did button{height:44px;padding:0 14px;border-radius:10px;border:1px solid #2f3240;background:#13151c;color:#e7e8ee;font:600 14px Inter,system-ui,sans-serif;flex-shrink:0}
+.btn{height:48px;border-radius:14px;background:#7c8cf8;color:#0a0b14;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:8px}
+.ghostb{height:44px;border-radius:14px;color:#8d90a0;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;text-decoration:none}
+</style>
+</helmet>
+<div class="s">
+<div class="ghost">Nov 9 to 15</div>
+<div class="sheet">
+<div class="grab"></div>
+<div>
+<div class="lbl">Monday, Nov 9 · yesterday</div>
+<div style="font-size:22px;font-weight:700;margin-top:4px">Upper lift</div>
+<div style="font-size:14px;color:#8d90a0;margin-top:2px">Planned for Monday. Nothing was logged.</div>
+</div>
+<div class="did"><span>Lifted without recording it?</span><button>Mark it done</button></div>
+<div class="lbl" style="margin-top:4px">Or move it to a day that's left</div>
+<button class="{{o0}}" aria-pressed="{{a0}}" onClick="{{pick0}}"><span class="{{r0}}"></span><span class="ot"><span class="oh">Wednesday, Nov 11</span><span class="eff">Open day, the day after VO2. Nothing else moves.</span></span></button>
+<button class="{{o1}}" aria-pressed="{{a1}}" onClick="{{pick1}}"><span class="{{r1}}"></span><span class="ot"><span class="oh">Friday, Nov 13</span><span class="eff">Open day, the day after Thursday's lower lift. Nothing else moves.</span></span></button>
+<a class="btn" href="Calendar.dc.html">{{cta}}</a>
+<a class="ghostb" href="Calendar.dc.html">Leave it. The goal stays at 0 of 1</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+state = { pick: 0 };
+renderVals() {
+const p = this.state.pick;
+const on = (v) => (v ? 'true' : 'false');
+return {
+o0: 'opt' + (p === 0 ? ' pick' : ''), o1: 'opt' + (p === 1 ? ' pick' : ''),
+r0: 'radio' + (p === 0 ? ' on' : ''), r1: 'radio' + (p === 1 ? ' on' : ''),
+a0: on(p === 0), a1: on(p === 1),
+pick0: () => this.setState({ pick: 0 }), pick1: () => this.setState({ pick: 1 }),
+cta: p === 0 ? 'Move it to Wednesday' : 'Move it to Friday',
+};
+}
+}
+</script>
+</body>
+</html>

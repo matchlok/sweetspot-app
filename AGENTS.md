@@ -24,13 +24,13 @@ Plan: [docs/plans/TECHNICAL-PLAN.md](docs/plans/TECHNICAL-PLAN.md).
 
 Update when a step finishes or a decision is made.
 
-- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Stack decided 2026-11-08: native SwiftUI plus a TypeScript engine ([decision](docs/decisions/0001-app-stack.md)). Engine scaffolded in `packages/engine` (2026-11-08). Goal system (progress/hold/off, auto-recovery) and the web POC Home are built; the Training Google Calendar is connected through the service account (2026-11-08). Next: calendar reader, strength goals, Programming and day-sheet screens.
+- **Phase:** 0 done, and the UI direction is set (2026-11-07; see [docs/build-writeup/2026-11-07-ui-mocks-v3](docs/build-writeup/2026-11-07-ui-mocks-v3/README.md)). Stack: a mobile web app (Vite + React, Hono API) plus the TypeScript engine, JWT cookie auth, Postgres (Neon) and hosting on Vercel ([decision 0002](docs/decisions/0002-web-shell-auth-storage.md), 2026-11-13, replacing the SwiftUI choice in 0001). API contract: [docs/plans/API.md](docs/plans/API.md). Engine scaffolded in `packages/engine` (2026-11-08). Goal system (progress/hold/off, auto-recovery) and the web POC Home are built; the Training Google Calendar is connected through the service account (2026-11-08). Screens v4 are drawn and reviewed (2026-11-11; see [docs/build-writeup/2026-11-11-ui-mocks-v4](docs/build-writeup/2026-11-11-ui-mocks-v4/README.md)). Next: calendar reader, planned-weeks rule, strength goals, day options, then the app shell.
 - **Next steps (pick up here):** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md).
-  1. ~~Decide the app stack~~ Done: SwiftUI app + TypeScript engine on a server, phone only (`docs/decisions/0001-app-stack.md`).
+  1. ~~Decide the app stack~~ Done: mobile web app + TypeScript engine, phone only (`docs/decisions/0002-web-shell-auth-storage.md`).
   2. ~~Scaffold `packages/engine`~~ Done. `pnpm test` runs Vitest; the Muse golden test needs `data/private/` so it only runs locally.
   3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Golden test passes locally. Adapter in `packages/engine/src/intervals.ts` is checked against live data (2026-11-08); next is a spot-check of the HR-only `vo2` rides.
-  4. Pick up at the top of [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md) (2026-11-08 update): calendar reader, lift goals, Programming screen, fatigue metrics.
-  5. Build a v0 Home screen in the chosen stack, fed by real engine data. Use the dark tokens from `docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css`.
+  4. Pick up at "Build order" in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md) (2026-11-11 update): calendar reader, planned-weeks rule, strength goals, fatigue metrics, day options, view models with fixtures.
+  5. Build the API server and web shell from the v4 screens, one screen at a time, to the contract in `docs/plans/API.md`. Colors and sizes come from `docs/build-writeup/2026-11-11-ui-mocks-v4/source/`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
 Full history (done, decided, open): [docs/STATUS.md](docs/STATUS.md). Add new entries there; keep only the phase and next action here.
