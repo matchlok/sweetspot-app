@@ -1,6 +1,6 @@
 # Next steps
 
-Updated 2026-11-13, after finishing build-order steps 1 and 2 in the engine (branch `engine-plan-goals-fatigue`, 96 tests). **Pick up at step 3.** Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Updated 2026-11-13, after finishing build-order steps 1 to 3 in the engine (branch `engine-plan-goals-fatigue`, 117 tests). **Pick up at step 5 (database and API); step 4 only needs the three `.env.local` secrets.** Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
 ## Where we are
 
@@ -52,7 +52,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
    - Given the week's sessions, one session and an action, return the candidate days, what else moves, and each rule's result, in the `DayOptions` shape.
    - Rules for the first version: no heavy lower lift the day before a quality ride; nothing in the past moves; completed sessions don't move; the long ride keeps the weekend slot unless overridden.
    - Test cases from the Muse history (the Week 4 reshuffle, Oct 26 to Nov 1) and the v4 scenario.
-3. **View models and fixtures** (`views.ts`): one pure function per read endpoint, with the v4 scenario committed as fixture JSON.
+3. **View models and fixtures. DONE 2026-11-13** (`views.ts`, same branch; see [STATUS](STATUS.md)): one pure function per read endpoint, with the v4 scenario committed as fixture JSON in `packages/engine/test/fixtures/`.
 4. **Accounts (Narjit): DONE (Neon and Vercel exist, 2026-11-13).** Still needed in `.env.local`: `JWT_SECRET`, `APP_PASSPHRASE_HASH`, `CRON_SECRET`. Original note: create a Vercel account (Hobby), import the GitHub repo, add Neon from the Marketplace, and create a `dev` branch in Neon. Put the dev branch's connection string in `.env.local` as `DATABASE_URL`, and the other secrets in both places (list in decision 0002).
 5. **Database and API** (`packages/db`, `apps/api`): the Drizzle schema and first migration, Hono with the auth routes, the read routes on live data, and the sync and cron routes. Add `JWT_SECRET`, `APP_PASSPHRASE_HASH` and `CRON_SECRET` to `.env.example`, plus a small script that prints a passphrase hash. Add `vercel.json` for the build, the `/api` function and the cron schedule.
 6. **Web shell** (`apps/web`), one screen at a time against fixtures first, then live: design tokens from the [v4 sources](build-writeup/2026-11-11-ui-mocks-v4/source/), login, the tab shell, Home, Calendar, day sheet, Programming, Goal settings. Inter, as in the mocks. Delete `apps/poc-web` once Home works here.

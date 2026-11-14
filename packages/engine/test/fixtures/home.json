@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-10",
+  "weekLabel": "week 2 of the program",
+  "isRecoveryWeek": false,
+  "readiness": null,
+  "today": {
+    "id": "w2-vo2",
+    "date": "2026-11-10",
+    "kind": "vo2",
+    "title": "VO2 Max Intervals, trail (~1 hr)",
+    "minutes": 60,
+    "detail": null,
+    "status": "planned"
+  },
+  "goals": [
+    {
+      "key": "endurance",
+      "label": "Endurance",
+      "unit": "min",
+      "actual": 0,
+      "target": 90,
+      "hit": false
+    },
+    {
+      "key": "vo2",
+      "label": "VO2",
+      "unit": "min",
+      "actual": 0,
+      "target": 8,
+      "hit": false
+    },
+    {
+      "key": "upper",
+      "label": "Upper lift",
+      "unit": "sessions",
+      "actual": 0,
+      "target": 1,
+      "hit": false,
+      "nudge": {
+        "text": "Still open from Monday. Wed or Thu fits.",
+        "date": "2026-11-11",
+        "sessionId": "w2-upper"
+      }
+    },
+    {
+      "key": "lower",
+      "label": "Lower lift",
+      "unit": "sessions",
+      "actual": 0,
+      "target": 1,
+      "hit": false
+    }
+  ],
+  "offGoals": [
+    {
+      "key": "sweetSpot",
+      "label": "Sweet spot",
+      "text": "Not planned this week. Back Nov 17 at 22 min."
+    }
+  ],
+  "fatigue": {
+    "form": -5,
+    "ramp": 3.2,
+    "load": null,
+    "note": null
+  },
+  "lastSyncedAt": "2026-11-10T06:02:00-07:00"
+}

@@ -1,0 +1,171 @@
+{
+  "session": {
+    "id": "w2-vo2",
+    "date": "2026-11-10",
+    "kind": "vo2",
+    "title": "VO2 Max Intervals, trail (~1 hr)",
+    "minutes": 60,
+    "detail": null,
+    "status": "planned"
+  },
+  "sessionId": "w2-vo2",
+  "action": "move",
+  "planVersion": "9eafc354",
+  "options": [
+    {
+      "id": "move:2026-11-11",
+      "heading": "Wednesday, Nov 11",
+      "effects": [
+        {
+          "text": "VO2 intervals moves to Wednesday.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to Wednesday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-12",
+      "heading": "Thursday, Nov 12",
+      "effects": [
+        {
+          "text": "VO2 intervals moves to Thursday.",
+          "tone": "plain"
+        },
+        {
+          "text": "Lift and quality ride on one day.",
+          "tone": "warn"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to Thursday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "warn"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-13",
+      "heading": "Friday, Nov 13",
+      "effects": [
+        {
+          "text": "VO2 intervals moves to Friday.",
+          "tone": "plain"
+        },
+        {
+          "text": "Lower lift moves to Wednesday so it isn't the day before.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [
+        {
+          "sessionId": "w2-lower",
+          "to": "2026-11-11"
+        }
+      ],
+      "cta": "Move to Friday, lower to Wednesday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-15",
+      "heading": "Sunday, Nov 15",
+      "effects": [
+        {
+          "text": "VO2 intervals moves to Sunday.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to Sunday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ]
+    }
+  ],
+  "blocked": [
+    {
+      "heading": "Saturday, Nov 14",
+      "reason": "Already a ride that day"
+    }
+  ]
+}

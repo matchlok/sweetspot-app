@@ -67,7 +67,7 @@ interface HomeView {
   today: Session | null;                   // null on an open day
   goals: GoalBar[];                        // planned-this-week goals and lifts, in display order
   offGoals: OffGoal[];
-  fatigue: null | { form: number; ramp: number; load: number; note: string | null };
+  fatigue: null | { form: number; ramp: number | null; load: number | null; note: string | null };   // load is null until a weekly-load source exists
   lastSyncedAt: string;                    // shown as "Updated 6:02 am"
 }
 ```

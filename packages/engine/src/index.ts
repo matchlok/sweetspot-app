@@ -7,3 +7,4 @@ export * from "./calendar";
 export * from "./plan";
 export * from "./fatigue";
 export * from "./options";
+export * from "./views";

@@ -1,0 +1,89 @@
+{
+  "start": "2026-11-09",
+  "label": "Nov 9 to 15",
+  "days": [
+    {
+      "date": "2026-11-09",
+      "isToday": false,
+      "isPast": true,
+      "sessions": [
+        {
+          "id": "w2-upper",
+          "date": "2026-11-09",
+          "kind": "lift_upper",
+          "title": "Lift B — Upper Body + Core",
+          "minutes": null,
+          "detail": null,
+          "status": "not_logged"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-10",
+      "isToday": true,
+      "isPast": false,
+      "sessions": [
+        {
+          "id": "w2-vo2",
+          "date": "2026-11-10",
+          "kind": "vo2",
+          "title": "VO2 Max Intervals, trail (~1 hr)",
+          "minutes": 60,
+          "detail": null,
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "isToday": false,
+      "isPast": false,
+      "sessions": []
+    },
+    {
+      "date": "2026-11-12",
+      "isToday": false,
+      "isPast": false,
+      "sessions": [
+        {
+          "id": "w2-lower",
+          "date": "2026-11-12",
+          "kind": "lift_lower",
+          "title": "Lift A — Lower Body + Core",
+          "minutes": null,
+          "detail": null,
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-13",
+      "isToday": false,
+      "isPast": false,
+      "sessions": []
+    },
+    {
+      "date": "2026-11-14",
+      "isToday": false,
+      "isPast": false,
+      "sessions": [
+        {
+          "id": "w2-long",
+          "date": "2026-11-14",
+          "kind": "endurance",
+          "title": "Endurance Ride (1.5 hrs)",
+          "minutes": 90,
+          "detail": null,
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-15",
+      "isToday": false,
+      "isPast": false,
+      "sessions": []
+    }
+  ],
+  "nextWeekNote": "Sweet spot returns Tuesday at 22 min. VO2 sits out."
+}
