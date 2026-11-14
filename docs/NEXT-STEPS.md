@@ -1,6 +1,6 @@
 # Next steps
 
-Updated 2026-11-13, after deciding the client, hosting, auth and storage and writing the API contract. Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Updated 2026-11-13, after finishing build-order steps 1 to 3 in the engine (branch `engine-plan-goals-fatigue`, 117 tests). **Pick up at step 5 (database and API); step 4 only needs the three `.env.local` secrets.** Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
 ## Where we are
 
@@ -42,19 +42,19 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 
 ## Build order
 
-1. **Plan and goals in the engine**
+1. **Plan and goals in the engine. DONE 2026-11-13** (branch `engine-plan-goals-fatigue`; see [STATUS](STATUS.md)). The sub-items below describe what was built. Still to do from this step: run the planned-weeks rule against the Muse history, and check the wellness field names on live data.
    - Calendar reader: expand the recurring series for a week and return sessions with a kind. Read the kind from `extendedProperties.private.sweetspotKind` once events are tagged, and from the title until then. Check the result against the Muse export.
    - Planned-weeks rule and dated goal changes in `targets.ts`.
    - Strength goals: read `WeightTraining` activities in the adapter, match each lift to the planned lift that day, and count sessions per type against a 0 to 7 target.
    - Not-logged detection: a planned session with nothing logged becomes `not_logged` after the day ends (Muse used a 21:00 local guard).
    - Fatigue: Form (CTL minus ATL), ramp rate and weekly load from intervals.icu wellness.
-2. **Day options** (`options.ts`, the rule gate pulled forward from Phase 2)
+2. **Day options. DONE 2026-11-13** (branch `engine-plan-goals-fatigue`, 96 tests; see [STATUS](STATUS.md)) (`options.ts`, the rule gate pulled forward from Phase 2)
    - Given the week's sessions, one session and an action, return the candidate days, what else moves, and each rule's result, in the `DayOptions` shape.
    - Rules for the first version: no heavy lower lift the day before a quality ride; nothing in the past moves; completed sessions don't move; the long ride keeps the weekend slot unless overridden.
    - Test cases from the Muse history (the Week 4 reshuffle, Oct 26 to Nov 1) and the v4 scenario.
-3. **View models and fixtures** (`views.ts`): one pure function per read endpoint, with the v4 scenario committed as fixture JSON.
-4. **Accounts (Narjit):** create a Vercel account (Hobby), import the GitHub repo, add Neon from the Marketplace, and create a `dev` branch in Neon. Put the dev branch's connection string in `.env.local` as `DATABASE_URL`, and the other secrets in both places (list in decision 0002).
-5. **Database and API** (`packages/db`, `apps/api`): the Drizzle schema and first migration, Hono with the auth routes, the read routes on live data, and the sync and cron routes. Add `JWT_SECRET`, `APP_PASSPHRASE_HASH` and `CRON_SECRET` to `.env.example`, plus a small script that prints a passphrase hash. Add `vercel.json` for the build, the `/api` function and the cron schedule.
+3. **View models and fixtures. DONE 2026-11-13** (`views.ts`, same branch; see [STATUS](STATUS.md)): one pure function per read endpoint, with the v4 scenario committed as fixture JSON in `packages/engine/test/fixtures/`.
+4. **Accounts (Narjit): DONE (Neon and Vercel exist, 2026-11-13).** Still needed in `.env.local`: `JWT_SECRET`, `APP_PASSPHRASE_HASH`, `CRON_SECRET`. Original note: create a Vercel account (Hobby), import the GitHub repo, add Neon from the Marketplace, and create a `dev` branch in Neon. Put the dev branch's connection string in `.env.local` as `DATABASE_URL`, and the other secrets in both places (list in decision 0002).
+5. **Database and API** (`packages/db` DONE 2026-11-13, `apps/api` auth, read routes, sync and cron DONE 2026-11-13; `vercel.json` and the function entry DONE 2026-11-13, verified on a Preview deploy; write routes next): the Drizzle schema and first migration, Hono with the auth routes, the read routes on live data, and the sync and cron routes. Add `JWT_SECRET`, `APP_PASSPHRASE_HASH` and `CRON_SECRET` to `.env.example`, plus a small script that prints a passphrase hash. Add `vercel.json` for the build, the `/api` function and the cron schedule.
 6. **Web shell** (`apps/web`), one screen at a time against fixtures first, then live: design tokens from the [v4 sources](build-writeup/2026-11-11-ui-mocks-v4/source/), login, the tab shell, Home, Calendar, day sheet, Programming, Goal settings. Inter, as in the mocks. Delete `apps/poc-web` once Home works here.
 7. **Writes:** calendar writes for move, swap and skip (one instance, never the series); goal and lift saves; "Mark it done"; the decision log.
 8. **After the shell:** PWA install and web push for the 6:05 am message (plain notification, no action buttons), "What changed?" with Claude, the month view, post-ride feedback, and performance predictions.

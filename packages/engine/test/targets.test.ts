@@ -89,3 +89,60 @@ describe("goalStatus", () => {
     expect(goalStatus(0, 90)).toBe("none");
   });
 });
+
+describe("planned weeks", () => {
+  const all = new Set(["endurance", "sweetSpot", "vo2"] as const);
+  const noVo2 = new Set(["endurance", "sweetSpot"] as const);
+
+  it("doesn't judge or step a goal in a week the plan has no session for it", () => {
+    const planned = new Map([[W[0]!, noVo2 as ReadonlySet<any>]]);
+    const s = programState(P, acts([{ sweetSpot: 25, vo2: 0 }]), W[1]!, { planned });
+    expect(s.weeks[0]!.notPlanned).toEqual(["vo2"]);
+    expect(s.weeks[0]!.hit.vo2).toBeUndefined();
+    expect(s.weeks[0]!.targets.vo2).toBeUndefined();
+    // VO2 carries over unchanged (no step), SS stepped.
+    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 22, vo2: 8 });
+  });
+
+  it("leaves the streak alone when no progress goal was judged", () => {
+    const none = new Set(["endurance"] as const) as ReadonlySet<any>;
+    const planned = new Map<string, ReadonlySet<any>>([
+      [W[0]!, all], [W[1]!, none], [W[2]!, all], [W[3]!, all],
+    ]);
+    const s = programState(P, acts([hitAll, hitAll, hitAll, hitAll]), W[4]!, { planned });
+    // hits in weeks 0, 2, 3 = 3 judged hits with the off week between: week 4 is recovery.
+    expect(s.weeks[4]!.streakBefore).toBe(3);
+    expect(s.current!.isRecovery).toBe(true);
+  });
+
+  it("reports the carried target for the Programming view", () => {
+    const planned = new Map<string, ReadonlySet<any>>([[W[1]!, noVo2]]);
+    const s = programState(P, acts([hitAll]), W[0]!, { planned });
+    expect(s.nextIfHit!.notPlanned).toEqual(["vo2"]);
+    expect(s.nextIfHit!.carried.vo2).toBe(9);
+    expect(s.nextIfHit!.targets.vo2).toBeUndefined();
+  });
+});
+
+describe("goal changes", () => {
+  it("applies from the effective week and keeps past weeks as judged", () => {
+    const changes = [{ effectiveWeek: W[2]!, goal: "sweetSpot" as const, change: { start: 30, stepMin: 3 } }];
+    const s = programState(P, acts([hitAll, hitAll]), W[3]!, { changes });
+    expect(s.weeks[1]!.targets.sweetSpot).toBe(22); // unchanged history
+    expect(s.weeks[2]!.targets.sweetSpot).toBe(30);
+    expect(s.current!.targets.sweetSpot).toBe(30); // week 2 not hit (no actuals), no step
+  });
+
+  it("turning a goal off drops it from that week on", () => {
+    const changes = [{ effectiveWeek: W[1]!, goal: "vo2" as const, change: { mode: "off" as const } }];
+    const s = programState(P, acts([hitAll]), W[1]!, { changes });
+    expect(s.weeks[0]!.targets.vo2).toBe(8);
+    expect(s.current!.targets.vo2).toBeUndefined();
+  });
+
+  it("applies a change that starts next week to the projection", () => {
+    const changes = [{ effectiveWeek: W[1]!, goal: "sweetSpot" as const, change: { start: 40 } }];
+    const s = programState(P, new Map(), W[0]!, { changes });
+    expect(s.nextIfHit!.targets.sweetSpot).toBe(40);
+  });
+});

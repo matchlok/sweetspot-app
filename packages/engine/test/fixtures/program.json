@@ -1,0 +1,46 @@
+{
+  "goals": [
+    {
+      "key": "endurance",
+      "label": "Endurance",
+      "mode": "hold",
+      "target": 90,
+      "stepMin": 0,
+      "summary": "Holds at 90 min"
+    },
+    {
+      "key": "sweetSpot",
+      "label": "Sweet spot",
+      "mode": "progress",
+      "target": 22,
+      "stepMin": 2,
+      "summary": "22 min, up 2 after each hit week"
+    },
+    {
+      "key": "threshold",
+      "label": "Threshold",
+      "mode": "off",
+      "target": 10,
+      "stepMin": 1,
+      "summary": "Not tracked"
+    },
+    {
+      "key": "vo2",
+      "label": "VO2",
+      "mode": "progress",
+      "target": 8,
+      "stepMin": 1,
+      "summary": "8 min, up 1 after each hit week"
+    }
+  ],
+  "lifts": {
+    "upper": 1,
+    "lower": 1
+  },
+  "recovery": {
+    "streak": 1,
+    "after": 3,
+    "factor": 0.6,
+    "text": "A recovery week follows 3 hit weeks in a row (1 of 3 so far). It runs targets at 60%."
+  }
+}
