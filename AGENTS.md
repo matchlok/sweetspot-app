@@ -30,7 +30,7 @@ Update when a step finishes or a decision is made.
   2. ~~Scaffold `packages/engine`~~ Done. `pnpm test` runs Vitest; the Muse golden test needs `data/private/` so it only runs locally.
   3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Golden test passes locally. Adapter in `packages/engine/src/intervals.ts` is checked against live data (2026-11-08); next is a spot-check of the HR-only `vo2` rides.
   4. ~~Build order steps 1 to 3~~ Done 2026-11-13 on branch `engine-plan-goals-fatigue` (not merged): calendar reader, planned-weeks rule, dated goal changes, strength matching, not-logged status, fatigue, day options, view models and fixtures. 117 tests.
-  5. **Next: `vercel.json` and the Vercel function entry** (build order step 5; auth, read routes, sync and cron done): read routes that call the `views.ts` functions on live data, sync and cron. `packages/db` and the secrets are done. Add the three auth values to Vercel's environment variables (Narjit) before the first deploy.
+  5. **Next: the write routes, then the web shell** (the Vercel function is live on Preview, 2026-11-13) (build order step 5; auth, read routes, sync and cron done): read routes that call the `views.ts` functions on live data, sync and cron. `packages/db` and the secrets are done. Add the three auth values to Vercel's environment variables (Narjit) before the first deploy.
   6. Build the API server and web shell from the v4 screens, one screen at a time, to the contract in `docs/plans/API.md`. Colors and sizes come from `docs/build-writeup/2026-11-11-ui-mocks-v4/source/`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
