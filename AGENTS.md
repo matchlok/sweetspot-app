@@ -44,6 +44,7 @@ Full history (done, decided, open): [docs/STATUS.md](docs/STATUS.md). Add new en
 
 ## Conventions
 
+- `.env.local` format: values unquoted (`KEY=value`), which is also how Vercel stores them. The one exception is `GOOGLE_SERVICE_ACCOUNT_JSON`: it holds spaces and double quotes, so wrap it in single quotes, and paste it into Vercel without them. Node's `--env-file` mis-parses it if it is double-quoted.
 - Secrets live in `.env.local` (gitignored): `INTERVALS_API_KEY`, `INTERVALS_ATHLETE_ID`, `ANTHROPIC_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `DATABASE_URL`. Report whether a variable exists, never its value.
 - Verify API facts before relying on them and date the note.
 - Tone of anything the system writes to Narjit: direct, practical training partner. Flag tempo drift and sequencing costs plainly, once, and leave the call to Narjit.
