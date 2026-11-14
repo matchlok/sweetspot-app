@@ -2,6 +2,8 @@
 
 Drafted 2026-11-06. Status: draft for review. Decisions behind it are in [AGENTS.md](../../AGENTS.md) "Current status".
 
+**Partly superseded (noted 2026-11-11, updated 2026-11-13).** The client is a phone-first web app on Vite + React with a Hono API, JWT cookie auth, Postgres on Neon and hosting on Vercel ([decision 0002](../decisions/0002-web-shell-auth-storage.md)). The Next.js and dashboard parts of sections 2, 4 and 9 no longer hold, and R12 (SwiftUI) is dropped. Section 4's data model is replaced by the tables in API.md for now. The API is in [API.md](API.md). The scorecard is organized by goals with progression ([STATUS](../STATUS.md), 2026-11-08), and the rule gate for single-session moves is pulled forward into the app shell. The current build order is in [NEXT-STEPS](../NEXT-STEPS.md). Sections 3, 5.3, 5.4, 6, 7 and 8 still stand. Rewrite sections 2, 4 and 9 once the shell is running.
+
 ## 1. Goal and scope
 
 Replace the Muse-hosted Strava adherence tracker with a system Narjit owns, and make it a portfolio piece.

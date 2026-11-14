@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Day sheet, today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+.s{width:390px;height:844px;background:#08090c;color:#e7e8ee;font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;position:relative;overflow:hidden;box-sizing:border-box}
+.ghost{position:absolute;inset:0;padding:56px 16px 0;opacity:.35;font-size:24px;font-weight:700}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:96px;background:#13151c;border:1px solid #262a36;border-radius:24px 24px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -12px 40px rgba(0,0,0,.6)}
+.grab{width:40px;height:5px;border-radius:3px;background:#2f3240;align-self:center}
+.lbl{font-size:12px;color:#8d90a0;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.acts{display:flex;gap:8px}
+.act{flex:1;height:44px;border-radius:12px;border:1px solid #2f3240;background:#0f1116;color:#e7e8ee;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.act.on{background:#1a1d33;border-color:#3d4680;color:#c9cffc}
+.pane{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;box-sizing:border-box;text-align:left;font-family:inherit;color:#e7e8ee;background:#0f1116;border:1px solid #1d2029;border-radius:14px;padding:12px 14px}
+.opt.pick{border-color:#3d4680;background:#1a1d33}
+.radio{width:18px;height:18px;border-radius:9px;box-sizing:border-box;border:2px solid #4f5262;flex-shrink:0;margin-top:1px}
+.radio.on{border:5px solid #7c8cf8;background:#0a0b14}
+.ot{display:block;flex:1}
+.oh{display:block;font-size:15px;font-weight:600}
+.eff{display:block;font-size:13px;color:#c4c6d2;margin-top:4px;line-height:1.4}
+.warn{color:#e8bd62}
+.note{background:#0f1116;border:1px solid #1d2029;border-radius:14px;padding:12px 14px;font-size:14px;color:#c4c6d2;line-height:1.45}
+.more{display:flex;align-items:center;justify-content:space-between;min-height:44px;font-size:13px;font-weight:600;color:#c9cffc;text-decoration:none}
+.btn{height:48px;border-radius:14px;background:#7c8cf8;color:#0a0b14;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.ghostb{height:44px;border-radius:14px;color:#8d90a0;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;text-decoration:none}
+</style>
+</helmet>
+<div class="s">
+<div class="ghost">Nov 9 to 15</div>
+<div class="sheet">
+<div class="grab"></div>
+<div>
+<div class="lbl">Tuesday, Nov 10 · today</div>
+<div style="font-size:22px;font-weight:700;margin-top:4px">VO2 Max Intervals, trail</div>
+<div style="font-size:14px;color:#8d90a0;margin-top:2px">About 1 hr · 8 min in Z5 is the target</div>
+</div>
+<div class="acts">
+<button class="{{tMove}}" aria-pressed="{{aMove}}" onClick="{{goMove}}">Move</button>
+<button class="{{tSwap}}" aria-pressed="{{aSwap}}" onClick="{{goSwap}}">Swap</button>
+<button class="{{tSkip}}" aria-pressed="{{aSkip}}" onClick="{{goSkip}}">Skip</button>
+</div>
+
+<sc-if value="{{isMove}}" hint-placeholder-val="{{true}}">
+<div class="pane">
+<div class="lbl" style="margin-top:4px">Where should it go?</div>
+<button class="{{m0}}" aria-pressed="{{am0}}" onClick="{{pickM0}}"><span class="{{rm0}}"></span><span class="ot"><span class="oh">Wednesday, Nov 11</span><span class="eff">Open day. Thursday's lower lift stays put and comes after the VO2 ride, which is fine.</span></span></button>
+<button class="{{m1}}" aria-pressed="{{am1}}" onClick="{{pickM1}}"><span class="{{rm1}}"></span><span class="ot"><span class="oh">Friday, Nov 13</span><span class="eff warn">Thursday's lower lift would land the day before VO2.</span><span class="eff">Picking this also moves the lift to Wednesday.</span></span></button>
+<button class="{{m2}}" aria-pressed="{{am2}}" onClick="{{pickM2}}"><span class="{{rm2}}"></span><span class="ot"><span class="oh">Sunday, Nov 15</span><span class="eff">Open day, the day after Saturday's 1.5 hr ride, so expect less snap. Nothing else moves.</span></span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{isSwap}}" hint-placeholder-val="{{false}}">
+<div class="pane">
+<div class="lbl" style="margin-top:4px">Trade days with which session?</div>
+<button class="{{s0}}" aria-pressed="{{as0}}" onClick="{{pickS0}}"><span class="{{rs0}}"></span><span class="ot"><span class="oh">Thursday's lower lift</span><span class="eff">Lift today, VO2 on Thursday. Two days sit between the lift and the VO2 ride, which is fine.</span></span></button>
+<button class="{{s1}}" aria-pressed="{{as1}}" onClick="{{pickS1}}"><span class="{{rs1}}"></span><span class="ot"><span class="oh">Saturday's endurance ride</span><span class="eff warn">A 1.5 hr ride has to fit into today.</span><span class="eff">VO2 goes to Saturday, two days after the lower lift.</span></span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{isSkip}}" hint-placeholder-val="{{false}}">
+<div class="pane">
+<div class="lbl" style="margin-top:4px">What skipping does</div>
+<div class="note">VO2 comes off this week and nothing else moves. The goal stays at 0 of 8 min, the 8 min target repeats the next time VO2 is planned, and the count toward a recovery week starts over.</div>
+</div>
+</sc-if>
+
+<a class="more" href="Programming.dc.html"><span>None of these fit? Say what changed</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<div style="flex:1"></div>
+<a class="btn" href="Calendar.dc.html">{{cta}}</a>
+<a class="ghostb" href="Calendar.dc.html">Cancel</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+state = { mode: 'move', move: 0, swap: 0 };
+renderVals() {
+const s = this.state;
+const set = (o) => () => this.setState(o);
+const tab = (m) => 'act' + (s.mode === m ? ' on' : '');
+const opt = (k, i) => 'opt' + (s[k] === i ? ' pick' : '');
+const rad = (k, i) => 'radio' + (s[k] === i ? ' on' : '');
+const on = (v) => (v ? 'true' : 'false');
+const moveCta = ['Move to Wednesday', 'Move to Friday, lift to Wednesday', 'Move to Sunday'];
+const swapCta = ['Swap with Thursday', 'Swap with Saturday'];
+const cta = s.mode === 'move' ? moveCta[s.move] : s.mode === 'swap' ? swapCta[s.swap] : 'Skip VO2 this week';
+return {
+isMove: s.mode === 'move', isSwap: s.mode === 'swap', isSkip: s.mode === 'skip',
+tMove: tab('move'), tSwap: tab('swap'), tSkip: tab('skip'),
+aMove: on(s.mode === 'move'), aSwap: on(s.mode === 'swap'), aSkip: on(s.mode === 'skip'),
+goMove: set({ mode: 'move' }), goSwap: set({ mode: 'swap' }), goSkip: set({ mode: 'skip' }),
+m0: opt('move', 0), m1: opt('move', 1), m2: opt('move', 2),
+rm0: rad('move', 0), rm1: rad('move', 1), rm2: rad('move', 2),
+am0: on(s.move === 0), am1: on(s.move === 1), am2: on(s.move === 2),
+pickM0: set({ move: 0 }), pickM1: set({ move: 1 }), pickM2: set({ move: 2 }),
+s0: opt('swap', 0), s1: opt('swap', 1),
+rs0: rad('swap', 0), rs1: rad('swap', 1),
+as0: on(s.swap === 0), as1: on(s.swap === 1),
+pickS0: set({ swap: 0 }), pickS1: set({ swap: 1 }),
+cta,
+};
+}
+}
+</script>
+</body>
+</html>

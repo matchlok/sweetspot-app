@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Calendar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+.s{width:390px;height:844px;background:#08090c;color:#e7e8ee;font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+.body{flex:1;padding:56px 16px 0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between}
+.day{display:flex;align-items:center;gap:12px;background:#13151c;border:1px solid #262a36;border-radius:14px;padding:10px 14px;min-height:48px;text-decoration:none;color:#e7e8ee}
+.day.open{background:transparent;border-style:dashed;border-color:#262a36;padding-top:6px;padding-bottom:6px}
+.dn{width:42px;flex-shrink:0}
+.dn b{display:block;font-size:13px;color:#8d90a0;font-weight:600;letter-spacing:.04em}
+.dn span{font-size:20px;font-weight:700}
+.t{font-size:15px;font-weight:600}
+.m{font-size:13px;color:#8d90a0;margin-top:2px}
+.dot{width:10px;height:10px;border-radius:5px;flex-shrink:0}
+.seg{display:flex;background:#13151c;border:1px solid #262a36;border-radius:10px;padding:3px}
+.seg button{padding:6px 12px;border-radius:8px;border:0;background:transparent;color:#8d90a0;font:600 13px Inter,system-ui,sans-serif}
+.seg button.on{background:#1a1d33;color:#c9cffc}
+.nav{height:84px;flex-shrink:0;background:#0d0f14;border-top:1px solid #1d2029;display:flex;padding-top:8px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#8d90a0;text-decoration:none}
+.tab.on{color:#c9cffc}
+</style>
+</helmet>
+<div class="s">
+<div class="body">
+<div class="row">
+<div style="font-size:24px;font-weight:700">Nov 9 to 15</div>
+<div class="seg"><button class="on" aria-pressed="true">Week</button><button aria-pressed="false">Month</button></div>
+</div>
+<div style="font-size:14px;color:#8d90a0;margin-bottom:4px">Tap a session to move, swap or skip it.</div>
+
+<a class="day" href="DayMissed.dc.html"><div class="dn"><b>MON</b><span>9</span></div><div style="flex:1"><div class="t">Upper lift</div><div class="m" style="color:#e8bd62">Not logged. Tap to reschedule</div></div><span class="dot" style="box-sizing:border-box;border:2px solid #e8bd62"></span></a>
+
+<a class="day" href="DayFuture.dc.html" style="border-color:#3d4680;background:#1a1d33"><div class="dn"><b style="color:#c9cffc">TUE</b><span>10</span></div><div style="flex:1"><div class="t">VO2 Max Intervals, trail</div><div class="m" style="color:#c4c6d2">Today · about 1 hr</div></div><span class="dot" style="background:#ee7480"></span></a>
+
+<div class="day open"><div class="dn"><b>WED</b><span>11</span></div><div style="flex:1"><div class="m" style="margin:0">Open day</div></div></div>
+
+<div class="day"><div class="dn"><b>THU</b><span>12</span></div><div style="flex:1"><div class="t">Lower lift</div><div class="m">30 min</div></div><span class="dot" style="background:#c4c6d2"></span></div>
+
+<div class="day open"><div class="dn"><b>FRI</b><span>13</span></div><div style="flex:1"><div class="m" style="margin:0">Open day</div></div></div>
+
+<div class="day"><div class="dn"><b>SAT</b><span>14</span></div><div style="flex:1"><div class="t">Endurance ride</div><div class="m">1.5 hr, Z2 and Z3</div></div><span class="dot" style="background:#7c8cf8"></span></div>
+
+<div class="day open"><div class="dn"><b>SUN</b><span>15</span></div><div style="flex:1"><div class="m" style="margin:0">Open day</div></div></div>
+
+<div class="row" style="gap:12px;padding:8px 2px 0">
+<div><div style="font-size:13px;font-weight:600;color:#c4c6d2">Next week, Nov 16 to 22</div><div class="m">Sweet spot returns Tuesday at 22 min. VO2 sits out.</div></div>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M9 5l7 7-7 7" stroke="#8d90a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+</div>
+
+<div class="nav">
+<a class="tab" href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Home</a>
+<a class="tab on" href="Calendar.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Calendar</a>
+<a class="tab" href="Programming.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h9M18 7h1M5 17h1M10 17h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="2" stroke="currentColor" stroke-width="1.8"/></svg>Programming</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

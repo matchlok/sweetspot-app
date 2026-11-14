@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Programming</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+.s{width:390px;height:844px;background:#08090c;color:#e7e8ee;font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+.body{flex:1;padding:56px 16px 0;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.card{background:#13151c;border:1px solid #262a36;border-radius:16px;padding:12px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.lbl{font-size:12px;color:#8d90a0;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.g{display:block;padding:7px 0;border-top:1px solid #1d2029;text-decoration:none;color:inherit}
+.g.first{border-top:0}
+.n{font-size:15px;font-weight:600}
+.m{font-size:13px;color:#8d90a0;margin-top:2px;line-height:1.4}
+.chips{display:flex;gap:8px;margin:8px -14px 0;padding:0 14px;overflow-x:auto;scrollbar-width:none}
+.chip{height:44px;padding:0 14px;border-radius:22px;border:1px solid #2f3240;background:#0f1116;color:#c4c6d2;font-size:14px;font-weight:600;display:flex;align-items:center;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.step{display:flex;align-items:center;gap:10px}
+.sb{width:44px;height:44px;border-radius:12px;border:1px solid #2f3240;background:#0f1116;color:#e7e8ee;font-size:20px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.nav{height:84px;flex-shrink:0;background:#0d0f14;border-top:1px solid #1d2029;display:flex;padding-top:8px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#8d90a0;text-decoration:none}
+.tab.on{color:#c9cffc}
+</style>
+</helmet>
+<div class="s">
+<div class="body">
+<div style="font-size:24px;font-weight:700">Programming</div>
+
+<div class="card">
+<div class="lbl">What changed?</div>
+<div class="chips">
+<button class="chip">Cooked</button><button class="chip">Short on time</button><button class="chip">Extra time</button><button class="chip">Something else</button>
+</div>
+</div>
+
+<div class="card">
+<div class="lbl">Zone goals, minutes per week</div>
+<div style="margin-top:4px">
+<div class="g first"><div class="row"><div><div class="n">Endurance</div><div class="m">90 min · Hold</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="#8d90a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+<a class="g" href="Goal.dc.html"><div class="row"><div><div class="n">Sweet spot</div><div class="m">22 min · Progress, +2 after a hit week</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="#8d90a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></a>
+<div class="g"><div class="row"><div><div class="n">VO2</div><div class="m">8 min · Progress, +1 after a hit week</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="#8d90a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+<div class="g"><div class="row"><div><div class="n" style="color:#8d90a0">Threshold</div><div class="m">Off. Tap to turn it on</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="#8d90a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+</div>
+</div>
+
+<div class="card">
+<div class="lbl">Strength, sessions per week</div>
+<div class="g first" style="margin-top:4px"><div class="row"><div class="n">Upper lift</div><div class="step"><button class="sb" aria-label="One fewer upper lift">−</button><span style="font-size:18px;font-weight:700;width:16px;text-align:center">1</span><button class="sb" aria-label="One more upper lift">+</button></div></div></div>
+<div class="g" style="padding-bottom:0"><div class="row"><div class="n">Lower lift</div><div class="step"><button class="sb" aria-label="One fewer lower lift">−</button><span style="font-size:18px;font-weight:700;width:16px;text-align:center">1</span><button class="sb" aria-label="One more lower lift">+</button></div></div></div>
+</div>
+
+<div class="card">
+<div class="row"><div class="lbl">Recovery week</div><div style="font-size:13px;font-weight:600;color:#c9cffc">1 of 3 hit weeks</div></div>
+<div style="display:flex;gap:6px;margin-top:10px"><div style="flex:1;height:6px;border-radius:3px;background:#7c8cf8"></div><div style="flex:1;height:6px;border-radius:3px;background:#1d2029"></div><div style="flex:1;height:6px;border-radius:3px;background:#1d2029"></div></div>
+<div class="m" style="margin-top:8px">Three hit weeks in a row earn a recovery week at 60% of target. A miss restarts the count.</div>
+</div>
+</div>
+
+<div class="nav">
+<a class="tab" href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Home</a>
+<a class="tab" href="Calendar.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Calendar</a>
+<a class="tab on" href="Programming.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h9M18 7h1M5 17h1M10 17h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="2" stroke="currentColor" stroke-width="1.8"/></svg>Programming</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # 0001 — App stack: native SwiftUI + TypeScript engine
 
-Status: accepted, 2026-11-08 (Narji).
+Status: accepted, 2026-11-08 (Narji). **Client part superseded 2026-11-13 by [0002](0002-web-shell-auth-storage.md):** a mobile web app instead of SwiftUI, since there is no personal Mac. The engine-on-a-server part still stands.
 
 ## Decision
 
