@@ -1,6 +1,6 @@
 # Next steps
 
-Updated 2026-11-13, after deciding the client, hosting, auth and storage and writing the API contract. Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Updated 2026-11-13, after finishing build-order steps 1 and 2 in the engine (branch `engine-plan-goals-fatigue`, 96 tests). **Pick up at step 3.** Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
 ## Where we are
 
@@ -42,7 +42,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 
 ## Build order
 
-1. **Plan and goals in the engine. DONE 2026-11-13** (branch `engine-plan-goals-fatigue`, 82 tests; see [STATUS](STATUS.md)). The sub-items below describe what was built. Still to do from this step: run the planned-weeks rule against the Muse history, and check the wellness field names on live data.
+1. **Plan and goals in the engine. DONE 2026-11-13** (branch `engine-plan-goals-fatigue`; see [STATUS](STATUS.md)). The sub-items below describe what was built. Still to do from this step: run the planned-weeks rule against the Muse history, and check the wellness field names on live data.
    - Calendar reader: expand the recurring series for a week and return sessions with a kind. Read the kind from `extendedProperties.private.sweetspotKind` once events are tagged, and from the title until then. Check the result against the Muse export.
    - Planned-weeks rule and dated goal changes in `targets.ts`.
    - Strength goals: read `WeightTraining` activities in the adapter, match each lift to the planned lift that day, and count sessions per type against a 0 to 7 target.

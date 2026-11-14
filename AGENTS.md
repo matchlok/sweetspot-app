@@ -29,8 +29,9 @@ Update when a step finishes or a decision is made.
   1. ~~Decide the app stack~~ Done: mobile web app + TypeScript engine, phone only (`docs/decisions/0002-web-shell-auth-storage.md`).
   2. ~~Scaffold `packages/engine`~~ Done. `pnpm test` runs Vitest; the Muse golden test needs `data/private/` so it only runs locally.
   3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Golden test passes locally. Adapter in `packages/engine/src/intervals.ts` is checked against live data (2026-11-08); next is a spot-check of the HR-only `vo2` rides.
-  4. Pick up at "Build order" in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md) (2026-11-11 update): calendar reader, planned-weeks rule, strength goals, fatigue metrics, day options, view models with fixtures.
-  5. Build the API server and web shell from the v4 screens, one screen at a time, to the contract in `docs/plans/API.md`. Colors and sizes come from `docs/build-writeup/2026-11-11-ui-mocks-v4/source/`.
+  4. ~~Build order steps 1 and 2~~ Done 2026-11-13 on branch `engine-plan-goals-fatigue` (not merged): calendar reader, planned-weeks rule, dated goal changes, strength matching, not-logged status, fatigue, day options. 96 tests.
+  5. **Next: build order step 3** in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md): `packages/engine/src/views.ts`, one pure function per read endpoint, with the v4 scenario as fixture JSON in `packages/engine/test/fixtures/`. Then add `JWT_SECRET`, `APP_PASSPHRASE_HASH`, `CRON_SECRET` to `.env.local` and start `packages/db` and `apps/api` (step 5).
+  6. Build the API server and web shell from the v4 screens, one screen at a time, to the contract in `docs/plans/API.md`. Colors and sizes come from `docs/build-writeup/2026-11-11-ui-mocks-v4/source/`.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
 Full history (done, decided, open): [docs/STATUS.md](docs/STATUS.md). Add new entries there; keep only the phase and next action here.
