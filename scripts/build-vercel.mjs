@@ -1,9 +1,10 @@
 // Builds the deploy output in Vercel's Build Output API format (v3):
 // .vercel/output/functions/api.func  the bundled Hono API (routes /api/*)
 // .vercel/output/config.json         routes + cron
-// Vercel runs this as the project's buildCommand. The web shell's static files will go in .vercel/output/static.
+// Vercel runs this as the project's buildCommand. The built web shell (apps/web/dist) is copied to .vercel/output/static.
 import { build } from "esbuild";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 
 const out = ".vercel/output";
 const fn = `${out}/functions/api.func`;
@@ -20,6 +21,10 @@ await build({
   // Some bundled deps are CommonJS and call require().
   banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
 });
+
+// Web shell: build with Vite, serve the files as static output.
+execSync("pnpm --filter @sweetspot/web build", { stdio: "inherit" });
+cpSync("apps/web/dist", `${out}/static`, { recursive: true });
 
 writeFileSync(
   `${fn}/.vc-config.json`,
