@@ -1,6 +1,6 @@
 # Next steps
 
-Updated 2026-11-14, after the API write routes (build-order step 7, API half). **Pick up at step 6, the web shell** (`apps/web`). Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Updated 2026-11-14, after the API write routes (build-order step 7, API half). **Pick up at step 6, the web shell** (`apps/web`: login, tab shell, Home, Calendar, the day sheet, Programming and Goal settings are in, uncommitted; next is checking them against live data, then committing on a branch). Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
 ## Where we are
 
