@@ -1,11 +1,13 @@
 import type { CalendarEvent, IntervalsActivity, WellnessRow } from "@sweetspot/engine";
-import { fetchEvents, type GoogleConfig } from "./google";
+import { fetchEvents, patchEvent, type EventPatch, type GoogleConfig } from "./google";
 
 /** Everything fetched from outside. Routes take this interface so tests can fake it. */
 export interface Sources {
   events(oldest: string, newest: string): Promise<CalendarEvent[]>;
   activities(oldest: string, newest: string): Promise<IntervalsActivity[]>;
   wellness(oldest: string, newest: string): Promise<WellnessRow[]>;
+  /** Patch one calendar instance (a move or a skip). Never the series. */
+  patchEvent(instanceId: string, patch: EventPatch): Promise<void>;
 }
 
 export interface IntervalsCreds {
@@ -31,6 +33,7 @@ export function liveSources(google: GoogleConfig, intervals: IntervalsCreds): So
     events: (o, n) => fetchEvents(google, o, n),
     activities: (o, n) => icu<IntervalsActivity>(intervals, "activities", o, n),
     wellness: (o, n) => icu<WellnessRow>(intervals, "wellness", o, n),
+    patchEvent: (id, patch) => patchEvent(google, id, patch),
   };
 }
 

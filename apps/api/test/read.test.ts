@@ -31,6 +31,7 @@ function setup() {
       return [rideRaw];
     },
     wellness: async () => [],
+    patchEvent: async () => {},
   };
   const repo = memoryRepo();
   // Tuesday Nov 10, 2026, noon in Denver.

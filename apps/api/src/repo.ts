@@ -28,6 +28,20 @@ export interface SyncState {
   lastError: string | null;
 }
 
+export type DecisionStatus = "applied" | "blocked" | "failed";
+
+/** One decision-log entry. Append-only: the table has a trigger that refuses updates and deletes. */
+export interface DecisionEntry {
+  id: number;
+  trigger: string;
+  inputs: unknown;
+  options?: unknown;
+  ruleResults?: unknown;
+  choice?: unknown;
+  calendarChanges?: unknown;
+  status: DecisionStatus;
+}
+
 export interface Repo {
   program(): Promise<StoredProgram | null>;
   goalChanges(): Promise<StoredGoalChange[]>;
@@ -38,28 +52,51 @@ export interface Repo {
   upsertActivities(rows: StoredActivity[]): Promise<void>;
   syncState(): Promise<SyncState>;
   saveSyncState(s: SyncState): Promise<void>;
+  /** Appends a goal_changes row. The engine replays rows in order, so a save never rewrites a judged week. */
+  saveGoalChange(c: StoredGoalChange): Promise<void>;
+  /** Insert or replace the row for `effectiveWeek`. */
+  saveLiftTargets(r: { effectiveWeek: string; upper: number; lower: number }): Promise<void>;
+  /** Idempotent. */
+  markDone(r: { sessionId: string; date: string; kind: string }): Promise<void>;
+  /** True if a row was removed. */
+  unmarkDone(sessionId: string): Promise<boolean>;
+  /** Reserved up front so calendar events can carry `sweetspotDecisionId` before the row exists. */
+  reserveDecisionId(): Promise<number>;
+  logDecision(d: DecisionEntry): Promise<void>;
 }
 
 export function toGoalChange(r: StoredGoalChange): GoalChange {
   return { effectiveWeek: r.effectiveWeek, goal: r.goal, change: { mode: r.mode, start: r.targetMin, stepMin: r.stepMin } };
 }
 
-export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: StoredGoalChange[]; manualDone: { sessionId: string; date: string; kind: string }[] }> = {}): Repo & { activitiesStore: Map<string, StoredActivity> } {
+type ManualRow = { sessionId: string; date: string; kind: string };
+type LiftRow = { effectiveWeek: string; upper: number; lower: number };
+
+export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: StoredGoalChange[]; manualDone: ManualRow[] }> = {}): Repo & {
+  activitiesStore: Map<string, StoredActivity>;
+  decisionLog: DecisionEntry[];
+} {
   const store = new Map<string, StoredActivity>();
+  const goals = [...(seed.goalChanges ?? [])];
+  const manual = new Map((seed.manualDone ?? []).map((m) => [m.sessionId, m]));
+  const lifts = new Map<string, LiftRow>();
+  const decisionLog: DecisionEntry[] = [];
+  let nextId = 1;
   let sync: SyncState = { lastSyncedAt: null, lastError: null };
   return {
     activitiesStore: store,
+    decisionLog,
     async program() {
       return seed.program ?? null;
     },
     async goalChanges() {
-      return seed.goalChanges ?? [];
+      return goals;
     },
     async liftTargets() {
-      return [];
+      return [...lifts.values()].sort((a, b) => a.effectiveWeek.localeCompare(b.effectiveWeek));
     },
     async manualDone() {
-      return seed.manualDone ?? [];
+      return [...manual.values()];
     },
     async activities(oldest, newest) {
       return [...store.values()].filter((a) => a.date >= oldest && a.date <= newest);
@@ -72,6 +109,24 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
     },
     async saveSyncState(s) {
       sync = s;
+    },
+    async saveGoalChange(c) {
+      goals.push(c);
+    },
+    async saveLiftTargets(r) {
+      lifts.set(r.effectiveWeek, r);
+    },
+    async markDone(r) {
+      manual.set(r.sessionId, r);
+    },
+    async unmarkDone(id) {
+      return manual.delete(id);
+    },
+    async reserveDecisionId() {
+      return nextId++;
+    },
+    async logDecision(d) {
+      decisionLog.push(d);
     },
   };
 }
