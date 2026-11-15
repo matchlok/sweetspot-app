@@ -1,6 +1,13 @@
 # Next steps
 
-Updated 2026-11-14, after the API write routes (build-order step 7, API half). **Pick up at step 6, the web shell** (`apps/web`: login, tab shell, Home, Calendar, the day sheet, Programming and Goal settings are in, uncommitted; next is checking them against live data, then committing on a branch). Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Updated 2026-11-15, after the web shell merged (all five v4 screens built). **Pick up at live checks:**
+
+1. Reset the passphrase (`! node scripts/setup-auth.mjs --reset`, then restart the API and put the new hash in Vercel's `APP_PASSPHRASE_HASH`).
+2. Run `apps/api` (`pnpm dev`, port 8787) and `apps/web` (`pnpm dev`, port 5173) together and check Home, Calendar, the day sheet, Programming and Goal against real data. Confirm the date shows Denver today. Apply only on a session you mean to change.
+3. Fix what the live check turns up, then deploy and try login on Vercel.
+4. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
+
+Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
 ## Where we are
 
