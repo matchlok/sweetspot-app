@@ -7,7 +7,7 @@ Each screen calls one read endpoint that returns a view model: exactly what the 
 ## Conventions
 
 - JSON only. Dates are `"YYYY-MM-DD"` in America/Denver; timestamps are ISO 8601 with offset. Durations are whole minutes.
-- Errors: HTTP status plus `{ "error": { "code": string, "message": string } }`. Codes: `unauthenticated`, `not_found`, `invalid`, `blocked` (a rule refused a change), `upstream` (intervals.icu or Google failed), `conflict` (the plan changed since the options were computed).
+- Errors: HTTP status plus `{ "error": { "code": string, "message": string } }`. Codes: `unauthenticated`, `not_found`, `invalid`, `blocked` (a rule refused a change; HTTP 422), `upstream` (intervals.icu or Google failed), `conflict` (the plan changed since the options were computed; HTTP 409).
 - Every route needs the auth cookie except `POST /api/auth/login`.
 - Fixtures: for each read endpoint, `packages/engine/test/fixtures/<view>.json` holds the v4 scenario (Tuesday, Nov 10, week 2, Monday's lift not logged). The web app can run against fixtures with `?fixture=1` in dev, and engine tests assert their view functions return these files.
 

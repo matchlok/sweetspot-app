@@ -6,6 +6,7 @@ import { fail } from "./errors";
 import type { LoginStore } from "./store";
 import type { DataDeps } from "./data";
 import { cronRoutes, readRoutes } from "./routes/read";
+import { writeRoutes } from "./routes/write";
 
 export interface Deps {
   env: Env;
@@ -88,6 +89,7 @@ export function createApp(deps: Deps) {
 
   if (data) {
     app.route("/", readRoutes(data));
+    app.route("/", writeRoutes(data));
     app.route("/cron", cronRoutes(data));
   }
 

@@ -90,3 +90,38 @@ function nextDay(d: string): string {
   t.setUTCDate(t.getUTCDate() + 1);
   return t.toISOString().slice(0, 10);
 }
+
+/** What a write may change on one instance. Dates are all-day, "YYYY-MM-DD". */
+export interface EventPatch {
+  /** New date for an all-day instance (a move). */
+  date?: string;
+  /** "cancelled" is a skip. */
+  status?: "cancelled" | "confirmed";
+  /** Merged into extendedProperties.private. */
+  tags?: Record<string, string>;
+}
+
+/**
+ * Patch one instance of a recurring series. Google stores the change as an
+ * exception, so the series is untouched. All-day events end on the next day
+ * (the end date is exclusive).
+ */
+export async function patchEvent(cfg: GoogleConfig, instanceId: string, patch: EventPatch): Promise<void> {
+  const f = cfg.fetch ?? fetch;
+  const token = await accessToken(cfg);
+  const body: Record<string, unknown> = {};
+  if (patch.date) {
+    body.start = { date: patch.date };
+    body.end = { date: nextDay(patch.date) };
+  }
+  if (patch.status) body.status = patch.status;
+  if (patch.tags) body.extendedProperties = { private: patch.tags };
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cfg.calendarId)}/events/${encodeURIComponent(instanceId)}`;
+  const res = await f(url, {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  // Status only: never echo the body.
+  if (!res.ok) throw new Error(`Google Calendar patch -> HTTP ${res.status}`);
+}

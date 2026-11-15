@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { fetchEvents, type GoogleConfig } from "../src/google";
+import { fetchEvents, patchEvent, type GoogleConfig } from "../src/google";
 
 const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
@@ -35,5 +35,40 @@ describe("fetchEvents", () => {
   it("reports status only on failure", async () => {
     const fake = (async () => new Response("secret body", { status: 403 })) as unknown as typeof fetch;
     await expect(fetchEvents(cfg(fake), "2026-11-09", "2026-11-15")).rejects.toThrow(/HTTP 403/);
+  });
+});
+
+describe("patchEvent", () => {
+  it("moves one all-day instance with an exclusive end date, and tags it", async () => {
+    let call: { url: string; init: RequestInit } | undefined;
+    const fake = (async (url: string, init?: RequestInit) => {
+      if (String(url).includes("oauth2")) return new Response(JSON.stringify({ access_token: "tok", expires_in: 3600 }));
+      call = { url: String(url), init: init! };
+      return new Response("{}");
+    }) as unknown as typeof fetch;
+
+    await patchEvent(cfg(fake), "series_20261110", { date: "2026-11-30", tags: { sweetspotKind: "vo2", sweetspotDecisionId: "7" } });
+    expect(call!.init.method).toBe("PATCH");
+    expect(call!.url).toContain("calendars/cal%40group/events/series_20261110");
+    expect(JSON.parse(String(call!.init.body))).toEqual({
+      start: { date: "2026-11-30" },
+      end: { date: "2026-12-01" },
+      extendedProperties: { private: { sweetspotKind: "vo2", sweetspotDecisionId: "7" } },
+    });
+  });
+
+  it("cancels an instance for a skip and reports status only on failure", async () => {
+    let body = "";
+    const ok = (async (url: string, init?: RequestInit) => {
+      if (String(url).includes("oauth2")) return new Response(JSON.stringify({ access_token: "tok", expires_in: 3600 }));
+      body = String(init?.body);
+      return new Response("{}");
+    }) as unknown as typeof fetch;
+    await patchEvent(cfg(ok), "e1", { status: "cancelled" });
+    expect(JSON.parse(body)).toEqual({ status: "cancelled" });
+
+    const bad = (async (url: string) =>
+      String(url).includes("oauth2") ? new Response(JSON.stringify({ access_token: "tok", expires_in: 3600 })) : new Response("secret", { status: 404 })) as unknown as typeof fetch;
+    await expect(patchEvent(cfg(bad), "e1", { status: "cancelled" })).rejects.toThrow(/HTTP 404$/);
   });
 });

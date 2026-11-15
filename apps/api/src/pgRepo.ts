@@ -1,5 +1,5 @@
-import { and, gte, lte, sql } from "drizzle-orm";
-import { activities, goalChanges, liftTargets, manualDone, programSettings, syncState, type Db } from "@sweetspot/db";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { activities, decisions, goalChanges, liftTargets, manualDone, programSettings, syncState, type Db } from "@sweetspot/db";
 import type { IntervalsActivity } from "@sweetspot/engine";
 import type { Repo } from "./repo";
 
@@ -48,6 +48,41 @@ export function pgRepo(db: Db): Repo {
         .insert(syncState)
         .values({ id: 1, lastSyncedAt: s.lastSyncedAt, lastError: s.lastError })
         .onConflictDoUpdate({ target: syncState.id, set: { lastSyncedAt: s.lastSyncedAt, lastError: s.lastError } });
+    },
+    async saveGoalChange(c) {
+      await db.insert(goalChanges).values({ goal: c.goal, effectiveWeek: c.effectiveWeek, mode: c.mode, targetMin: c.targetMin, stepMin: c.stepMin });
+    },
+    async saveLiftTargets(r) {
+      await db
+        .insert(liftTargets)
+        .values(r)
+        .onConflictDoUpdate({ target: liftTargets.effectiveWeek, set: { upper: r.upper, lower: r.lower } });
+    },
+    async markDone(r) {
+      await db.insert(manualDone).values(r).onConflictDoNothing({ target: manualDone.sessionId });
+    },
+    async unmarkDone(sessionId) {
+      const gone = await db.delete(manualDone).where(eq(manualDone.sessionId, sessionId)).returning({ id: manualDone.sessionId });
+      return gone.length > 0;
+    },
+    async reserveDecisionId() {
+      const res = (await db.execute(sql`select nextval(pg_get_serial_sequence('decisions', 'id')) as id`)) as unknown as
+        | { rows: { id: string | number }[] }
+        | { id: string | number }[];
+      const rows = Array.isArray(res) ? res : res.rows;
+      return Number(rows[0]!.id);
+    },
+    async logDecision(d) {
+      await db.insert(decisions).values({
+        id: d.id,
+        trigger: d.trigger,
+        inputs: d.inputs ?? {},
+        options: d.options ?? null,
+        ruleResults: d.ruleResults ?? null,
+        choice: d.choice ?? null,
+        calendarChanges: d.calendarChanges ?? null,
+        status: d.status,
+      });
     },
   };
 }
