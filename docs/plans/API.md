@@ -63,7 +63,7 @@ interface HomeView {
   date: Day;
   weekLabel: string;                       // "week 2 of the program"
   isRecoveryWeek: boolean;
-  readiness: null | { light: "green" | "yellow" | "red"; label: string; reasons: string[] };  // null until its inputs are decided
+  readiness: null | Readiness;  // null when intervals.icu has no Form for the day. Provisional thresholds, see readiness.ts
   today: Session | null;                   // null on an open day
   goals: GoalBar[];                        // planned-this-week goals and lifts, in display order
   offGoals: OffGoal[];
@@ -147,7 +147,17 @@ Every write appends an entry to the decision log (see Storage) with the inputs, 
 | `PUT /api/lifts` | `{ upper, lower }` | Lift sessions per week, 0 to 7 each | `ProgramView` |
 | `POST /api/sync` | none | Fetches new activities from intervals.icu now (pull to refresh) | `{ lastSyncedAt, newActivities: number }` |
 
-"What changed?" (`POST /api/replan`, Claude) is out of scope for the shell and gets its own section when it's built.
+"What changed?" (`POST /api/replan`, Claude) is out of scope for the shell and gets its own section when it's built (it waits on a yes for API spend).
+
+**Cross-week moves (2026-11-21).** `GET /api/sessions/:id/options?action=move` also lists days in the following week for a `planned` session. Such an option has `absorbs: [{ sessionId }]` when it replaces next week's session of the same kind. `apply` moves the session and then cancels each absorbed one (last, so a failed cancel reverts the move). The reader derives the rest: the origin week gets a skipped stand-in (`movedTo`) and records a miss; the destination week shows the moved session (`movedFrom`) and drops its own of that kind. Google keeps `originalStartTime` on a moved instance, which is what the reader uses.
+
+### `GET /api/month?date=`
+
+`MonthView`: `{ month, label, start, weeks: { start, days: { date, inMonth, isToday, isPast, sessions: { id, kind, status, title, movedTo?, movedFrom? }[] }[] }[] }`. `date` is any day in the month (default today). `GET /api/week?start=` accepts any Monday up to 26 weeks ahead.
+
+### Readiness log
+
+`GET /api/home` logs one `readiness_reading` decision per day (first read) with `inputs: { date, version, readiness, fatigue }` and `choice: ReadinessPrediction` (green predicts the planned session completes at its goal, yellow and red predict a shortfall). Each sync then appends a `readiness_scored` decision for every reading whose day is over, with `choice: { outcome, score }`. Days with no session, or whose goal wasn't judged, are not scored.
 
 ### Calendar writes
 

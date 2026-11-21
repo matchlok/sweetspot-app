@@ -1,14 +1,12 @@
 # Next steps
 
-Updated 2026-11-21. The web shell is merged (all five v4 screens built), the passphrase is reset locally, and the local API and web run together. **Pick up here:**
+Updated 2026-11-21. The engine now follows the 2026-11-20 rules, the readiness pill is live, and the remaining web-shell items are built (branch `claude/dreamy-fermi-dkt7o3`, not merged). **Pick up here:**
 
-1. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves. Start on a new branch.
-2. **Readiness pill:** Form, ramp rate and recent hard days, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
-3. **Fix prod `/api/home`:** it logs `Google Calendar events -> HTTP 404` (2026-11-20, Vercel logs). Login works in prod. Suspect `GOOGLE_CALENDAR_ID` or `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel's Production env (secrets can't be read back, so re-set them from `.env.local`, JSON without the single quotes, then `vercel redeploy`). Also confirm `APP_PASSPHRASE_HASH` in Vercel matches the reset local hash.
-4. **Local live check:** the local app loaded and ran (2026-11-21). Still to do: go through each screen against real data and confirm the date shows Denver today. Apply only on a session you mean to change.
-5. **Small fix:** Home and the other screens sit on "Loading…" forever if the API is unreachable. Show an error instead.
-6. Dev note: if the app says "Loading…" locally, make sure both servers were started fresh. A stale Vite process returned the HTML page for `/api/*` calls.
-7. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
+1. **Review and merge the branch.** 139 engine, 34 API and 15 web tests pass. Apply nothing to the real calendar until you've tried a cross-week move on a throwaway series: the unit tests fake Google, and the cross-week logic relies on Google keeping `originalStartTime` on a moved instance (it does for recurring instances, but check once live, then date this note).
+2. **"What changed?" with Claude** (`POST /api/replan`, the four chips on Programming: Cooked, Short on time, Extra time, Something else). Not built. It spends on the Anthropic API, so it waits for a yes. Needs `ANTHROPIC_API_KEY`, a prompt version, and the rule gate on every proposal (the options already exist in `options.ts`). Log each proposal with its inputs and a prediction.
+3. **Local live check.** Go through each screen against real data, including the new Week/Month toggle, week arrows, pull to refresh, the readiness tap and a cross-week move, and confirm the date shows Denver today.
+4. **Readiness record.** Each day's first Home read logs a `readiness_reading` decision with a prediction, and the next sync scores it as `readiness_scored`. After a few weeks, read the record and adjust the provisional thresholds in `packages/engine/src/readiness.ts` (bump `READINESS_VERSION`).
+5. **Not done yet, lower priority:** web push for the 6:05 am message, post-ride feedback, performance predictions, the "Sweetspot Ops" view, a service worker (deliberately none: nothing offline-cached for an authenticated API).
 
 Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
@@ -48,7 +46,7 @@ The API between the app and the engine is in [plans/API.md](plans/API.md): endpo
 6. **Lift counts above 1:** follows rule 4. No extra tracking for overflow.
 7. **Readiness pill:** build it now with provisional thresholds from Form, ramp rate and recent hard days, show the inputs on tap, log each reading with a prediction, and score it.
 
-Engine and API changes these imply are not done yet.
+Built 2026-11-21: a skip (or a session moved out of its week) stays planned and is judged, so it is a miss; moves into the following week replace that week's session of the same kind (`readWeek`, `crossWeekOptions`); the fixtures now carry all three sessions every week; the readiness pill and its log are in. Recovery weeks were already volume-only (the factor scales every target, same workouts), so that rule needed no engine change.
 
 ## Earlier assumptions (superseded by the list above)
 
@@ -96,7 +94,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 
 ## Housekeeping
 
-- Stop the POC server (port 5174) if it is still running.
+- `apps/poc-web` is deleted (2026-11-21).
 
 ## Findings to keep in mind
 

@@ -1,10 +1,15 @@
 import type { GoalKey } from "@sweetspot/engine";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { api } from "./api";
 import { Calendar } from "./screens/Calendar";
 import { DaySheet } from "./screens/DaySheet";
 import { Goal } from "./screens/Goal";
 import { Home } from "./screens/Home";
 import { Programming } from "./screens/Programming";
+
+/** How far a pull must travel, in px after damping, before release refreshes. */
+const PULL_TRIGGER = 50;
+const PULL_MAX = 80;
 
 type Tab = "home" | "calendar" | "programming";
 
@@ -31,13 +36,54 @@ export function Shell({ onLogout }: { onLogout: () => void }) {
   const [sheet, setSheet] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [goal, setGoal] = useState<GoalKey | null>(null);
+
+  // Pull to refresh: drag down from the top of a screen, release past the trigger, and the server fetches new rides now.
+  const [pull, setPull] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const startY = useRef<number | null>(null);
+
+  async function refresh() {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      await api.sync();
+      setVersion((v) => v + 1);
+    } catch (e) {
+      setSyncMsg(e instanceof Error ? e.message : "Couldn't refresh.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <div className="shell">
-      <main className="body">
+      <main
+        className="body"
+        onTouchStart={(e) => {
+          startY.current = !syncing && !sheet && e.currentTarget.scrollTop <= 0 ? e.touches[0]!.clientY : null;
+        }}
+        onTouchMove={(e) => {
+          if (startY.current === null) return;
+          const dy = e.touches[0]!.clientY - startY.current;
+          setPull(dy > 0 ? Math.min(PULL_MAX, dy * 0.5) : 0);
+        }}
+        onTouchEnd={() => {
+          const fire = startY.current !== null && pull >= PULL_TRIGGER;
+          startY.current = null;
+          setPull(0);
+          if (fire) void refresh();
+        }}
+      >
+        {(pull > 0 || syncing || syncMsg) && (
+          <div className="ptr" role="status" style={{ height: syncing || syncMsg ? 24 : pull * 0.6 }}>
+            {syncing ? "Fetching new rides…" : syncMsg ? <span className="err">{syncMsg}</span> : pull >= PULL_TRIGGER ? "Release to refresh" : "Pull to refresh"}
+          </div>
+        )}
         {tab === "home" ? (
           <Home key={version} onOpen={setSheet} />
         ) : tab === "calendar" ? (
-          <Calendar key={version} onOpen={(s) => setSheet(s.id)} />
+          <Calendar refreshKey={version} onOpen={(s) => setSheet(s.id)} />
         ) : goal ? (
           <Goal
             goalKey={goal}

@@ -1,4 +1,4 @@
-import type { DayOptionsView, GoalDraft, GoalKey, GoalPreviewPoint, GoalView, HomeView, ProgramView, WeekView } from "@sweetspot/engine";
+import type { DayOptionsView, GoalDraft, GoalKey, GoalPreviewPoint, GoalView, HomeView, MonthView, ProgramView, WeekView } from "@sweetspot/engine";
 import goalFixture from "../../../packages/engine/test/fixtures/goal-sweetSpot.json";
 import homeFixture from "../../../packages/engine/test/fixtures/home.json";
 import programFixture from "../../../packages/engine/test/fixtures/program.json";
@@ -14,14 +14,31 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, { credentials: "same-origin", ...init });
+const TIMEOUT_MS = 20_000;
+
+/**
+ * One place that turns every failure into an ApiError with a sentence to show:
+ * no network, a timeout, and a 200 that isn't JSON (a dev server answering an
+ * /api call with its HTML page, which used to leave screens on "Loading…").
+ */
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(path, { credentials: "same-origin", signal: ctl.signal, ...init });
+  } catch (e) {
+    throw new ApiError(0, ctl.signal.aborted ? "timeout" : "offline", ctl.signal.aborted ? "The server took too long to answer." : "Can't reach the server. Check your connection.");
+  } finally {
+    clearTimeout(timer);
+  }
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const e = body?.error;
     throw new ApiError(res.status, e?.code ?? "unknown", e?.message ?? `Request failed (${res.status})`);
   }
+  if (body === null || typeof body !== "object") throw new ApiError(res.status, "bad_response", "The server sent something the app can't read.");
   return body as T;
 }
 
@@ -39,6 +56,9 @@ export const api = {
   home: () => (fixtureMode ? Promise.resolve(homeFixture as unknown as HomeView) : request<HomeView>("/api/home")),
   week: (start?: string) =>
     fixtureMode ? Promise.resolve(weekFixture as unknown as WeekView) : request<WeekView>(`/api/week${start ? `?start=${start}` : ""}`),
+  month: (date?: string) => request<MonthView>(`/api/month${date ? `?date=${date}` : ""}`),
+  /** Pull to refresh: fetch new activities from intervals.icu now. */
+  sync: () => (fixtureMode ? Promise.resolve(undefined) : request<{ lastSyncedAt: string; newActivities: number }>("/api/sync", { method: "POST" })),
   options: (id: string, action: "move" | "swap" | "skip") => {
     if (fixtureMode) {
       const f = (id === "w2-upper" ? optsUpper : optsVo2) as unknown as DayOptionsView;

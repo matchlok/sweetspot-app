@@ -1,6 +1,8 @@
 import type { GoalBar, HomeView } from "@sweetspot/engine";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../api";
+import { Status } from "../Status";
+import { useLoad } from "../useLoad";
 
 const BAR_COLOR: Record<string, string> = {
   endurance: "var(--endurance)",
@@ -59,6 +61,38 @@ function Bar({ g, onOpen }: { g: GoalBar; onOpen: (id: string) => void }) {
   );
 }
 
+const LIGHT_COLOR = { green: "#5fd0a4", yellow: "#e0b25c", red: "#ee7480" };
+
+/** What the pill was judged on. Provisional thresholds, and the page says so. */
+function ReadinessWhy({ r }: { r: NonNullable<HomeView["readiness"]> }) {
+  return (
+    <div className="card" id="readiness-why">
+      <div className="lbl">Why {r.label.toLowerCase()}</div>
+      {r.reasons.length > 0 ? (
+        r.reasons.map((t) => <div key={t} style={{ fontSize: 14, color: "var(--text-2)", marginTop: 8, lineHeight: 1.4 }}>{t}</div>)
+      ) : (
+        <div style={{ fontSize: 14, color: "var(--text-2)", marginTop: 8 }}>Every input is in range.</div>
+      )}
+      <div style={{ marginTop: 10 }}>
+        {r.inputs.map((i) => (
+          <div key={i.key} style={{ padding: "8px 0", borderTop: "1px solid var(--track)" }}>
+            <div className="row">
+              <span className="n" style={{ fontSize: 14 }}>{i.label}</span>
+              <span className="f" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {i.value}
+                <span aria-label={i.light} style={{ width: 8, height: 8, borderRadius: 4, background: LIGHT_COLOR[i.light] }} />
+              </span>
+            </div>
+            <div className="m">{i.rule}</div>
+          </div>
+        ))}
+      </div>
+      {r.missing.length > 0 && <div className="m" style={{ marginTop: 8 }}>Not available: {r.missing.join(", ")}.</div>}
+      <div className="m" style={{ marginTop: 8 }}>The pill shows the worst of these. The thresholds are provisional: each reading is logged with a prediction and scored, and they change only when that record says so.</div>
+    </div>
+  );
+}
+
 function Stat({ value, name, sub }: { value: string; name: string; sub: string }) {
   return (
     <div style={{ flex: 1 }}>
@@ -70,14 +104,10 @@ function Stat({ value, name, sub }: { value: string; name: string; sub: string }
 }
 
 export function Home({ onOpen }: { onOpen: (sessionId: string) => void }) {
-  const [v, setV] = useState<HomeView | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  useEffect(() => {
-    api.home().then(setV, (e) => setErr(e.message));
-  }, []);
-
-  if (err) return <div className="card err" role="alert">{err}</div>;
-  if (!v) return <div className="muted">Loading…</div>;
+  const load = useLoad(() => api.home());
+  const [why, setWhy] = useState(false);
+  const v = load.data;
+  if (!v) return <Status load={load} />;
 
   const { weekday, short } = dayParts(v.date);
   const p = v.readiness ? PILL[v.readiness.light] : null;
@@ -89,12 +119,20 @@ export function Home({ onOpen }: { onOpen: (sessionId: string) => void }) {
           <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>{short} · {v.weekLabel}</div>
         </div>
         {v.readiness && p && (
-          <div className="pill" style={{ background: p.bg, borderColor: p.line, color: p.fg }}>
+          <button
+            className="pill"
+            style={{ background: p.bg, borderColor: p.line, color: p.fg, font: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            aria-expanded={why}
+            aria-controls="readiness-why"
+            onClick={() => setWhy((x) => !x)}
+          >
             <span style={{ width: 8, height: 8, borderRadius: 4, background: p.dot }} />
             {v.readiness.label}
-          </div>
+          </button>
         )}
       </div>
+      <Status load={load} />
+      {why && v.readiness && <ReadinessWhy r={v.readiness} />}
 
       {v.today ? (
         <button className="card" onClick={() => onOpen(v.today!.id)} style={{ background: "var(--today-bg)", borderColor: "var(--today-line)" }}>
