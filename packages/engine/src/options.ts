@@ -17,7 +17,9 @@ import type { ResolvedStatus } from "./plan";
  * - one ride a day (hard)
  * - quality rides on back-to-back days, or a lift on a quality day, are
  *   allowed with a warning
- * Moves stay inside the session's own week (assumed 2026-11-11, awaiting Narjit's yes).
+ * A planned session may also move into the following week (rule 4, 2026-11-20):
+ * this week records a miss for it, and it replaces next week's own session of
+ * the same kind, so next week never carries two (no 3/2 counts).
  */
 
 export type OptionAction = "move" | "swap" | "skip";
@@ -29,6 +31,8 @@ export interface WeekSession {
   title: string;
   minutes: number | null;
   status: ResolvedStatus | "done";
+  /** Moved in from another week. A second move into the same week of the same kind is refused. */
+  movedIn?: boolean;
 }
 
 export interface DayOption {
@@ -36,6 +40,8 @@ export interface DayOption {
   heading: string;
   effects: { text: string; tone: "plain" | "warn" }[];
   alsoMoves: { sessionId: string; to: string }[];
+  /** Sessions this option replaces. The calendar write cancels them, and they don't count as skips. */
+  absorbs?: { sessionId: string }[];
   cta: string;
   rules: { rule: string; result: "pass" | "warn" }[];
 }
@@ -57,6 +63,8 @@ export interface DayOptionsInput {
   action: OptionAction;
   /** Today's Denver date. */
   today: string;
+  /** The following week's sessions, when its plan exists. Lets a planned session move across the week boundary. */
+  nextWeek?: readonly WeekSession[];
   /** Let the long ride leave Saturday and Sunday. Off by default. */
   allowLongRideOffWeekend?: boolean;
 }
@@ -173,6 +181,51 @@ function planVersion(sessions: readonly WeekSession[]): string {
 
 const lc = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
+/**
+ * Days in the following week a planned session can move to. The move counts as
+ * a miss for its own week and replaces next week's session of the same kind.
+ */
+function crossWeekOptions(s: WeekSession, next: readonly WeekSession[], today: string, allowOff: boolean, result: DayOptions): void {
+  if (next.length === 0) return;
+  const nextStart = addDays(mondayOf(s.date), 7);
+  if (next.some((x) => x.kind === s.kind && x.movedIn && x.status !== "skipped")) {
+    result.blocked.push({ heading: `Next week`, reason: `${KIND_LABEL[s.kind]} next week already has a session moved in.` });
+    return;
+  }
+  const replaced = next.filter((x) => x.kind === s.kind && !x.movedIn && x.status !== "skipped" && x.status !== "done");
+  // The replaced session leaves the plan, so it can't cause or fix a violation.
+  const rest = next.filter((x) => !replaced.includes(x));
+  const baseKeys = new Set(violations(rest, new Map(), allowOff).map((v) => v.key));
+  const optional = s.kind === "easy_spin";
+
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(nextStart, i);
+    if (day < today) continue;
+    const moved: WeekSession = { ...s, date: day, movedIn: true };
+    const found = violations([...rest, moved], new Map(), allowOff).filter((v) => !baseKeys.has(v.key));
+    const hard = found.filter((v) => v.hard);
+    if (hard.length > 0) {
+      result.blocked.push({ heading: `${heading(day)}, next week`, reason: hard[0]!.reason });
+      continue;
+    }
+    const effects: DayOption["effects"] = [{ text: `${KIND_LABEL[s.kind]} moves to next ${dayName(day)}.`, tone: "plain" }];
+    if (!optional) effects.push({ text: `${KIND_LABEL[s.kind]} counts as missed this week.`, tone: "warn" });
+    if (replaced.length > 0) effects.push({ text: `It replaces next week's ${lc(KIND_LABEL[s.kind])}, so next week still has one.`, tone: "plain" });
+    for (const w of found) effects.push({ text: `${w.warnText ?? w.reason}.`, tone: "warn" });
+    const touched = new Set<Rule>(found.map((v) => v.rule));
+    const option: DayOption = {
+      id: `move:${day}`,
+      heading: `${heading(day)}, next week`,
+      effects,
+      alsoMoves: [],
+      cta: `Move to next ${dayName(day)}`,
+      rules: RULES.map((rule) => ({ rule, result: touched.has(rule) ? ("warn" as const) : ("pass" as const) })),
+    };
+    if (replaced.length > 0) option.absorbs = replaced.map((x) => ({ sessionId: x.id }));
+    result.options.push(option);
+  }
+}
+
 // ---- Builder ----
 
 export function dayOptions(input: DayOptionsInput): DayOptions {
@@ -181,7 +234,7 @@ export function dayOptions(input: DayOptionsInput): DayOptions {
   const s = sessions.find((x) => x.id === sessionId);
   if (!s) throw new Error(`unknown session ${sessionId}`);
 
-  const result: DayOptions = { sessionId, action, planVersion: planVersion(sessions), options: [], blocked: [] };
+  const result: DayOptions = { sessionId, action, planVersion: planVersion([...sessions, ...(input.nextWeek ?? [])]), options: [], blocked: [] };
   if (s.status === "not_logged" && isLift(s.kind)) result.canMarkDone = true;
 
   if (s.status === "done" || s.status === "skipped") {
@@ -269,6 +322,9 @@ export function dayOptions(input: DayOptionsInput): DayOptions {
         cta: `Move to ${dayName(day)}` + alsoMoves.map((m) => `, ${lc(KIND_LABEL[sessions.find((q) => q.id === m.sessionId)!.kind]).replace(" lift", "")} to ${dayName(m.to)}`).join(""),
         rules: RULES.map((rule) => ({ rule, result: touched.has(rule) ? ("warn" as const) : ("pass" as const) })),
       });
+    }
+    if (s.status === "planned" && input.nextWeek) {
+      crossWeekOptions(s, input.nextWeek, today, allowOff, result);
     }
     return result;
   }

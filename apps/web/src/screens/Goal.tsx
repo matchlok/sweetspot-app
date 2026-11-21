@@ -41,8 +41,10 @@ export function Goal({ goalKey, onBack, onSaved }: { goalKey: GoalKey; onBack: (
   const [preview, setPreview] = useState<GoalPreviewPoint[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    setErr(null);
     api.goal(goalKey).then(
       (v) => {
         setG(v);
@@ -51,7 +53,7 @@ export function Goal({ goalKey, onBack, onSaved }: { goalKey: GoalKey; onBack: (
       },
       (e) => setErr(e.message),
     );
-  }, [goalKey]);
+  }, [goalKey, attempt]);
 
   // Redraw the preview as the draft changes. The short delay keeps rapid taps on a stepper to one request.
   const dKey = draft ? `${draft.mode}|${draft.target}|${draft.stepMin}` : null;
@@ -80,7 +82,17 @@ export function Goal({ goalKey, onBack, onSaved }: { goalKey: GoalKey; onBack: (
     </button>
   );
 
-  if (err && !g) return <><div>{back}</div><div className="card err" role="alert">{err}</div></>;
+  if (err && !g) {
+    return (
+      <>
+        <div>{back}</div>
+        <div className="card" role="alert">
+          <div className="err">{err}</div>
+          <button className="btn" style={{ marginTop: 10 }} onClick={() => setAttempt((n) => n + 1)}>Try again</button>
+        </div>
+      </>
+    );
+  }
   if (!g || !draft) return <div className="muted">Loading…</div>;
 
   const set = (patch: Partial<GoalDraft>) => setDraft({ ...draft, ...patch });

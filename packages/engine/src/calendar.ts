@@ -34,6 +34,8 @@ export interface CalendarEvent {
   status?: "confirmed" | "tentative" | "cancelled";
   /** All-day events carry `date`; timed events carry `dateTime` with an offset. */
   start: { date?: string; dateTime?: string };
+  /** Where a recurring instance sat before it was moved. Google keeps this on moved instances. */
+  originalStartTime?: { date?: string; dateTime?: string };
   extendedProperties?: { private?: Record<string, string> };
 }
 
@@ -47,6 +49,13 @@ export interface PlannedSession {
   /** A cancelled instance is a skip. */
   status: "planned" | "skipped";
   kindSource: "tag" | "title";
+  /** Set on a session that moved in from another week: the date it was planned for. */
+  movedFrom?: string;
+  /**
+   * Set on the stand-in for a session that moved out of this week, dated on its
+   * original day and `skipped`: the origin week records a miss for it.
+   */
+  movedTo?: string;
 }
 
 export interface WeekPlan {
@@ -106,31 +115,55 @@ export function eventDate(e: CalendarEvent): string | null {
   return null;
 }
 
-/** Sessions in the Mon-Sun week starting `weekStart`, sorted by date then title. */
+/**
+ * Sessions in the Mon-Sun week starting `weekStart`, sorted by date then title.
+ * Pass events from the neighbouring weeks too, so moves across weeks resolve:
+ *
+ * - A session moved out of this week (its original day is here, its new day is
+ *   not) stays on its original day as a skipped stand-in with `movedTo`. The
+ *   week records a miss for it (rule 4, 2026-11-20).
+ * - A session moved in from another week replaces this week's own session of
+ *   the same kind, so the week never carries two (no 3/2 counts). The replaced
+ *   one is dropped, whether the calendar still shows it or has cancelled it.
+ */
 export function readWeek(events: readonly CalendarEvent[], weekStart: string): WeekPlan {
   const weekEnd = addDays(weekStart, 6);
-  const sessions: PlannedSession[] = [];
+  const inWeek = (d: string) => d >= weekStart && d <= weekEnd;
+  let sessions: PlannedSession[] = [];
   const unrecognized: WeekPlan["unrecognized"] = [];
 
   for (const e of events) {
     const date = eventDate(e);
-    if (!date || date < weekStart || date > weekEnd) continue;
+    if (!date) continue;
+    const origin = e.originalStartTime ? (eventDate({ id: e.id, start: e.originalStartTime }) ?? date) : date;
+    const here = inWeek(date);
+    const originHere = inWeek(origin);
+    if (!here && !originHere) continue;
     const title = e.summary ?? "";
     const tag = e.extendedProperties?.private?.sweetspotKind;
     const kind = isKind(tag) ? tag : kindFromTitle(title);
     if (!kind) {
-      unrecognized.push({ id: e.id, date, title });
+      if (here) unrecognized.push({ id: e.id, date, title });
       continue;
     }
-    sessions.push({
-      id: e.id,
-      date,
-      kind,
-      title,
-      minutes: minutesFromTitle(title),
-      status: e.status === "cancelled" ? "skipped" : "planned",
-      kindSource: isKind(tag) ? "tag" : "title",
-    });
+    const cancelled = e.status === "cancelled";
+    const base = { kind, title, minutes: minutesFromTitle(title), kindSource: (isKind(tag) ? "tag" : "title") as "tag" | "title" };
+    if (here) {
+      const s: PlannedSession = { id: e.id, date, ...base, status: cancelled ? "skipped" : "planned" };
+      if (origin !== date && !originHere) s.movedFrom = origin;
+      sessions.push(s);
+    } else {
+      // Original day is in this week, current day is elsewhere.
+      const g: PlannedSession = { id: `${e.id}~origin`, date: origin, ...base, status: "skipped" };
+      if (!cancelled) g.movedTo = date;
+      sessions.push(g);
+    }
+  }
+
+  const movedIn = sessions.filter((s) => s.movedFrom && s.status === "planned");
+  if (movedIn.length > 0) {
+    const kinds = new Set(movedIn.map((s) => s.kind));
+    sessions = sessions.filter((s) => !(kinds.has(s.kind) && !s.movedFrom && !s.movedTo));
   }
 
   sessions.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));

@@ -28,9 +28,9 @@
       "key": "vo2",
       "label": "VO2",
       "mode": "progress",
-      "target": 8,
+      "target": 9,
       "stepMin": 1,
-      "summary": "8 min, up 1 after each hit week"
+      "summary": "9 min, up 1 after each hit week"
     }
   ],
   "lifts": {
