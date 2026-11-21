@@ -67,6 +67,12 @@ function changesFor(sessionId: string, action: OptionAction, option: DayOption, 
     if (!p) return null;
     out.push({ sessionId: p.id, kind: p.kind, from: p.date, to: m.to });
   }
+  // Sessions a cross-week move replaces are cancelled, last, so a failure above never leaves one cancelled.
+  for (const a of option.absorbs ?? []) {
+    const p = byId.get(a.sessionId);
+    if (!p) return null;
+    out.push({ sessionId: p.id, kind: p.kind, from: p.date, to: null });
+  }
   return out;
 }
 
@@ -118,7 +124,7 @@ export function writeRoutes(data: DataDeps) {
 
     const inputs = { sessionId, action, optionId, planVersion, today: d.today };
     const option = view.options.find((o) => o.id === optionId);
-    const changes = option ? changesFor(sessionId, action, option, plan.sessions) : null;
+    const changes = option ? changesFor(sessionId, action, option, d.plans.flatMap((p) => p.sessions)) : null;
     if (!option || !changes) {
       const reason = view.blocked.find((b) => optionId.includes(b.heading))?.reason ?? "The rules don't offer that option.";
       await record({

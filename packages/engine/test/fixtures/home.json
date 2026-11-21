@@ -2,7 +2,37 @@
   "date": "2026-11-10",
   "weekLabel": "week 2 of the program",
   "isRecoveryWeek": false,
-  "readiness": null,
+  "readiness": {
+    "light": "green",
+    "label": "Ready",
+    "reasons": [],
+    "inputs": [
+      {
+        "key": "form",
+        "label": "Form",
+        "value": "−5",
+        "light": "green",
+        "rule": "Green at −10 or higher, yellow down to −20, red below."
+      },
+      {
+        "key": "ramp",
+        "label": "Ramp rate",
+        "value": "+3.2 per week",
+        "light": "green",
+        "rule": "Green up to 5 CTL a week, yellow up to 8, red above."
+      },
+      {
+        "key": "hardDays",
+        "label": "Recent hard days",
+        "value": "0 of the last 3 days",
+        "light": "green",
+        "rule": "Hard means a VO2 or sweet spot ride. Green at 0 or 1, yellow at 2, red at 3."
+      }
+    ],
+    "missing": [],
+    "provisional": true,
+    "version": "2026-11-21-provisional"
+  },
   "today": {
     "id": "w2-vo2",
     "date": "2026-11-10",
@@ -22,11 +52,19 @@
       "hit": false
     },
     {
+      "key": "sweetSpot",
+      "label": "Sweet spot",
+      "unit": "min",
+      "actual": 0,
+      "target": 22,
+      "hit": false
+    },
+    {
       "key": "vo2",
       "label": "VO2",
       "unit": "min",
       "actual": 0,
-      "target": 8,
+      "target": 9,
       "hit": false
     },
     {
@@ -51,13 +89,7 @@
       "hit": false
     }
   ],
-  "offGoals": [
-    {
-      "key": "sweetSpot",
-      "label": "Sweet spot",
-      "text": "Not planned this week. Back Nov 17 at 22 min."
-    }
-  ],
+  "offGoals": [],
   "fatigue": {
     "form": -5,
     "ramp": 3.2,

@@ -17,6 +17,8 @@ function seedEvents(): CalendarEvent[] {
     { id: "vo2-1110", summary: "VO2 Max Intervals — Trail (~1 hr)", start: { date: "2026-11-10" } },
     { id: "lift-a-1112", summary: "Lift A — Lower Body + Core", start: { date: "2026-11-12" } },
     { id: "end-1114", summary: "Endurance — Long Ride (~1.5 hr)", start: { date: "2026-11-14" } },
+    { id: "vo2-1117", summary: "VO2 Max Intervals — Trail (~1 hr)", start: { date: "2026-11-17" } },
+    { id: "end-1121", summary: "Endurance — Long Ride (~1.5 hr)", start: { date: "2026-11-21" } },
   ];
 }
 
@@ -32,7 +34,10 @@ function setup(opts: { failOn?: (id: string, patch: EventPatch) => boolean } = {
       if (opts.failOn?.(id, patch)) throw new Error("Google Calendar patch -> HTTP 500");
       patches.push({ id, patch });
       const e = events.find((x) => x.id === id)!;
-      if (patch.date) e.start = { date: patch.date };
+      if (patch.date) {
+        e.originalStartTime ??= { date: e.start.date! }; // Google keeps where an instance started
+        e.start = { date: patch.date };
+      }
       if (patch.status) e.status = patch.status;
       if (patch.tags) e.extendedProperties = { private: { ...e.extendedProperties?.private, ...patch.tags } };
     },
@@ -216,5 +221,38 @@ describe("settings", () => {
     expect((await res.json()).lifts).toEqual({ upper: 2, lower: 0 });
     expect((await call(app, "PUT", "/api/lifts", { upper: 8, lower: 0 })).status).toBe(400);
     expect((await call(app, "PUT", "/api/lifts", { upper: 1 })).status).toBe(400);
+  });
+});
+
+describe("apply: move into next week", () => {
+  it("moves the session, cancels the one it replaces, and the origin week records a miss", async () => {
+    const { app, repo, patches } = setup();
+    const opts = await options(app, "end-1114", "move");
+    const sat = opts.options.find((o: { id: string }) => o.id === "move:2026-11-21");
+    expect(sat.absorbs).toEqual([{ sessionId: "end-1121" }]);
+
+    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sat.id, planVersion: opts.planVersion });
+    expect(res.status).toBe(200);
+    expect(patches.map((p) => [p.id, p.patch.date ?? p.patch.status])).toEqual([
+      ["end-1114", "2026-11-21"],
+      ["end-1121", "cancelled"], // the replaced one goes last
+    ]);
+    const week = (await res.json()).week;
+    expect(week.days[5].sessions[0]).toMatchObject({ status: "skipped", movedTo: "2026-11-21" });
+    expect(repo.decisionLog.at(-1)).toMatchObject({ trigger: "apply_move", status: "applied" });
+
+    const next = await (await call(app, "GET", "/api/week?start=2026-11-16")).json();
+    const long = next.days[5].sessions;
+    expect(long).toHaveLength(1);
+    expect(long[0]).toMatchObject({ id: "end-1114", movedFrom: "2026-11-14" });
+  });
+
+  it("reverts the move when the cancel of the replaced session fails", async () => {
+    const { app, events } = setup({ failOn: (id, patch) => id === "end-1121" && patch.status === "cancelled" });
+    const opts = await options(app, "end-1114", "move");
+    const sat = opts.options.find((o: { id: string }) => o.id === "move:2026-11-21");
+    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sat.id, planVersion: opts.planVersion });
+    expect(res.status).toBe(502);
+    expect(events.find((e) => e.id === "end-1114")!.start.date).toBe("2026-11-14");
   });
 });

@@ -107,4 +107,16 @@ describe("read routes", () => {
     const cron = await app.request("/api/cron/sync", { headers: { authorization: "Bearer cron" } });
     expect(cron.status).toBe(200);
   });
+
+  it("serves a month and weeks beyond next week, and refuses far-future ones", async () => {
+    const { app } = setup();
+    const month = await (await authed(app, "/api/month")).json();
+    expect(month.label).toBe("November 2026");
+    expect(month.weeks[2].days[1].sessions[0].kind).toBe("vo2");
+    const ahead = await authed(app, "/api/week?start=2026-12-07");
+    expect(ahead.status).toBe(200);
+    expect((await ahead.json()).label).toBe("Dec 7 to 13");
+    expect((await authed(app, "/api/week?start=2028-01-03")).status).toBe(400);
+    expect((await authed(app, "/api/month?date=nope")).status).toBe(400);
+  });
 });

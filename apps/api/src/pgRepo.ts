@@ -84,5 +84,9 @@ export function pgRepo(db: Db): Repo {
         status: d.status,
       });
     },
+    async decisionsFor(trigger) {
+      const rows = await db.select({ inputs: decisions.inputs, choice: decisions.choice }).from(decisions).where(eq(decisions.trigger, trigger)).orderBy(decisions.id);
+      return rows;
+    },
   };
 }

@@ -14,11 +14,15 @@ export function goalServedBy(kind: SessionKind): GoalKey | null {
   }
 }
 
-/** Goals the week's plan has a live (not skipped) session for. Feeds `programState`'s `planned` option. */
+/**
+ * Goals the week's plan has a session for. Feeds `programState`'s `planned`
+ * option. A skipped session still counts as planned, so skipping it is a miss
+ * (rule 1, 2026-11-20), and so is a session that moved out of the week.
+ */
 export function plannedGoals(sessions: readonly PlannedSession[]): Set<GoalKey> {
   const out = new Set<GoalKey>();
   for (const s of sessions) {
-    const g = s.status === "skipped" ? null : goalServedBy(s.kind);
+    const g = goalServedBy(s.kind);
     if (g) out.add(g);
   }
   return out;

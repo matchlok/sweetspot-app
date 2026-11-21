@@ -82,8 +82,18 @@
       "date": "2026-11-15",
       "isToday": false,
       "isPast": false,
-      "sessions": []
+      "sessions": [
+        {
+          "id": "w2-ss",
+          "date": "2026-11-15",
+          "kind": "sweet_spot",
+          "title": "Sweet Spot Intervals (~1 hr)",
+          "minutes": 60,
+          "detail": null,
+          "status": "planned"
+        }
+      ]
     }
   ],
-  "nextWeekNote": "Sweet spot returns Tuesday at 22 min. VO2 sits out."
+  "nextWeekNote": null
 }

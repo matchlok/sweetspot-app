@@ -63,6 +63,8 @@ export interface Repo {
   /** Reserved up front so calendar events can carry `sweetspotDecisionId` before the row exists. */
   reserveDecisionId(): Promise<number>;
   logDecision(d: DecisionEntry): Promise<void>;
+  /** Logged entries for one trigger, oldest first. Readiness uses it to log once a day and to find unscored readings. */
+  decisionsFor(trigger: string): Promise<{ inputs: unknown; choice: unknown }[]>;
 }
 
 export function toGoalChange(r: StoredGoalChange): GoalChange {
@@ -127,6 +129,9 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
     },
     async logDecision(d) {
       decisionLog.push(d);
+    },
+    async decisionsFor(trigger) {
+      return decisionLog.filter((d) => d.trigger === trigger).map((d) => ({ inputs: d.inputs, choice: d.choice }));
     },
   };
 }

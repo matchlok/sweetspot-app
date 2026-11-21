@@ -1,6 +1,7 @@
 import { addDays, mondayOf, weekdayMon0 } from "./dates";
 import type { SessionKind, WeekPlan, PlannedSession } from "./calendar";
 import { fatigueOn, type WellnessRow } from "./fatigue";
+import { predictFor, readiness, type Readiness, type ReadinessOutcome, type ReadinessPrediction } from "./readiness";
 import { toActivityZones, type RideZones } from "./intervals";
 import {
   LIFT_KEYS,
@@ -49,6 +50,10 @@ export interface Session {
   detail: string | null;
   status: SessionStatus;
   doneSource?: "intervals" | "manual";
+  /** Moved in from an earlier week: the date it was planned for. */
+  movedFrom?: Day;
+  /** Moved out to a later week. This is the stand-in on its original day, and it counts as a miss. */
+  movedTo?: Day;
 }
 
 export interface GoalBar {
@@ -189,6 +194,8 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
     }
     const s: Session = { id: p.id, date: p.date, kind: p.kind, title: p.title, minutes: p.minutes, detail: null, status };
     if (doneSource) s.doneSource = doneSource;
+    if (p.movedFrom) s.movedFrom = p.movedFrom;
+    if (p.movedTo) s.movedTo = p.movedTo;
     return s;
   });
 
@@ -204,7 +211,15 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   return {
     start: weekStart,
     sessions,
-    weekSessions: sessions.map((s) => ({ id: s.id, date: s.date, kind: s.kind, title: s.title, minutes: s.minutes, status: s.status })),
+    weekSessions: sessions.map((s) => ({
+      id: s.id,
+      date: s.date,
+      kind: s.kind,
+      title: s.title,
+      minutes: s.minutes,
+      status: s.status,
+      ...(s.movedFrom ? { movedIn: true } : {}),
+    })),
     plan,
     liftsDone,
   };
@@ -216,8 +231,8 @@ export interface HomeView {
   date: Day;
   weekLabel: string;
   isRecoveryWeek: boolean;
-  /** Null until its inputs are decided (NEXT-STEPS item 7). */
-  readiness: null | { light: "green" | "yellow" | "red"; label: string; reasons: string[] };
+  /** Null when intervals.icu has no Form for the day. Provisional thresholds (see readiness.ts). */
+  readiness: Readiness | null;
   today: Session | null;
   goals: GoalBar[];
   offGoals: OffGoal[];
@@ -291,7 +306,7 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
     date,
     weekLabel: n >= 1 ? `week ${n} of the program` : "before the program starts",
     isRecoveryWeek: current?.isRecovery ?? false,
-    readiness: null,
+    readiness: readiness(f, d.rides, date),
     today: todaySession,
     goals,
     offGoals,
@@ -332,10 +347,60 @@ export function weekView(d: ViewData, start: Day = mondayOf(d.today)): WeekView 
         lines.push(`${GOAL_LABEL[key]} sits out.`);
       }
     }
+    if (state.nextIfHit.isRecovery) lines.push("Next week is a recovery week if you hit this one.");
     nextWeekNote = lines.length > 0 ? lines.join(" ") : null;
   }
 
   return { start: monday, label: weekLabel(monday), days, nextWeekNote };
+}
+
+// ---- Month ----
+
+export interface MonthDay {
+  date: Day;
+  /** False for the lead-in and tail days that fill the first and last week. */
+  inMonth: boolean;
+  isToday: boolean;
+  isPast: boolean;
+  sessions: Pick<Session, "id" | "kind" | "status" | "title" | "movedTo" | "movedFrom">[];
+}
+
+export interface MonthView {
+  /** "2026-11". */
+  month: string;
+  label: string;
+  /** Monday of the first week shown. */
+  start: Day;
+  weeks: { start: Day; days: MonthDay[] }[];
+}
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** The Monday-start weeks that cover the month containing `date`. Weeks with no plan data show no sessions. */
+export function monthView(d: ViewData, date: Day = d.today): MonthView {
+  const first = `${date.slice(0, 7)}-01`;
+  const next = new Date(Date.UTC(Number(first.slice(0, 4)), Number(first.slice(5, 7)), 1)).toISOString().slice(0, 10);
+  const last = addDays(next, -1);
+  const weeks: MonthView["weeks"] = [];
+  for (let m = mondayOf(first); m <= last; m = addDays(m, 7)) {
+    const wk = resolveWeek(d, m);
+    weeks.push({
+      start: m,
+      days: Array.from({ length: 7 }, (_, i) => {
+        const day = addDays(m, i);
+        return {
+          date: day,
+          inMonth: day.slice(0, 7) === first.slice(0, 7),
+          isToday: day === d.today,
+          isPast: day < d.today,
+          sessions: wk.sessions
+            .filter((s) => s.date === day)
+            .map((s) => ({ id: s.id, kind: s.kind, status: s.status, title: s.title, ...(s.movedTo ? { movedTo: s.movedTo } : {}), ...(s.movedFrom ? { movedFrom: s.movedFrom } : {}) })),
+        };
+      }),
+    });
+  }
+  return { month: first.slice(0, 7), label: `${MONTH_NAMES[Number(first.slice(5, 7)) - 1]} ${first.slice(0, 4)}`, start: weeks[0]!.start, weeks };
 }
 
 // ---- Day options ----
@@ -349,7 +414,9 @@ export function sessionOptionsView(d: ViewData, sessionId: string, action: Optio
   if (!plan) throw new Error(`unknown session ${sessionId}`);
   const wk = resolveWeek(d, plan.weekStart);
   const session = wk.sessions.find((s) => s.id === sessionId)!;
-  return { session, ...dayOptions({ sessions: wk.weekSessions, sessionId, action, today: d.today }) };
+  const hasNext = planFor(d, addDays(plan.weekStart, 7)) !== undefined;
+  const nextWeek = hasNext ? resolveWeek(d, addDays(plan.weekStart, 7)).weekSessions : undefined;
+  return { session, ...dayOptions({ sessions: wk.weekSessions, sessionId, action, today: d.today, nextWeek }) };
 }
 
 // ---- Program and goals ----
@@ -469,4 +536,41 @@ export function goalView(d: ViewData, key: GoalKey, date: Day = d.today): GoalVi
     stepMin: cfg.stepMin,
     preview: goalPreview(d, key, undefined, date),
   };
+}
+
+// ---- Readiness: prediction and outcome ----
+
+/** The reading for `date` and the prediction to log with it. Null when there is no reading. */
+export function readinessPrediction(d: ViewData, date: Day = d.today): ReadinessPrediction | null {
+  const r = readiness(fatigueOn(d.wellness ?? [], date), d.rides, date);
+  if (!r) return null;
+  const s = resolveWeek(d, mondayOf(date)).sessions.find((x) => x.date === date && x.status !== "skipped" && x.kind !== "easy_spin");
+  return predictFor(r, date, s ? { id: s.id, kind: s.kind } : null);
+}
+
+/**
+ * What happened on a predicted day, once the day is over. Null while it's still
+ * running or when the prediction had no session. "Completed" means the session
+ * is done and, for a zone goal, that day's minutes in the goal's zone reached
+ * the week's target for it. Every week carries one session per goal, so the
+ * week's target is that session's target.
+ */
+export function readinessOutcome(d: ViewData, p: ReadinessPrediction): ReadinessOutcome | null {
+  if (p.date >= d.today || !p.sessionId) return null;
+  const monday = mondayOf(p.date);
+  const session = resolveWeek(d, monday).sessions.find((s) => s.id === p.sessionId);
+  if (!session) return null;
+  const done = session.status === "done";
+  const goal = goalServedBy(session.kind);
+  if (!goal) return { date: p.date, done, goalMinutes: null, targetMin: null, completed: done };
+
+  const day = weeklyZoneRows(toActivityZones(d.rides.filter((r) => r.date === p.date)), monday, 1)[0];
+  const minutes =
+    goal === "endurance" ? (day?.enduranceSeconds ?? 0) / 60
+      : goal === "sweetSpot" ? (day?.ssSeconds ?? 0) / 60
+      : goal === "threshold" ? (day?.z4 ?? 0) / 60
+      : (day?.vo2Seconds ?? 0) / 60;
+  const target = stateFor(d, monday).current?.targets[goal];
+  if (target === undefined) return null; // goal wasn't judged that week: nothing to score against
+  return { date: p.date, done, goalMinutes: Math.round(minutes), targetMin: target, completed: done && minutes >= target };
 }
