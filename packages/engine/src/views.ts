@@ -1,6 +1,6 @@
 import { addDays, mondayOf, weekdayMon0 } from "./dates";
 import type { SessionKind, WeekPlan, PlannedSession } from "./calendar";
-import { fatigueOn, type WellnessRow } from "./fatigue";
+import { fatigueFor, type LoadRide, type LoadSettings, type WellnessRow } from "./fatigue";
 import { predictFor, readiness, type Readiness, type ReadinessOutcome, type ReadinessPrediction } from "./readiness";
 import { toActivityZones, type RideZones } from "./intervals";
 import {
@@ -90,7 +90,19 @@ export interface ViewData {
   /** Sessions marked done by hand. */
   manualDone?: readonly { sessionId: string }[];
   wellness?: readonly WellnessRow[];
+  /** Rides with power or HR for the own load calculation (both sources, deduplicated like `rides`). */
+  loadRides?: readonly LoadRide[];
+  /** FTP and threshold HR from intervals.icu. */
+  loadSettings?: LoadSettings | null;
   lastSyncedAt: string;
+}
+
+/** Own load when FTP is known, else intervals.icu wellness. See `fatigueFor`. */
+function currentFatigue(d: ViewData, date: Day) {
+  return fatigueFor(
+    { rides: d.loadRides ?? [], settings: d.loadSettings, wellness: d.wellness, programStart: d.program.startWeek },
+    date,
+  );
 }
 
 // ---- Labels and formatting ----
@@ -298,7 +310,8 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
     }
   }
 
-  const f = fatigueOn(d.wellness ?? [], date);
+  const fr = currentFatigue(d, date);
+  const f = fr?.fatigue ?? null;
   const todaySession = wk.sessions.find((s) => s.date === date && s.status !== "skipped") ?? null;
   const n = weeksBetween(d.program.startWeek, start) + 1;
 
@@ -310,7 +323,7 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
     today: todaySession,
     goals,
     offGoals,
-    fatigue: f ? { form: f.form, ramp: f.rampRate, load: null, note: null } : null,
+    fatigue: f ? { form: f.form, ramp: f.rampRate, load: null, note: fr?.note ?? null } : null,
     lastSyncedAt: d.lastSyncedAt,
   };
 }
@@ -542,7 +555,7 @@ export function goalView(d: ViewData, key: GoalKey, date: Day = d.today): GoalVi
 
 /** The reading for `date` and the prediction to log with it. Null when there is no reading. */
 export function readinessPrediction(d: ViewData, date: Day = d.today): ReadinessPrediction | null {
-  const r = readiness(fatigueOn(d.wellness ?? [], date), d.rides, date);
+  const r = readiness(currentFatigue(d, date)?.fatigue ?? null, d.rides, date);
   if (!r) return null;
   const s = resolveWeek(d, mondayOf(date)).sessions.find((x) => x.date === date && x.status !== "skipped" && x.kind !== "easy_spin");
   return predictFor(r, date, s ? { id: s.id, kind: s.kind } : null);

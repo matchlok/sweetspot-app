@@ -113,6 +113,8 @@ interface StravaActivity {
   start_date_local?: string;
   moving_time?: number;
   device_watts?: boolean;
+  weighted_average_watts?: number;
+  average_heartrate?: number;
 }
 
 /** Strava's shape in the engine's activity shape. Zones stay absent, so a Strava ride is `unknown`, never guessed. */
@@ -126,6 +128,8 @@ export function toActivity(a: StravaActivity): (IntervalsActivity & { name?: str
     start_date_local: a.start_date_local,
     moving_time: a.moving_time,
     ...(a.device_watts !== undefined ? { device_watts: a.device_watts } : {}),
+    ...(a.weighted_average_watts !== undefined ? { weighted_average_watts: a.weighted_average_watts } : {}),
+    ...(a.average_heartrate !== undefined ? { average_heartrate: a.average_heartrate } : {}),
   };
 }
 

@@ -10,6 +10,7 @@ import {
   denverToday,
   mapActivities,
   mapLifts,
+  mapLoadRides,
   RIDE_TYPES,
   mondayOf,
   readWeek,
@@ -121,14 +122,16 @@ export async function loadViewData(d: DataDeps, today?: string, horizon?: string
   const lastMonday = horizon && mondayOf(horizon) > nextMonday ? mondayOf(horizon) : nextMonday;
   const last = addDays(lastMonday, 6);
 
-  const [events, stored, goalRows, liftRows, manual, state, wellness] = await Promise.all([
+  const [events, stored, goalRows, liftRows, manual, state, wellness, loadSettings] = await Promise.all([
     d.sources.events(program.startWeek, last),
     d.repo.activities(program.startWeek, day),
     d.repo.goalChanges(),
     d.repo.liftTargets(),
     d.repo.manualDone(),
     d.repo.syncState(),
-    d.sources.wellness(addDays(day, -42), day).catch(() => []),
+    // From the day before the program starts: that row seeds the own load series.
+    d.sources.wellness(addDays(program.startWeek, -1), day).catch(() => []),
+    (d.sources.loadSettings?.() ?? Promise.resolve(null)).catch(() => null),
   ]);
 
   const plans: WeekPlan[] = mondays(program.startWeek, lastMonday).map((m) => readWeek(events, m));
@@ -148,6 +151,8 @@ export async function loadViewData(d: DataDeps, today?: string, horizon?: string
     lifts: mapLifts(raws),
     manualDone: manual,
     wellness,
+    loadRides: mapLoadRides(raws),
+    loadSettings,
     lastSyncedAt: (state.lastSyncedAt ?? now).toISOString(),
   };
 }
