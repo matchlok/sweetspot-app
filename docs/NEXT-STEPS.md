@@ -1,19 +1,18 @@
 # Next steps
 
-Updated 2026-11-21. The web shell is merged (all five v4 screens built), the passphrase is reset locally, and the local API and web run together. **Pick up here:**
+Updated 2026-11-21. The web shell is merged (all five v4 screens built). Strava is a second source on branch `strava-source` (pushed, not merged; PR when ready). **Pick up here:**
 
-0. **Strava second source: built, authorized and syncing (2026-11-21, branch `strava-source`, merge when ready).** Strava client ID and secret are set locally and in Vercel (Narjit, 2026-11-21); prod needs the branch merged and a redeploy. Routing is `ACTIVITY_SOURCES` in [routing.ts](../apps/api/src/routing.ts): default intervals.icu everything, Strava `WeightTraining` only. Local `.env.local` also lets Strava supply `VirtualRide`, so Zwift rides show in the app now.
-0a. ~~Retry Strava network errors.~~ Done 2026-11-21 (uncommitted, awaiting review): `fetchWithRetry` in `strava.ts`, 3 attempts, 500 ms doubling backoff, network errors and 429/5xx only, tested (39 API tests).
-0b. ~~Zwift rides from Strava with computed zones.~~ Done 2026-11-21 (uncommitted, awaiting review): `VirtualRide` is in the default Strava route; `packages/engine/src/powerzones.ts` computes zones and sweet spot from the power stream, sync stores them once per ride. Golden check on the 2026-11-13 ride passed (zones within 6 s, SS within 1 s; `apps/api/src/zonecheck.ts`). Live: Nov 11 Zwift = endurance, Nov 20 = sweet spot. Method and the 84 to 97 band finding are in "Data flow" item 1 and 2 below.
-0c. **Own load and fatigue, before the readiness pill:** per-ride load, CTL, ATL, Form and ramp computed from rides in both sources, checked against intervals.icu where both exist.
-0d. **Strength tags, category matching by week, auto-reshuffle** (decided 2026-11-21, below). Build order: tags and the Strength bar, then matching, then reshuffle. Fold into item 1.
-1. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves. Start on a new branch.
-2. **Readiness pill:** Form, ramp rate and recent hard days, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
-3. **Fix prod `/api/home`:** it logs `Google Calendar events -> HTTP 404` (2026-11-20, Vercel logs). Login works in prod. Suspect `GOOGLE_CALENDAR_ID` or `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel's Production env (secrets can't be read back, so re-set them from `.env.local`, JSON without the single quotes, then `vercel redeploy`). Also confirm `APP_PASSPHRASE_HASH` in Vercel matches the reset local hash.
-4. **Local live check:** the local app loaded and ran (2026-11-21). Still to do: go through each screen against real data and confirm the date shows Denver today. Apply only on a session you mean to change.
-5. **Small fix:** Home and the other screens sit on "Loading…" forever if the API is unreachable. Show an error instead.
-6. Dev note: if the app says "Loading…" locally, make sure both servers were started fresh. A stale Vite process returned the HTML page for `/api/*` calls.
-7. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
+1. **Merge `strava-source`** (open the PR, then redeploy; Strava client ID and secret are already in Vercel). After the redeploy, check prod `/api/sync` stores the Zwift rides with zones.
+2. **Own load and fatigue (was 0c), next to build.** Per-ride load, CTL (42-day), ATL (7-day), Form (CTL minus ATL) and weekly ramp, computed from rides in both sources. Use Strava `weighted_average_watts` and intervals.icu FTP for rides with power, an HR-based estimate for HR-only rides, and `unknown` for neither. Validate against intervals.icu on Garmin-only weeks (the Nov 11 and Nov 20 Zwift rides are why intervals.icu undercounts). Put it in `packages/engine/src/fatigue.ts` beside the existing wellness-based version, with tests. Start on a new branch off `main` once `strava-source` is merged. Spec: "Data flow, revised 2026-11-21", item 3, below.
+3. **Strength tags, category matching by week, auto-reshuffle** (decided 2026-11-21, below). Build order: tags and the Strength bar, then matching, then reshuffle. Fold into item 4.
+4. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves.
+5. **Readiness pill:** Form, ramp rate and recent hard days from item 2, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
+6. **Local live check:** go through each screen against real data and confirm the date shows Denver today. Apply only on a session you mean to change. Include the Zwift rides now that they have zones.
+7. **Small fix:** Home and the other screens sit on "Loading…" forever if the API is unreachable. Show an error instead.
+8. Dev note: if the app says "Loading…" locally, make sure both servers were started fresh. A stale Vite process returned the HTML page for `/api/*` calls.
+9. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
+
+Done this session (2026-11-21): Strava retry with backoff; Zwift zones and sweet spot computed from Strava power streams (golden check passed; `VirtualRide` routes from Strava by default); prod `/api/home` Google Calendar 404 fixed (Narjit).
 
 Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
