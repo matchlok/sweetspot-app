@@ -10,14 +10,14 @@ const s = (
 ): PlannedSession => ({ id, date, kind, title: id, minutes: null, status, kindSource: "title" });
 
 describe("plannedGoals", () => {
-  it("lists goals with a live session and ignores skips, lifts and easy spins", () => {
+  it("lists goals the plan has a session for, skipped ones included, and ignores lifts and easy spins", () => {
     const g = plannedGoals([
       s("a", "2026-11-10", "vo2"),
       s("b", "2026-11-11", "sweet_spot", "skipped"),
       s("c", "2026-11-12", "lift_upper"),
       s("d", "2026-11-13", "easy_spin"),
     ]);
-    expect([...g]).toEqual(["vo2"]);
+    expect([...g].sort()).toEqual(["sweetSpot", "vo2"]); // a skip stays planned, so it is judged and missed
   });
 });
 

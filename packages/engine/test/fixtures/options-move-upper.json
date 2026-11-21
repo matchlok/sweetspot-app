@@ -10,7 +10,7 @@
   },
   "sessionId": "w2-upper",
   "action": "move",
-  "planVersion": "9eafc354",
+  "planVersion": "dabcf613",
   "options": [
     {
       "id": "move:2026-11-10",
@@ -193,6 +193,10 @@
         {
           "text": "Upper lift moves to Sunday.",
           "tone": "plain"
+        },
+        {
+          "text": "Lift and quality ride on one day.",
+          "tone": "warn"
         }
       ],
       "alsoMoves": [],
@@ -216,7 +220,7 @@
         },
         {
           "rule": "lift_with_quality",
-          "result": "pass"
+          "result": "warn"
         }
       ]
     }

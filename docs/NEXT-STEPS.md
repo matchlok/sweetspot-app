@@ -1,18 +1,15 @@
 # Next steps
 
-Updated 2026-11-21. The web shell is merged (all five v4 screens built). Strava is a second source on branch `strava-source` (pushed, not merged; PR when ready). **Pick up here:**
+Updated 2026-11-21. The web shell, Strava as a second source, the 2026-11-20 engine rules, the readiness pill, Week/Month, pull to refresh, error states and the PWA manifest are all on `main` (PR #11 and the web-shell rework merge). **Pick up here:**
 
-1. **Merge `strava-source`** (open the PR, then redeploy; Strava client ID and secret are already in Vercel). After the redeploy, check prod `/api/sync` stores the Zwift rides with zones.
-2. **Own load and fatigue (was 0c), next to build.** Per-ride load, CTL (42-day), ATL (7-day), Form (CTL minus ATL) and weekly ramp, computed from rides in both sources. Use Strava `weighted_average_watts` and intervals.icu FTP for rides with power, an HR-based estimate for HR-only rides, and `unknown` for neither. Validate against intervals.icu on Garmin-only weeks (the Nov 11 and Nov 20 Zwift rides are why intervals.icu undercounts). Put it in `packages/engine/src/fatigue.ts` beside the existing wellness-based version, with tests. Start on a new branch off `main` once `strava-source` is merged. Spec: "Data flow, revised 2026-11-21", item 3, below.
-3. **Strength tags, category matching by week, auto-reshuffle** (decided 2026-11-21, below). Build order: tags and the Strength bar, then matching, then reshuffle. Fold into item 4.
-4. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves.
-5. **Readiness pill:** Form, ramp rate and recent hard days from item 2, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
-6. **Local live check:** go through each screen against real data and confirm the date shows Denver today. Apply only on a session you mean to change. Include the Zwift rides now that they have zones.
-7. **Small fix:** Home and the other screens sit on "Loading…" forever if the API is unreachable. Show an error instead.
-8. Dev note: if the app says "Loading…" locally, make sure both servers were started fresh. A stale Vite process returned the HTML page for `/api/*` calls.
-9. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
-
-Done this session (2026-11-21): Strava retry with backoff; Zwift zones and sweet spot computed from Strava power streams (golden check passed; `VirtualRide` routes from Strava by default); prod `/api/home` Google Calendar 404 fixed (Narjit).
+1. **Own load and fatigue (was 0c).** Engine half built (`rideLoad`, `ownFatigueOn` in `fatigue.ts`, with tests). Still to do: carry Strava `weighted_average_watts` and `average_heartrate`, plus intervals.icu FTP and threshold HR, into `LoadRide`; validate against intervals.icu on Garmin-only weeks (the Nov 11 and Nov 20 Zwift rides are why intervals.icu undercounts); then switch Home Form and the readiness pill from the wellness-based `fatigueOn` to it. Spec: "Data flow, revised 2026-11-21", item 3, below.
+2. **Strength tags, activity-driven category matching, auto-reshuffle** (decided 2026-11-21, below; not built). Build on the merged engine: `readWeek`/`crossWeekOptions` in `calendar.ts` and `options.ts` already handle skips as misses and cross-week moves, so matching and the reshuffle must go through them, not around them. Order: tags and the Strength bar, then matching, then reshuffle.
+3. **Cross-week move, live check.** Try one on a throwaway series before applying anything real: the unit tests fake Google, and the logic relies on Google keeping `originalStartTime` on a moved instance. Date this note once checked.
+4. **"What changed?" with Claude** (`POST /api/replan`, the four chips on Programming: Cooked, Short on time, Extra time, Something else). Not built. It spends on the Anthropic API, so it waits for a yes. Needs `ANTHROPIC_API_KEY`, a prompt version, and the rule gate on every proposal. Log each proposal with its inputs and a prediction.
+5. **Local live check.** Go through each screen against real data (Week/Month toggle, week arrows, pull to refresh, the readiness tap, Zwift rides), and confirm the date shows Denver today.
+6. **Readiness record.** Each day's first Home read logs a `readiness_reading` decision and the next sync scores it as `readiness_scored`. After a few weeks, adjust the provisional thresholds in `packages/engine/src/readiness.ts` (bump `READINESS_VERSION`).
+7. **Lower priority:** web push for the 6:05 am message, post-ride feedback, performance predictions, the "Sweetspot Ops" view. No service worker on purpose: nothing offline-cached for an authenticated API.
+8. Dev note: if the app says "Loading…" locally, start both servers fresh; a stale Vite process returned HTML for `/api/*`.
 
 Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
@@ -52,7 +49,7 @@ The API between the app and the engine is in [plans/API.md](plans/API.md): endpo
 6. **Lift counts above 1:** follows rule 4. No extra tracking for overflow.
 7. **Readiness pill:** build it now with provisional thresholds from Form, ramp rate and recent hard days, show the inputs on tap, log each reading with a prediction, and score it.
 
-Engine and API changes these imply are not done yet.
+Built 2026-11-21: a skip (or a session moved out of its week) stays planned and is judged, so it is a miss; moves into the following week replace that week's session of the same kind (`readWeek`, `crossWeekOptions`); the fixtures now carry all three sessions every week; the readiness pill and its log are in. Recovery weeks were already volume-only (the factor scales every target, same workouts), so that rule needed no engine change.
 
 ## Decided 2026-11-21 (Narjit)
 
@@ -134,7 +131,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 
 ## Housekeeping
 
-- Stop the POC server (port 5174) if it is still running.
+- `apps/poc-web` is deleted (2026-11-21).
 
 ## Findings to keep in mind
 

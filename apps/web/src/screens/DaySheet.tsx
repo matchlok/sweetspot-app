@@ -1,8 +1,11 @@
 import type { DayOptionsView } from "@sweetspot/engine";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 
 type Action = "move" | "swap" | "skip";
+
+/** Pulled this far down, the sheet closes on release. */
+const CLOSE_DRAG_PX = 90;
 
 function longDate(date: string) {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
@@ -15,6 +18,15 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
   const [pick, setPick] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dy, setDy] = useState(0);
+  const drag = useRef<{ y: number; id: number } | null>(null);
+
+  // Escape closes, like the scrim.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   useEffect(() => {
     setData(null);
@@ -53,9 +65,39 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
 
   return (
     <>
-      <div className="scrim" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-label="Session options">
-        <div className="grab" />
+      <div className="scrim" onClick={onClose} style={{ opacity: Math.max(0.2, 1 - dy / 400) }} />
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Session options"
+        style={{ transform: dy ? `translateY(${dy}px)` : undefined, transition: drag.current ? "none" : "transform .18s ease-out" }}
+      >
+        {/* Drag the handle down to close. A short drag snaps back. */}
+        <div
+          className="grabzone"
+          data-testid="sheet-handle"
+          onPointerDown={(e) => {
+            drag.current = { y: e.clientY, id: e.pointerId };
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (drag.current) setDy(Math.max(0, e.clientY - drag.current.y));
+          }}
+          onPointerUp={(e) => {
+            if (!drag.current) return;
+            const moved = Math.max(0, e.clientY - drag.current.y);
+            drag.current = null;
+            if (moved > CLOSE_DRAG_PX) onClose();
+            else setDy(0);
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+            setDy(0);
+          }}
+        >
+          <div className="grab" />
+        </div>
         {data ? (
           <>
             <div>

@@ -34,13 +34,11 @@ describe("v4 scenario: the story the screens share", () => {
     expect(home.today?.kind).toBe("vo2");
     expect(home.isRecoveryWeek).toBe(false);
   });
-  it("shows VO2 at 8 and endurance at 90, with no invented minutes", () => {
-    expect(home.goals.find((g) => g.key === "vo2")).toMatchObject({ actual: 0, target: 8, hit: false });
+  it("tracks endurance, sweet spot and VO2 every week, stepped up after week 1's hits", () => {
+    expect(home.goals.find((g) => g.key === "vo2")).toMatchObject({ actual: 0, target: 9, hit: false });
+    expect(home.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ actual: 0, target: 22, hit: false });
     expect(home.goals.find((g) => g.key === "endurance")).toMatchObject({ actual: 0, target: 90 });
-  });
-  it("leaves sweet spot off this week, back Nov 17 at 22 min", () => {
-    expect(home.goals.some((g) => g.key === "sweetSpot")).toBe(false);
-    expect(home.offGoals).toEqual([{ key: "sweetSpot", label: "Sweet spot", text: "Not planned this week. Back Nov 17 at 22 min." }]);
+    expect(home.offGoals).toEqual([]);
   });
   it("nudges the unlogged Monday lift", () => {
     const upper = home.goals.find((g) => g.key === "upper")!;
@@ -48,16 +46,16 @@ describe("v4 scenario: the story the screens share", () => {
     expect(upper.nudge?.sessionId).toBe("w2-upper");
     expect(upper.nudge?.text.startsWith("Still open from Monday.")).toBe(true);
   });
-  it("reads fatigue from wellness and leaves load and readiness empty", () => {
+  it("reads fatigue from wellness and shows a green readiness pill", () => {
     expect(home.fatigue).toEqual({ form: -5, ramp: 3.2, load: null, note: null });
-    expect(home.readiness).toBeNull();
+    expect(home.readiness).toMatchObject({ light: "green", label: "Ready" });
   });
   it("week view marks Monday not logged and notes next week", () => {
     const w = weekView(D);
     expect(w.label).toBe("Nov 9 to 15");
     expect(w.days[0]!.sessions[0]!.status).toBe("not_logged");
     expect(w.days[1]!.isToday).toBe(true);
-    expect(w.nextWeekNote).toBe("Sweet spot returns Tuesday at 22 min. VO2 sits out.");
+    expect(w.nextWeekNote).toBeNull();
   });
   it("program shows sweet spot at 22 and the recovery streak", () => {
     const p = programView(D);
@@ -98,22 +96,46 @@ describe("state changes flow through", () => {
 });
 
 describe("goal preview", () => {
-  it("lists planned sweet-spot weeks starting Nov 17 at 22", () => {
+  it("lists planned sweet-spot weeks, starting with this week's Sunday session at 22", () => {
     const p = goalView(D, "sweetSpot").preview;
-    expect(p[0]).toEqual({ date: "2026-11-17", target: 22, isRecovery: false });
+    expect(p[0]).toEqual({ date: "2026-11-15", target: 22, isRecovery: false });
+    expect(p[1]).toEqual({ date: "2026-11-17", target: 24, isRecovery: false });
     expect(p.length).toBeGreaterThan(1);
   });
   it("redraws for a draft without saving", () => {
     const p = goalPreview(D, "sweetSpot", { mode: "progress", target: 30, stepMin: 4 });
     expect(p[0]!.target).toBe(30);
-    // Week 3 is the third hit week in a row, so week 4 is a recovery week at 60% of the stepped-up 34.
-    expect(p[1]).toMatchObject({ target: 20, isRecovery: true });
-    expect(p[2]!.target).toBe(34);
+    // Week 3 is the third hit week in a row, so week 4 is a recovery week at 60% of the stepped-up 38.
+    expect(p[1]).toMatchObject({ target: 34, isRecovery: false });
+    expect(p[2]).toMatchObject({ target: 23, isRecovery: true });
   });
   it("hold stays flat and off is empty", () => {
     const hold = goalPreview(D, "sweetSpot", { mode: "hold", target: 25, stepMin: 0 });
     expect(new Set(hold.filter((x) => !x.isRecovery).map((x) => x.target))).toEqual(new Set([25]));
     expect(hold.filter((x) => x.isRecovery).every((x) => x.target === 15)).toBe(true);
     expect(goalPreview(D, "sweetSpot", { mode: "off", target: 25, stepMin: 0 })).toEqual([]);
+  });
+});
+
+describe("month view", () => {
+  it("covers the month in Monday-start weeks with the plan's sessions", async () => {
+    const { monthView } = await import("../src/views");
+    const m = monthView(D);
+    expect(m).toMatchObject({ month: "2026-11", label: "November 2026", start: "2026-10-26" });
+    expect(m.weeks.map((w) => w.start)).toEqual(["2026-10-26", "2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23", "2026-11-30"]);
+    const nov10 = m.weeks[2]!.days[1]!;
+    expect(nov10).toMatchObject({ date: "2026-11-10", isToday: true, inMonth: true });
+    expect(nov10.sessions.map((s) => s.kind)).toEqual(["vo2"]);
+    // The last row spills into December and has no plan data yet.
+    const tail = m.weeks[5]!.days;
+    expect(tail[0]!.inMonth).toBe(true); // Nov 30
+    expect(tail[1]!.inMonth).toBe(false);
+    expect(tail.every((x) => x.sessions.length === 0)).toBe(true);
+  });
+  it("starts a month that opens midweek on that week's Monday", async () => {
+    const { monthView } = await import("../src/views");
+    const m = monthView(D, "2026-10-15");
+    expect(m.start).toBe("2026-09-28");
+    expect(m.weeks[0]!.days.slice(0, 3).every((x) => !x.inMonth)).toBe(true);
   });
 });

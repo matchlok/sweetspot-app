@@ -1,6 +1,8 @@
 import type { GoalKey, ProgramView } from "@sweetspot/engine";
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { Status } from "../Status";
+import { useLoad } from "../useLoad";
 
 function Chevron() {
   return (
@@ -24,15 +26,14 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
 }
 
 export function Programming({ onOpenGoal, onLogout }: { onOpenGoal: (key: GoalKey) => void; onLogout: () => void }) {
+  const load = useLoad(() => api.program());
   const [p, setP] = useState<ProgramView | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
   useEffect(() => {
-    api.program().then(setP, (e) => setErr(e.message));
-  }, []);
+    if (load.data) setP(load.data);
+  }, [load.data]);
 
-  if (err) return <div className="card err" role="alert">{err}</div>;
-  if (!p) return <div className="muted">Loading…</div>;
+  if (!p) return <Status load={load} />;
 
   const setLift = async (which: "upper" | "lower", n: number) => {
     const prev = p.lifts;
