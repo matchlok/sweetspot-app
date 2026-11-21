@@ -1,13 +1,11 @@
 import { addDays, mondayOf, weekdayMon0 } from "./dates";
 import type { SessionKind, WeekPlan, PlannedSession } from "./calendar";
+import { weekStrength, type WeekLift, type WeekStrength } from "./strength";
 import { fatigueFor, type LoadRide, type LoadSettings, type WellnessRow } from "./fatigue";
 import { predictFor, readiness, type Readiness, type ReadinessOutcome, type ReadinessPrediction } from "./readiness";
 import { toActivityZones, type RideZones } from "./intervals";
 import {
-  LIFT_KEYS,
   goalServedBy,
-  liftCounts,
-  matchLifts,
   plannedGoals,
   sessionStatus,
   type LiftActivity,
@@ -66,6 +64,20 @@ export interface GoalBar {
   nudge?: { text: string; date: Day; sessionId: string };
 }
 
+/** The one Strength bar: every strength activity counts once, tagged upper or lower when known. */
+export interface StrengthBar {
+  label: string;
+  actual: number;
+  target: number;
+  hit: boolean;
+  upper: { actual: number; target: number };
+  lower: { actual: number; target: number };
+  /** This week's strength activities. Untagged ones show "tag it". */
+  lifts: Array<Pick<WeekLift, "id" | "date" | "tag" | "tagSource">>;
+  untagged: number;
+  nudge?: { text: string; date: Day; sessionId: string };
+}
+
 export interface OffGoal {
   key: GoalKey;
   label: string;
@@ -83,6 +95,8 @@ export interface ViewData {
   changes?: readonly GoalChange[];
   /** Lift sessions per week, 0 to 7 each. Defaults to 1 and 1. Not dated yet: one setting applies to every week. */
   liftTargets?: Record<LiftKey, number>;
+  /** Upper or lower tags set by tapping, keyed by strength activity id. */
+  liftTags?: Readonly<Record<string, LiftKey>>;
   /** Plans read from the calendar. A week missing here counts as everything planned for goals, and has no sessions. */
   plans: readonly WeekPlan[];
   rides: readonly RideZones[];
@@ -119,7 +133,6 @@ const GOAL_DEFINITION: Record<GoalKey, string> = {
   threshold: "Time in Z4",
   vo2: "Time in Z5",
 };
-const LIFT_LABEL: Record<LiftKey, string> = { upper: "Upper lift", lower: "Lower lift" };
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const dayName = (d: Day) => DAYS[weekdayMon0(d)]!;
@@ -181,8 +194,10 @@ interface ResolvedWeek {
   sessions: Session[];
   weekSessions: WeekSession[];
   plan: WeekPlan | undefined;
-  /** Lift sessions done per type this week, from recordings and manual marks. */
-  liftsDone: Record<LiftKey, number>;
+  /** Strength activities this week with their tags. */
+  strength: WeekStrength;
+  /** Planned lift sessions marked done by hand with no activity behind them. */
+  manualLifts: Record<LiftKey, number>;
 }
 
 function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
@@ -195,10 +210,17 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   const now = d.now ?? new Date(`${d.today}T19:00:00Z`);
   const planned: PlannedSession[] = plan?.sessions ?? [];
 
+  const weekLifts = d.lifts.filter((l) => l.date >= weekStart && l.date <= addDays(weekStart, 6));
+  const strength = weekStrength(planned, weekLifts, new Map(Object.entries(d.liftTags ?? {})));
+  const settled = new Set(strength.lifts.flatMap((l) => (l.sessionId ? [l.sessionId] : [])));
+
   const sessions: Session[] = planned.map((p) => {
     let status: SessionStatus = sessionStatus(p, logged, now);
     let doneSource: Session["doneSource"];
-    if (p.status !== "skipped" && manual.has(p.id)) {
+    if (p.status !== "skipped" && settled.has(p.id) && status !== "done") {
+      status = "done";
+      doneSource = "intervals";
+    } else if (p.status !== "skipped" && manual.has(p.id)) {
       status = "done";
       doneSource = "manual";
     } else if (status === "done") {
@@ -211,13 +233,10 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
     return s;
   });
 
-  const match = matchLifts(planned, d.lifts.filter((l) => l.date >= weekStart && l.date <= addDays(weekStart, 6)));
-  const counted = liftCounts(match, { upper: 7, lower: 7 });
-  const matchedSessions = new Set([...match.matched.values()].map((m) => m.sessionId));
-  const liftsDone: Record<LiftKey, number> = { upper: counted.upper.actual, lower: counted.lower.actual };
+  const manualLifts: Record<LiftKey, number> = { upper: 0, lower: 0 };
   for (const p of planned) {
     const k = liftOf(p.kind);
-    if (k && p.status !== "skipped" && manual.has(p.id) && !matchedSessions.has(p.id)) liftsDone[k] += 1;
+    if (k && p.status !== "skipped" && manual.has(p.id) && !settled.has(p.id)) manualLifts[k] += 1;
   }
 
   return {
@@ -233,7 +252,8 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
       ...(s.movedFrom ? { movedIn: true } : {}),
     })),
     plan,
-    liftsDone,
+    strength,
+    manualLifts,
   };
 }
 
@@ -247,6 +267,8 @@ export interface HomeView {
   readiness: Readiness | null;
   today: Session | null;
   goals: GoalBar[];
+  /** Null when both lift targets are 0. */
+  strength: StrengthBar | null;
   offGoals: OffGoal[];
   fatigue: null | { form: number; ramp: number | null; load: number | null; note: string | null };
   lastSyncedAt: string;
@@ -270,13 +292,27 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
   }
 
   const liftTargets = d.liftTargets ?? { upper: 1, lower: 1 };
-  for (const k of LIFT_KEYS) {
-    const target = Math.min(7, Math.max(0, Math.round(liftTargets[k])));
-    if (target === 0) continue;
-    const actual = wk.liftsDone[k];
-    const bar: GoalBar = { key: k, label: LIFT_LABEL[k], unit: "sessions", actual, target, hit: actual >= target };
-    if (!bar.hit) {
-      const open = wk.sessions.find((s) => liftOf(s.kind) === k && s.status === "not_logged");
+  const tgt = (k: LiftKey) => Math.min(7, Math.max(0, Math.round(liftTargets[k])));
+  let strength: StrengthBar | null = null;
+  if (tgt("upper") + tgt("lower") > 0) {
+    const up = wk.strength.upper + wk.manualLifts.upper;
+    const lo = wk.strength.lower + wk.manualLifts.lower;
+    const total = wk.strength.total + wk.manualLifts.upper + wk.manualLifts.lower;
+    const target = tgt("upper") + tgt("lower");
+    strength = {
+      label: "Strength",
+      actual: total,
+      target,
+      hit: total >= target,
+      upper: { actual: up, target: tgt("upper") },
+      lower: { actual: lo, target: tgt("lower") },
+      lifts: wk.strength.lifts.map(({ id, date, tag, tagSource }) => ({ id, date, tag, tagSource })),
+      untagged: wk.strength.untagged,
+    };
+    if (!strength.hit) {
+      // Prefer a type whose own target is still unmet.
+      const short = (k: LiftKey) => (k === "upper" ? up < tgt("upper") : lo < tgt("lower"));
+      const open = wk.sessions.find((s) => { const k = liftOf(s.kind); return k && short(k) && s.status === "not_logged"; });
       if (open) {
         const fits = dayOptions({ sessions: wk.weekSessions, sessionId: open.id, action: "move", today: d.today }).options
           // Days with no warning first, so the nudge doesn't suggest putting a lift on a quality day.
@@ -285,7 +321,7 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
           .slice(0, 2)
           .sort();
         if (fits.length > 0) {
-          bar.nudge = {
+          strength.nudge = {
             text: `Still open from ${dayName(open.date)}. ${fits.map(dayAbbr).join(" or ")} fits.`,
             date: fits[0]!,
             sessionId: open.id,
@@ -293,7 +329,6 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
         }
       }
     }
-    goals.push(bar);
   }
 
   const offGoals: OffGoal[] = [];
@@ -322,6 +357,7 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
     readiness: readiness(f, d.rides, date),
     today: todaySession,
     goals,
+    strength,
     offGoals,
     fatigue: f ? { form: f.form, ramp: f.rampRate, load: null, note: fr?.note ?? null } : null,
     lastSyncedAt: d.lastSyncedAt,

@@ -1,4 +1,4 @@
-import type { GoalBar, HomeView } from "@sweetspot/engine";
+import type { GoalBar, HomeView, StrengthBar } from "@sweetspot/engine";
 import { useState } from "react";
 import { api } from "../api";
 import { Status } from "../Status";
@@ -61,6 +61,59 @@ function Bar({ g, onOpen }: { g: GoalBar; onOpen: (id: string) => void }) {
   );
 }
 
+/** One Strength bar: every strength activity counts, and a tag puts it under Upper or Lower. */
+function Strength({ s, onOpen, onTag, busy }: { s: StrengthBar; onOpen: (id: string) => void; onTag: (id: string, tag: "upper" | "lower" | null) => void; busy: boolean }) {
+  const pct = s.target > 0 ? Math.min(100, (s.actual / s.target) * 100) : 0;
+  const chip = (on: boolean): React.CSSProperties => ({
+    minHeight: 44, minWidth: 72, padding: "0 14px", borderRadius: 12, font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer",
+    border: `1px solid ${on ? "var(--accent)" : "var(--card-line)"}`, background: on ? "var(--accent)" : "#0f1116", color: on ? "#0b0c10" : "var(--text-2)",
+  });
+  return (
+    <div className="g">
+      <div className="row">
+        <span className="n">{s.label}</span>
+        <span className="f">
+          {s.actual} <span>/{s.target}</span>
+        </span>
+      </div>
+      <div className="track" role="progressbar" aria-valuenow={s.actual} aria-valuemax={s.target} aria-label={s.label}>
+        <div className="fill" style={{ width: `${pct}%`, background: "var(--lift)" }} />
+      </div>
+      <div className="m" style={{ marginTop: 6 }}>
+        Upper {s.upper.actual}/{s.upper.target} · Lower {s.lower.actual}/{s.lower.target}
+        {s.untagged > 0 ? ` · ${s.untagged} to tag` : ""}
+      </div>
+      {s.lifts.map((l) => (
+        <div key={l.id} style={{ marginTop: 10 }}>
+          <div className="m" style={{ marginBottom: 6 }}>
+            {dayParts(l.date).weekday} {dayParts(l.date).short}
+            {l.tag ? "" : " · tag it"}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["upper", "lower"] as const).map((k) => (
+              <button
+                key={k}
+                style={chip(l.tag === k)}
+                disabled={busy}
+                aria-pressed={l.tag === k}
+                onClick={() => onTag(l.id, l.tag === k ? null : k)}
+              >
+                {k === "upper" ? "Upper" : "Lower"}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      {s.nudge && (
+        <button className="nudge" onClick={() => onOpen(s.nudge!.sessionId)}>
+          <span>{s.nudge.text}</span>
+          <Chevron />
+        </button>
+      )}
+    </div>
+  );
+}
+
 const LIGHT_COLOR = { green: "#5fd0a4", yellow: "#e0b25c", red: "#ee7480" };
 
 /** What the pill was judged on. Provisional thresholds, and the page says so. */
@@ -106,8 +159,19 @@ function Stat({ value, name, sub }: { value: string; name: string; sub: string }
 export function Home({ onOpen }: { onOpen: (sessionId: string) => void }) {
   const load = useLoad(() => api.home());
   const [why, setWhy] = useState(false);
+  const [tagging, setTagging] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
   const v = load.data;
   if (!v) return <Status load={load} />;
+
+  const onTag = (id: string, tag: "upper" | "lower" | null) => {
+    setTagging(true);
+    setTagError(null);
+    api.tagLift(id, tag).then(
+      () => { setTagging(false); load.reload(); },
+      (e: unknown) => { setTagging(false); setTagError(e instanceof Error ? e.message : "Couldn't save the tag."); },
+    );
+  };
 
   const { weekday, short } = dayParts(v.date);
   const p = v.readiness ? PILL[v.readiness.light] : null;
@@ -155,6 +219,8 @@ export function Home({ onOpen }: { onOpen: (sessionId: string) => void }) {
       <div className="card">
         <div className="lbl">This week</div>
         {v.goals.map((g) => <Bar key={g.key} g={g} onOpen={onOpen} />)}
+        {v.strength && <Strength s={v.strength} onOpen={onOpen} onTag={onTag} busy={tagging} />}
+        {tagError && <div className="m" role="alert" style={{ marginTop: 8, color: "#f4a4ac" }}>{tagError}</div>}
         {v.offGoals.map((o, i) => (
           <div key={o.key} className="g" style={i === 0 ? { borderTop: "1px solid var(--track)", paddingTop: 12 } : undefined}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)" }}>{o.label}</div>

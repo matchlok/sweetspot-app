@@ -1,5 +1,5 @@
 import { zonesFromPowerStream, type CalendarEvent, type ComputedPowerZones, type IntervalsActivity, type LoadSettings, type PowerSettings, type WellnessRow } from "@sweetspot/engine";
-import { fetchPowerStream, fetchStravaActivities, type StravaConfig } from "./strava";
+import { fetchActivityNote, fetchPowerStream, fetchStravaActivities, type StravaConfig } from "./strava";
 import { fetchEvents, patchEvent, type EventPatch, type GoogleConfig } from "./google";
 
 /** Everything fetched from outside. Routes take this interface so tests can fake it. */
@@ -16,6 +16,8 @@ export interface Sources {
    * Null when the ride has no power stream (so it stays `unknown`). Absent when Strava isn't configured.
    */
   stravaPowerZones?(stravaId: string): Promise<ComputedPowerZones | null>;
+  /** A Strava strength activity's description and private note, for upper or lower tags. */
+  stravaNote?(stravaId: string): Promise<{ description: string | null; private_note: string | null }>;
   /** Patch one calendar instance (a move or a skip). Never the series. */
   patchEvent(instanceId: string, patch: EventPatch): Promise<void>;
 }
@@ -68,6 +70,7 @@ export function liveSources(google: GoogleConfig, intervals: IntervalsCreds, str
     ...(strava
       ? {
           stravaActivities: (o: string, n: string) => fetchStravaActivities(strava, o, n),
+          stravaNote: (id: string) => fetchActivityNote(strava, id),
           stravaPowerZones: async (id: string) => {
             const stream = await fetchPowerStream(strava, id);
             return stream ? (zonesFromPowerStream(stream, await fetchPowerSettings(intervals)) ?? null) : null;

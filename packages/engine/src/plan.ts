@@ -38,6 +38,8 @@ export interface LiftActivity {
   id: string;
   date: string;
   movingSeconds: number;
+  /** Title, description and Strava private note, for reading an upper or lower tag. */
+  text?: string;
 }
 
 /** WeightTraining activities as local dates. Stub rows and bad dates are dropped. */
@@ -47,7 +49,8 @@ export function mapLifts(raw: readonly IntervalsActivity[]): LiftActivity[] {
     if (a.type !== "WeightTraining" || a._note) continue;
     const date = a.start_date_local?.slice(0, 10);
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    out.push({ id: String(a.id ?? `${date}-${a.moving_time ?? 0}`), date, movingSeconds: a.moving_time ?? 0 });
+    const text = [a.name, a.description, a.private_note].filter((x): x is string => typeof x === "string" && x.length > 0).join(" ");
+    out.push({ id: String(a.id ?? `${date}-${a.moving_time ?? 0}`), date, movingSeconds: a.moving_time ?? 0, ...(text ? { text } : {}) });
   }
   return out;
 }

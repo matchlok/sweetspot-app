@@ -34,6 +34,10 @@ export interface IntervalsActivity {
   /** Normalized power in watts: intervals.icu's name for it. */
   icu_weighted_avg_watts?: number | null;
   average_heartrate?: number | null;
+  /** Strava title, description and private note: read for upper or lower lift tags. */
+  name?: string;
+  description?: string | null;
+  private_note?: string | null;
 }
 
 export const RIDE_TYPES = new Set([

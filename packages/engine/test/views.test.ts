@@ -41,10 +41,10 @@ describe("v4 scenario: the story the screens share", () => {
     expect(home.offGoals).toEqual([]);
   });
   it("nudges the unlogged Monday lift", () => {
-    const upper = home.goals.find((g) => g.key === "upper")!;
-    expect(upper).toMatchObject({ actual: 0, target: 1, hit: false });
-    expect(upper.nudge?.sessionId).toBe("w2-upper");
-    expect(upper.nudge?.text.startsWith("Still open from Monday.")).toBe(true);
+    const s = home.strength!;
+    expect(s).toMatchObject({ actual: 0, target: 2, hit: false, upper: { actual: 0, target: 1 }, lower: { actual: 0, target: 1 } });
+    expect(s.nudge?.sessionId).toBe("w2-upper");
+    expect(s.nudge?.text.startsWith("Still open from Monday.")).toBe(true);
   });
   it("reads fatigue from wellness and shows a green readiness pill", () => {
     expect(home.fatigue).toEqual({ form: -5, ramp: 3.2, load: null, note: null });
@@ -68,18 +68,23 @@ describe("v4 scenario: the story the screens share", () => {
 describe("state changes flow through", () => {
   it("a manual mark counts the lift and clears the nudge", () => {
     const data = { ...D, manualDone: [{ sessionId: "w2-upper" }] };
-    const upper = homeView(data).goals.find((g) => g.key === "upper")!;
-    expect(upper).toMatchObject({ actual: 1, hit: true });
-    expect(upper.nudge).toBeUndefined();
+    const s = homeView(data).strength!;
+    expect(s).toMatchObject({ actual: 1, upper: { actual: 1, target: 1 } });
+    expect(s.nudge?.sessionId).not.toBe("w2-upper");
     expect(weekView(data).days[0]!.sessions[0]).toMatchObject({ status: "done", doneSource: "manual" });
   });
   it("a recorded lift matches the planned lift that day", () => {
     const home = homeView({ ...D, lifts: [{ id: "l1", date: "2026-11-09", movingSeconds: 2400 }] });
-    expect(home.goals.find((g) => g.key === "upper")).toMatchObject({ actual: 1, hit: true });
+    expect(home.strength).toMatchObject({ actual: 1, upper: { actual: 1 }, untagged: 0 });
+    expect(home.strength!.lifts[0]).toMatchObject({ tag: "upper", tagSource: "plan" });
   });
-  it("a lift target of 0 hides the bar", () => {
-    const home = homeView({ ...D, liftTargets: { upper: 0, lower: 1 } });
-    expect(home.goals.some((g) => g.key === "upper")).toBe(false);
+  it("one Strength bar replaces the two lift bars and sums their targets", () => {
+    const home = homeView({ ...D, liftTargets: { upper: 3, lower: 0 } });
+    expect(home.goals.some((g) => g.key === "upper" || g.key === "lower")).toBe(false);
+    expect(home.strength).toMatchObject({ target: 3, upper: { target: 3 }, lower: { target: 0 } });
+  });
+  it("both lift targets at 0 hide the bar", () => {
+    expect(homeView({ ...D, liftTargets: { upper: 0, lower: 0 } }).strength).toBeNull();
   });
   it("a VO2 ride shows in the bar and marks today done", () => {
     const rides = [

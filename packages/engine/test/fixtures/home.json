@@ -66,29 +66,29 @@
       "actual": 0,
       "target": 9,
       "hit": false
-    },
-    {
-      "key": "upper",
-      "label": "Upper lift",
-      "unit": "sessions",
-      "actual": 0,
-      "target": 1,
-      "hit": false,
-      "nudge": {
-        "text": "Still open from Monday. Wed or Thu fits.",
-        "date": "2026-11-11",
-        "sessionId": "w2-upper"
-      }
-    },
-    {
-      "key": "lower",
-      "label": "Lower lift",
-      "unit": "sessions",
-      "actual": 0,
-      "target": 1,
-      "hit": false
     }
   ],
+  "strength": {
+    "label": "Strength",
+    "actual": 0,
+    "target": 2,
+    "hit": false,
+    "upper": {
+      "actual": 0,
+      "target": 1
+    },
+    "lower": {
+      "actual": 0,
+      "target": 1
+    },
+    "lifts": [],
+    "untagged": 0,
+    "nudge": {
+      "text": "Still open from Monday. Wed or Thu fits.",
+      "date": "2026-11-11",
+      "sessionId": "w2-upper"
+    }
+  },
   "offGoals": [],
   "fatigue": {
     "form": -5,

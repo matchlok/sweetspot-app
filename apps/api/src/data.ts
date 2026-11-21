@@ -5,6 +5,7 @@ import {
   readinessPrediction,
   scoreReading,
   READINESS_VERSION,
+  type LiftKey,
   type ReadinessPrediction,
   addDays,
   denverToday,
@@ -77,6 +78,18 @@ export async function syncActivities(d: DataDeps): Promise<SyncResult> {
             if (z) r.raw = { ...r.raw, device_watts: true, icu_zone_times: [...z.power.map((secs, i) => ({ id: `Z${i + 1}`, secs })), { id: "SS", secs: z.sweetSpotSeconds }] };
           }
         }
+        // Lifts: read the note once per sync for the last two weeks (it can be edited after the fact).
+        // A failed read keeps what was stored, and never fails the sync.
+        for (const r of stravaRows) {
+          if (r.type !== "WeightTraining" || !d.sources.stravaNote) continue;
+          try {
+            const n = await d.sources.stravaNote(r.id);
+            r.raw = { ...r.raw, description: n.description, private_note: n.private_note };
+          } catch {
+            const kept = have.get(r.id);
+            if (kept) r.raw = { ...r.raw, description: kept.description ?? null, private_note: kept.private_note ?? null };
+          }
+        }
         rows.push(...stravaRows);
       } catch (e) {
         stravaError = `strava: ${e instanceof Error ? e.message : "sync failed"}`;
@@ -122,7 +135,7 @@ export async function loadViewData(d: DataDeps, today?: string, horizon?: string
   const lastMonday = horizon && mondayOf(horizon) > nextMonday ? mondayOf(horizon) : nextMonday;
   const last = addDays(lastMonday, 6);
 
-  const [events, stored, goalRows, liftRows, manual, state, wellness, loadSettings] = await Promise.all([
+  const [events, stored, goalRows, liftRows, manual, state, wellness, loadSettings, tagLog] = await Promise.all([
     d.sources.events(program.startWeek, last),
     d.repo.activities(program.startWeek, day),
     d.repo.goalChanges(),
@@ -132,6 +145,7 @@ export async function loadViewData(d: DataDeps, today?: string, horizon?: string
     // From the day before the program starts: that row seeds the own load series.
     d.sources.wellness(addDays(program.startWeek, -1), day).catch(() => []),
     (d.sources.loadSettings?.() ?? Promise.resolve(null)).catch(() => null),
+    d.repo.decisionsFor(LIFT_TAG),
   ]);
 
   const plans: WeekPlan[] = mondays(program.startWeek, lastMonday).map((m) => readWeek(events, m));
@@ -145,6 +159,7 @@ export async function loadViewData(d: DataDeps, today?: string, horizon?: string
     now,
     program,
     changes: goalRows.map(toGoalChange),
+    liftTags: liftTagsFrom(tagLog),
     liftTargets: inForce ? { upper: inForce.upper, lower: inForce.lower } : undefined,
     plans,
     rides: mapActivities(raws),
@@ -155,6 +170,24 @@ export async function loadViewData(d: DataDeps, today?: string, horizon?: string
     loadSettings,
     lastSyncedAt: (state.lastSyncedAt ?? now).toISOString(),
   };
+}
+
+// ---- Lift tags ----
+
+/** Decision-log trigger for a tap that tags a strength activity upper or lower (or clears the tag). */
+export const LIFT_TAG = "lift_tag";
+
+/** Latest tap per activity wins; a null tag clears it. */
+export function liftTagsFrom(log: readonly { inputs: unknown; choice: unknown }[]): Record<string, LiftKey> {
+  const out: Record<string, LiftKey> = {};
+  for (const e of log) {
+    const id = (e.inputs as { activityId?: unknown } | null)?.activityId;
+    const tag = (e.choice as { tag?: unknown } | null)?.tag;
+    if (typeof id !== "string") continue;
+    if (tag === "upper" || tag === "lower") out[id] = tag;
+    else delete out[id];
+  }
+  return out;
 }
 
 // ---- Readiness log ----
