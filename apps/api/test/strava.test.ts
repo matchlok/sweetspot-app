@@ -83,6 +83,49 @@ describe("strava client", () => {
     ).rejects.toThrow("strava token -> HTTP 401");
   });
 
+  it("retries network errors, 429 and 5xx, but not other 4xx", async () => {
+    const fresh: StravaToken = { refreshToken: "r1", accessToken: "a1", expiresAt: new Date("2030-01-01") };
+    const mk = (f: typeof fetch, sleeps: number[] = []) => ({
+      clientId: "c",
+      clientSecret: "s",
+      tokens: { get: async () => fresh, save: async () => {} },
+      fetch: f,
+      sleep: async (ms: number) => void sleeps.push(ms),
+      now: () => new Date("2026-11-21T12:00:00Z"),
+    });
+    const ok = () => new Response("[]", { status: 200 });
+
+    let n = 0;
+    const sleeps: number[] = [];
+    const flaky = (async () => {
+      n++;
+      if (n === 1) throw new TypeError("fetch failed: ECONNRESET");
+      if (n === 2) return new Response("", { status: 503 });
+      return ok();
+    }) as typeof fetch;
+    expect(await fetchStravaActivities(mk(flaky, sleeps), "2026-11-14", "2026-11-21")).toEqual([]);
+    expect(n).toBe(3);
+    expect(sleeps).toEqual([500, 1000]);
+
+    let m = 0;
+    const limited = (async () => (++m === 1 ? new Response("", { status: 429 }) : ok())) as typeof fetch;
+    await fetchStravaActivities(mk(limited), "2026-11-14", "2026-11-21");
+    expect(m).toBe(2);
+
+    let k = 0;
+    const denied = (async () => (k++, new Response("", { status: 401 }))) as typeof fetch;
+    await expect(fetchStravaActivities(mk(denied), "2026-11-14", "2026-11-21")).rejects.toThrow("strava activities -> HTTP 401");
+    expect(k).toBe(1);
+
+    let j = 0;
+    const down = (async () => {
+      j++;
+      throw new TypeError("ECONNRESET");
+    }) as typeof fetch;
+    await expect(fetchStravaActivities(mk(down), "2026-11-14", "2026-11-21")).rejects.toThrow("ECONNRESET");
+    expect(j).toBe(3);
+  });
+
   it("maps a Strava row to the engine shape without inventing zones", () => {
     const a = toActivity({ id: 9, type: "Ride", start_date_local: "2026-11-20T18:00:00Z", moving_time: 3600 })!;
     expect(a.icu_hr_zone_times).toBeUndefined();
@@ -125,6 +168,33 @@ describe("sync and read with two sources", () => {
     });
     expect(res.newActivities).toBe(1);
     expect((await repo.syncState()).lastError).toBe("strava: strava activities -> HTTP 429");
+  });
+
+  it("computes zones for a Strava Zwift ride once, and reuses them on the next sync", async () => {
+    const repo = memoryRepo();
+    let calls = 0;
+    const zwift = async () => [{ id: "strava:7", type: "VirtualRide", start_date_local: "2026-11-20T06:30:00Z", moving_time: 3000, device_watts: true }];
+    const sources: Sources = {
+      ...mkSources(zwift),
+      stravaPowerZones: async () => (calls++, { power: [100, 200, 300, 400, 0, 0, 0], sweetSpotSeconds: 250 }),
+    };
+    await syncActivities({ repo, sources, now });
+    await syncActivities({ repo, sources, now });
+    expect(calls).toBe(1);
+    const d = await loadViewData({ repo, sources, now }, "2026-11-21");
+    const ride = d.rides.find((r) => r.id === "strava:7");
+    expect(ride).toMatchObject({ power: [100, 200, 300, 400, 0, 0, 0], sweetSpotSeconds: 250 });
+  });
+
+  it("leaves a Strava ride unknown when it has no power stream", async () => {
+    const repo = memoryRepo();
+    const sources: Sources = {
+      ...mkSources(async () => [{ id: "strava:8", type: "VirtualRide", start_date_local: "2026-11-20T06:30:00Z", moving_time: 3000 }]),
+      stravaPowerZones: async () => null,
+    };
+    await syncActivities({ repo, sources, now });
+    const d = await loadViewData({ repo, sources, now }, "2026-11-21");
+    expect(d.rides.find((r) => r.id === "strava:8")).toMatchObject({ category: "unknown" });
   });
 
   it("works with no Strava source at all", async () => {

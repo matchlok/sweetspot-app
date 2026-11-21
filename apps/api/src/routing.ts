@@ -5,7 +5,9 @@ import type { IntervalsActivity } from "@sweetspot/engine";
  * activities, so changing it needs no re-sync.
  *
  * Default: intervals.icu supplies everything it has (Garmin brings zone times
- * and power). Strava supplies only strength, which never reaches Garmin.
+ * and power). Strava supplies strength and Zwift rides (VirtualRide), neither of
+ * which reaches intervals.icu through Garmin. A Strava ride's zones are computed
+ * from its power stream at sync time (powerzones.ts).
  * Widen Strava with ACTIVITY_SOURCES, e.g. {"strava":{"types":["WeightTraining","Yoga"]}},
  * give a source "types": "*" for all of its activities, or [] to turn it off.
  *
@@ -24,7 +26,7 @@ export interface ActivityRouting {
 
 export const DEFAULT_ROUTING: ActivityRouting = {
   intervals: { types: "*" },
-  strava: { types: ["WeightTraining"] },
+  strava: { types: ["WeightTraining", "VirtualRide"] },
 };
 
 export const DEDUPE_MINUTES = 10;

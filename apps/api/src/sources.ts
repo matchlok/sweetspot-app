@@ -1,5 +1,5 @@
-import type { CalendarEvent, IntervalsActivity, WellnessRow } from "@sweetspot/engine";
-import { fetchStravaActivities, type StravaConfig } from "./strava";
+import { zonesFromPowerStream, type CalendarEvent, type ComputedPowerZones, type IntervalsActivity, type PowerSettings, type WellnessRow } from "@sweetspot/engine";
+import { fetchPowerStream, fetchStravaActivities, type StravaConfig } from "./strava";
 import { fetchEvents, patchEvent, type EventPatch, type GoogleConfig } from "./google";
 
 /** Everything fetched from outside. Routes take this interface so tests can fake it. */
@@ -9,6 +9,11 @@ export interface Sources {
   wellness(oldest: string, newest: string): Promise<WellnessRow[]>;
   /** Absent when Strava isn't configured. Private to the athlete; see routing.ts. */
   stravaActivities?(oldest: string, newest: string): Promise<IntervalsActivity[]>;
+  /**
+   * Zone seconds computed from one Strava ride's power stream against intervals.icu's FTP and zones.
+   * Null when the ride has no power stream (so it stays `unknown`). Absent when Strava isn't configured.
+   */
+  stravaPowerZones?(stravaId: string): Promise<ComputedPowerZones | null>;
   /** Patch one calendar instance (a move or a skip). Never the series. */
   patchEvent(instanceId: string, patch: EventPatch): Promise<void>;
 }
@@ -31,9 +36,31 @@ async function icu<T>(c: IntervalsCreds, path: string, oldest: string, newest: s
   return body as T[];
 }
 
+/** FTP, zone tops and the sweet spot band for cycling, as intervals.icu holds them. */
+export async function fetchPowerSettings(c: IntervalsCreds): Promise<PowerSettings> {
+  const f = c.fetch ?? fetch;
+  const auth = "Basic " + Buffer.from(`API_KEY:${c.apiKey}`).toString("base64");
+  const res = await f(`https://intervals.icu/api/v1/athlete/${encodeURIComponent(c.athleteId)}/sport-settings`, { headers: { Authorization: auth } });
+  if (!res.ok) throw new Error(`intervals.icu sport-settings -> HTTP ${res.status}`);
+  const all = (await res.json()) as Array<{ types?: string[]; ftp?: number; power_zones?: number[]; sweet_spot_min?: number; sweet_spot_max?: number }>;
+  const s = Array.isArray(all) ? all.find((x) => x.types?.includes("Ride")) : undefined;
+  if (!s?.ftp || !Array.isArray(s.power_zones) || typeof s.sweet_spot_min !== "number" || typeof s.sweet_spot_max !== "number") {
+    throw new Error("intervals.icu sport-settings: no cycling FTP or zones");
+  }
+  return { ftp: s.ftp, zoneTopsPct: s.power_zones, sweetSpotPct: { min: s.sweet_spot_min, max: s.sweet_spot_max } };
+}
+
 export function liveSources(google: GoogleConfig, intervals: IntervalsCreds, strava?: StravaConfig | null): Sources {
   return {
-    ...(strava ? { stravaActivities: (o: string, n: string) => fetchStravaActivities(strava, o, n) } : {}),
+    ...(strava
+      ? {
+          stravaActivities: (o: string, n: string) => fetchStravaActivities(strava, o, n),
+          stravaPowerZones: async (id: string) => {
+            const stream = await fetchPowerStream(strava, id);
+            return stream ? (zonesFromPowerStream(stream, await fetchPowerSettings(intervals)) ?? null) : null;
+          },
+        }
+      : {}),
     events: (o, n) => fetchEvents(google, o, n),
     activities: (o, n) => icu<IntervalsActivity>(intervals, "activities", o, n),
     wellness: (o, n) => icu<WellnessRow>(intervals, "wellness", o, n),

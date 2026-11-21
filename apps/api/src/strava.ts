@@ -25,6 +25,8 @@ export interface StravaConfig {
   tokens: StravaTokenStore;
   fetch?: typeof fetch;
   now?: () => Date;
+  /** Wait between retries; tests pass a no-op. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 const API = "https://www.strava.com/api/v3";
@@ -48,6 +50,28 @@ export function authorizeUrl(clientId: string, redirectUri: string): string {
   return `https://www.strava.com/oauth/authorize?${q}`;
 }
 
+const MAX_ATTEMPTS = 3;
+const BACKOFF_MS = 500;
+
+/**
+ * fetch with a short retry on network errors (ECONNRESET and the like), HTTP 429 and 5xx.
+ * Other 4xx come back at once. Backoff doubles from 500 ms. The last response or error is surfaced.
+ */
+async function fetchWithRetry(cfg: StravaConfig, url: string, init?: RequestInit): Promise<Response> {
+  const f = cfg.fetch ?? fetch;
+  const sleep = cfg.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await f(url, init);
+      const retryable = res.status === 429 || res.status >= 500;
+      if (!retryable || attempt === MAX_ATTEMPTS) return res;
+    } catch (e) {
+      if (attempt === MAX_ATTEMPTS) throw e;
+    }
+    await sleep(BACKOFF_MS * 2 ** (attempt - 1));
+  }
+}
+
 interface TokenResponse {
   access_token: string;
   refresh_token: string;
@@ -55,8 +79,7 @@ interface TokenResponse {
 }
 
 async function tokenRequest(cfg: StravaConfig, body: Record<string, string>): Promise<StravaToken> {
-  const f = cfg.fetch ?? fetch;
-  const res = await f(TOKEN_URL, {
+  const res = await fetchWithRetry(cfg, TOKEN_URL, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: cfg.clientId, client_secret: cfg.clientSecret, ...body }),
@@ -89,6 +112,7 @@ interface StravaActivity {
   sport_type?: string;
   start_date_local?: string;
   moving_time?: number;
+  device_watts?: boolean;
 }
 
 /** Strava's shape in the engine's activity shape. Zones stay absent, so a Strava ride is `unknown`, never guessed. */
@@ -101,19 +125,19 @@ export function toActivity(a: StravaActivity): (IntervalsActivity & { name?: str
     name: a.name,
     start_date_local: a.start_date_local,
     moving_time: a.moving_time,
+    ...(a.device_watts !== undefined ? { device_watts: a.device_watts } : {}),
   };
 }
 
 /** Activities whose local date is between `oldest` and `newest` (Denver dates, inclusive). */
 export async function fetchStravaActivities(cfg: StravaConfig, oldest: string, newest: string): Promise<IntervalsActivity[]> {
-  const f = cfg.fetch ?? fetch;
   const token = await accessToken(cfg);
   // A day of slack each side: Strava filters on a UTC epoch, we filter on the local date afterwards.
   const after = Math.floor(Date.parse(`${oldest}T00:00:00Z`) / 1000) - 86_400;
   const before = Math.floor(Date.parse(`${newest}T23:59:59Z`) / 1000) + 86_400;
   const out: IntervalsActivity[] = [];
   for (let page = 1; page <= 20; page++) {
-    const res = await f(`${API}/athlete/activities?after=${after}&before=${before}&per_page=100&page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetchWithRetry(cfg, `${API}/athlete/activities?after=${after}&before=${before}&per_page=100&page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`strava activities -> HTTP ${res.status}`);
     const rows = (await res.json()) as StravaActivity[];
     if (!Array.isArray(rows)) throw new Error("strava activities: expected an array");
@@ -125,4 +149,23 @@ export async function fetchStravaActivities(cfg: StravaConfig, oldest: string, n
     if (rows.length < 100) break;
   }
   return out;
+}
+
+export interface StravaPowerStream {
+  time: number[];
+  watts: Array<number | null>;
+  moving: boolean[] | null;
+}
+
+/** One activity's power stream (one extra call per ride). Null when the ride has no watts stream. */
+export async function fetchPowerStream(cfg: StravaConfig, stravaId: string | number): Promise<StravaPowerStream | null> {
+  const token = await accessToken(cfg);
+  const id = String(stravaId).replace(/^strava:/, "");
+  const res = await fetchWithRetry(cfg, `${API}/activities/${encodeURIComponent(id)}/streams?keys=time,watts,moving&key_by_type=true`, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 404) return null; // no streams for this activity
+  if (!res.ok) throw new Error(`strava streams -> HTTP ${res.status}`);
+  const j = (await res.json()) as { time?: { data?: number[] }; watts?: { data?: Array<number | null> }; moving?: { data?: boolean[] } };
+  const time = j.time?.data;
+  const watts = j.watts?.data;
+  return Array.isArray(time) && Array.isArray(watts) && watts.length > 0 ? { time, watts, moving: Array.isArray(j.moving?.data) ? j.moving!.data! : null } : null;
 }
