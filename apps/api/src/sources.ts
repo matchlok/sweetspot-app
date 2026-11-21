@@ -1,4 +1,4 @@
-import { zonesFromPowerStream, type CalendarEvent, type ComputedPowerZones, type IntervalsActivity, type PowerSettings, type WellnessRow } from "@sweetspot/engine";
+import { zonesFromPowerStream, type CalendarEvent, type ComputedPowerZones, type IntervalsActivity, type LoadSettings, type PowerSettings, type WellnessRow } from "@sweetspot/engine";
 import { fetchPowerStream, fetchStravaActivities, type StravaConfig } from "./strava";
 import { fetchEvents, patchEvent, type EventPatch, type GoogleConfig } from "./google";
 
@@ -7,6 +7,8 @@ export interface Sources {
   events(oldest: string, newest: string): Promise<CalendarEvent[]>;
   activities(oldest: string, newest: string): Promise<IntervalsActivity[]>;
   wellness(oldest: string, newest: string): Promise<WellnessRow[]>;
+  /** FTP and threshold HR for the own load calculation. Absent in tests that don't need it. */
+  loadSettings?(): Promise<LoadSettings | null>;
   /** Absent when Strava isn't configured. Private to the athlete; see routing.ts. */
   stravaActivities?(oldest: string, newest: string): Promise<IntervalsActivity[]>;
   /**
@@ -50,6 +52,17 @@ export async function fetchPowerSettings(c: IntervalsCreds): Promise<PowerSettin
   return { ftp: s.ftp, zoneTopsPct: s.power_zones, sweetSpotPct: { min: s.sweet_spot_min, max: s.sweet_spot_max } };
 }
 
+/** FTP and threshold HR (`lthr`) for cycling, as intervals.icu holds them. HR is null when unset. */
+export async function fetchLoadSettings(c: IntervalsCreds): Promise<LoadSettings | null> {
+  const f = c.fetch ?? fetch;
+  const auth = "Basic " + Buffer.from(`API_KEY:${c.apiKey}`).toString("base64");
+  const res = await f(`https://intervals.icu/api/v1/athlete/${encodeURIComponent(c.athleteId)}/sport-settings`, { headers: { Authorization: auth } });
+  if (!res.ok) throw new Error(`intervals.icu sport-settings -> HTTP ${res.status}`);
+  const all = (await res.json()) as Array<{ types?: string[]; ftp?: number; lthr?: number }>;
+  const s = Array.isArray(all) ? all.find((x) => x.types?.includes("Ride")) : undefined;
+  return s?.ftp ? { ftp: s.ftp, thresholdHr: s.lthr ?? null } : null;
+}
+
 export function liveSources(google: GoogleConfig, intervals: IntervalsCreds, strava?: StravaConfig | null): Sources {
   return {
     ...(strava
@@ -64,6 +77,7 @@ export function liveSources(google: GoogleConfig, intervals: IntervalsCreds, str
     events: (o, n) => fetchEvents(google, o, n),
     activities: (o, n) => icu<IntervalsActivity>(intervals, "activities", o, n),
     wellness: (o, n) => icu<WellnessRow>(intervals, "wellness", o, n),
+    loadSettings: () => fetchLoadSettings(intervals),
     patchEvent: (id, patch) => patchEvent(google, id, patch),
   };
 }

@@ -1,5 +1,6 @@
 import { categorizeActivity, type Category, type ZoneSource } from "./categorize";
 import type { ActivityZones } from "./scorecard";
+import type { LoadRide } from "./fatigue";
 
 /**
  * intervals.icu adapter. Fetching is injected so tests (and the app) control
@@ -28,6 +29,11 @@ export interface IntervalsActivity {
   icu_zone_times?: Array<{ id?: string; secs?: number } | number> | null;
   /** false when power is estimated rather than from a sensor. */
   device_watts?: boolean | null;
+  /** Normalized power in watts: Strava's name for it. */
+  weighted_average_watts?: number | null;
+  /** Normalized power in watts: intervals.icu's name for it. */
+  icu_weighted_avg_watts?: number | null;
+  average_heartrate?: number | null;
 }
 
 export const RIDE_TYPES = new Set([
@@ -114,6 +120,20 @@ export function mapActivity(a: IntervalsActivity): RideZones | null {
 
 export function mapActivities(raw: readonly IntervalsActivity[]): RideZones[] {
   return raw.flatMap((a) => mapActivity(a) ?? []);
+}
+
+/**
+ * Rides in the shape the load calculation expects. Normalized power counts only
+ * from a sensor (`device_watts` not false); a ride with no power and no average
+ * HR has neither, and its load stays unknown.
+ */
+export function mapLoadRides(raw: readonly IntervalsActivity[]): LoadRide[] {
+  return raw.flatMap((a) => {
+    const r = mapActivity(a);
+    if (!r) return [];
+    const np = a.device_watts === false ? null : (a.weighted_average_watts ?? a.icu_weighted_avg_watts ?? null);
+    return [{ date: r.date, movingSeconds: r.movingSeconds, normalizedWatts: np, avgHr: a.average_heartrate ?? null }];
+  });
 }
 
 /** Shape the scorecard expects. It prefers power per ride and falls back to HR. */
