@@ -164,12 +164,12 @@ describe("mark done", () => {
   it("marks Monday's unlogged lift done, then undoes it", async () => {
     const { app, repo } = setup();
     const before = await (await call(app, "GET", "/api/home")).json();
-    expect(before.goals.find((g: { key: string }) => g.key === "upper").actual).toBe(0);
+    expect(before.strength.upper.actual).toBe(0);
 
     const res = await call(app, "POST", "/api/sessions/lift-b-1109/done");
     expect(res.status).toBe(200);
     const { home } = await res.json();
-    expect(home.goals.find((g: { key: string }) => g.key === "upper").actual).toBe(1);
+    expect(home.strength.upper.actual).toBe(1);
     expect(repo.decisionLog.map((d) => d.trigger)).toEqual(["mark_done"]);
 
     // Marking twice is harmless.
@@ -178,7 +178,7 @@ describe("mark done", () => {
 
     const undo = await call(app, "DELETE", "/api/sessions/lift-b-1109/done");
     expect(undo.status).toBe(200);
-    expect((await undo.json()).home.goals.find((g: { key: string }) => g.key === "upper").actual).toBe(0);
+    expect((await undo.json()).home.strength.upper.actual).toBe(0);
     expect((await call(app, "DELETE", "/api/sessions/lift-b-1109/done")).status).toBe(404);
   });
 

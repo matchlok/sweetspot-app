@@ -95,6 +95,15 @@ export const api = {
           headers: { "content-type": "application/json" },
           body: JSON.stringify(d),
         }),
+  /** Tag a strength activity upper or lower, or clear it with null. */
+  tagLift: (id: string, tag: "upper" | "lower" | null) =>
+    fixtureMode
+      ? Promise.resolve(undefined)
+      : request<{ home: HomeView }>(`/api/lifts/${enc(id)}/tag`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ tag }),
+        }),
   saveLifts: (lifts: { upper: number; lower: number }) =>
     fixtureMode
       ? Promise.resolve(undefined)

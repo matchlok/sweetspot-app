@@ -155,6 +155,20 @@ export async function fetchStravaActivities(cfg: StravaConfig, oldest: string, n
   return out;
 }
 
+/**
+ * A strength activity's description and private note. The list endpoint omits both, and the
+ * single-activity endpoint returns `private_note` only when one is set (checked 2026-11-21).
+ * Read for upper or lower lift tags; never shown to anyone but Narjit.
+ */
+export async function fetchActivityNote(cfg: StravaConfig, stravaId: string | number): Promise<{ description: string | null; private_note: string | null }> {
+  const token = await accessToken(cfg);
+  const id = String(stravaId).replace(/^strava:/, "");
+  const res = await fetchWithRetry(cfg, `${API}/activities/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`strava activity -> HTTP ${res.status}`);
+  const j = (await res.json()) as { description?: string | null; private_note?: string | null };
+  return { description: j.description ?? null, private_note: j.private_note ?? null };
+}
+
 export interface StravaPowerStream {
   time: number[];
   watts: Array<number | null>;

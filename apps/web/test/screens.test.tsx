@@ -26,7 +26,7 @@ vi.mock("../src/api", () => {
   return {
     ApiError,
     fixtureMode: false,
-    api: { home: vi.fn(), week: vi.fn(), month: vi.fn(), sync: vi.fn(), options: vi.fn(), apply: vi.fn(), markDone: vi.fn(), program: vi.fn() },
+    api: { tagLift: vi.fn(), home: vi.fn(), week: vi.fn(), month: vi.fn(), sync: vi.fn(), options: vi.fn(), apply: vi.fn(), markDone: vi.fn(), program: vi.fn() },
   };
 });
 
@@ -68,6 +68,34 @@ describe("Home", () => {
     expect(screen.getByText(/provisional/)).toBeTruthy();
     fireEvent.click(pill);
     expect(screen.queryByText("Recent hard days")).toBeNull();
+  });
+});
+
+describe("Strength bar", () => {
+  const withLift = {
+    ...home,
+    strength: {
+      label: "Strength", actual: 1, target: 2, hit: false,
+      upper: { actual: 0, target: 1 }, lower: { actual: 0, target: 1 },
+      lifts: [{ id: "strava:1", date: "2026-11-10", tag: null, tagSource: null }], untagged: 1,
+    },
+  } as unknown as HomeView;
+
+  it("shows the total, the upper and lower counts, and asks for a tag", async () => {
+    m.home!.mockResolvedValue(withLift);
+    render(<Home onOpen={() => {}} />);
+    expect(await screen.findByText("Strength")).toBeTruthy();
+    expect(screen.getByText(/Upper 0\/1 · Lower 0\/1 · 1 to tag/)).toBeTruthy();
+    expect(screen.getByText(/tag it/)).toBeTruthy();
+  });
+
+  it("tapping Upper tags the lift and reloads", async () => {
+    m.home!.mockResolvedValue(withLift);
+    m.tagLift!.mockResolvedValue(undefined);
+    render(<Home onOpen={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Upper" }));
+    await waitFor(() => expect(m.tagLift).toHaveBeenCalledWith("strava:1", "upper"));
+    await waitFor(() => expect(m.home).toHaveBeenCalledTimes(2));
   });
 });
 

@@ -16,7 +16,7 @@ import {
   type PlannedSession,
   type ViewData,
 } from "@sweetspot/engine";
-import { loadViewData, type DataDeps } from "../data";
+import { LIFT_TAG, loadViewData, type DataDeps } from "../data";
 import { fail } from "../errors";
 import type { DecisionEntry, DecisionStatus } from "../repo";
 
@@ -220,6 +220,21 @@ export function writeRoutes(data: DataDeps) {
     const sessionId = c.req.param("id");
     if (!(await data.repo.unmarkDone(sessionId))) return fail(c, 404, "not_found", "That session isn't marked done by hand.");
     await logSimple("unmark_done", { sessionId, today: today() }, { doneSource: null });
+    return c.json({ home: homeView(await loadViewData(data)) });
+  });
+
+  // ---- Strength tags ----
+
+  // Tag a strength activity upper or lower, or clear the tag with null. The latest tap wins.
+  r.put("/lifts/:id/tag", async (c) => {
+    const activityId = c.req.param("id");
+    const body = await readBody(c);
+    const tag = body?.tag;
+    if (tag !== "upper" && tag !== "lower" && tag !== null) return fail(c, 400, "invalid", 'tag must be "upper", "lower" or null.');
+    const d = await loadViewData(data);
+    const lift = d.lifts.find((l) => l.id === activityId);
+    if (!lift) return fail(c, 404, "not_found", "No such strength activity.");
+    await logSimple(LIFT_TAG, { activityId, date: lift.date, today: d.today }, { tag });
     return c.json({ home: homeView(await loadViewData(data)) });
   });
 

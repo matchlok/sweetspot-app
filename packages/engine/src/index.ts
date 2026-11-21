@@ -10,3 +10,4 @@ export * from "./options";
 export * from "./views";
 export * from "./powerzones";
 export * from "./readiness";
+export * from "./strength";
