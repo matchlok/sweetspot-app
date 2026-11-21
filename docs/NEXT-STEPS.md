@@ -2,8 +2,11 @@
 
 Updated 2026-11-21. The web shell is merged (all five v4 screens built), the passphrase is reset locally, and the local API and web run together. **Pick up here:**
 
-0. **Strava second source: built, authorized and syncing (2026-11-21, branch `strava-source`, merge when ready).** Still for Narjit: add `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` to Vercel and run `strava-auth` against prod's database once (tokens are in Neon, so prod already has them if it uses the same `DATABASE_URL`); switch Zwift to Garmin Connect; check the Garmin to intervals.icu link (intervals.icu had nothing after 2026-11-13). Routing is `ACTIVITY_SOURCES` in [routing.ts](../apps/api/src/routing.ts): default intervals.icu everything, Strava `WeightTraining` only.
-0b. **Activity-driven matching, strength tags and auto-reshuffle** (decided 2026-11-21, below). Not built. Build order: (a) lift tags and the Strength bar, (b) category matching by week, (c) auto-reshuffle. Fold into item 1 (the engine rework), same branch.
+0. **Strava second source: built, authorized and syncing (2026-11-21, branch `strava-source`, merge when ready).** Strava client ID and secret are set locally and in Vercel (Narjit, 2026-11-21); prod needs the branch merged and a redeploy. Routing is `ACTIVITY_SOURCES` in [routing.ts](../apps/api/src/routing.ts): default intervals.icu everything, Strava `WeightTraining` only. Local `.env.local` also lets Strava supply `VirtualRide`, so Zwift rides show in the app now.
+0a. **Fix first: retry Strava network errors.** The first Strava call failed with `ECONNRESET` twice in the 2026-11-21 session and succeeded on retry. Add a short retry with backoff in `strava.ts` (network errors and 429/5xx, not 4xx), with a test.
+0b. **Data flow revision (decided 2026-11-21, below): Zwift rides come from Strava, not via Garmin.** Add `VirtualRide` to the Strava route by default, and compute their zones and sweet spot from Strava's power stream.
+0c. **Own load and fatigue, before the readiness pill:** per-ride load, CTL, ATL, Form and ramp computed from rides in both sources, checked against intervals.icu where both exist.
+0d. **Strength tags, category matching by week, auto-reshuffle** (decided 2026-11-21, below). Build order: tags and the Strength bar, then matching, then reshuffle. Fold into item 1.
 1. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves. Start on a new branch.
 2. **Readiness pill:** Form, ramp rate and recent hard days, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
 3. **Fix prod `/api/home`:** it logs `Google Calendar events -> HTTP 404` (2026-11-20, Vercel logs). Login works in prod. Suspect `GOOGLE_CALENDAR_ID` or `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel's Production env (secrets can't be read back, so re-set them from `.env.local`, JSON without the single quotes, then `vercel redeploy`). Also confirm `APP_PASSPHRASE_HASH` in Vercel matches the reset local hash.
@@ -56,7 +59,7 @@ Engine and API changes these imply are not done yet.
 
 Source: rereading how Muse handled it (`reference/muse/strava_tracker.py`, `data/private/week-plans-export.json`). Muse's matching was deterministic code; the reshuffle was the Muse agent editing the calendar by hand. Neither needs an LLM here.
 
-1. **Two sources, routed by activity type.** intervals.icu supplies everything (zones and power come from Garmin). Strava supplies strength only, configurable with `ACTIVITY_SOURCES`. If both hold the same activity, intervals.icu wins. Zwift goes through Garmin Connect so rides arrive with zones. Built.
+1. **Two sources, routed by activity type.** intervals.icu supplies everything (zones and power come from Garmin). Strava supplies strength only, configurable with `ACTIVITY_SOURCES`. If both hold the same activity, intervals.icu wins. Built. (Superseded for Zwift: see "Data flow, revised 2026-11-21".)
 2. **Match by what was done, not the planned date** (Muse's `_ride_match`, ported to the engine):
    - an exact category match wins;
    - a quality ride (sweet spot or VO2) satisfies either quality session, and the substitution is recorded;
@@ -69,6 +72,22 @@ Source: rereading how Muse handled it (`reference/muse/strava_tracker.py`, `data
 5. **One Strength bar on Home.** Total target 2 (shows 0/2), with a sub-counter for upper (0/1) and lower (0/1). An untagged lift fills the total and shows "tag it" until it is tagged. Lift goals stay adjustable from 0 to 7 per type ([2026-11-10](#decided-2026-11-10-narjit)); the total is the sum.
 6. **The reshuffle applies automatically** (reverses the earlier "replan only proposes"). Once activities are matched, the engine re-plans the rest of the week and writes the moves to the Training calendar itself. This is half the value of the app. Guardrails: the rule gate (`options.ts`) can still block a move; each automatic move is written to the decision log with its inputs; the "What changed?" card shows it; one tap undoes it; it never moves a past or done session, never touches the work calendar, and the 2026-11-20 rules (no alternation, recovery cuts volume only, cross-week moves) govern it. The 6:05 am message reports what moved.
 7. **No AI in matching or reshuffling.** Category matching, lift tagging and the reshuffle are tested TypeScript (AGENTS rule 1). Claude's role is the "What changed?" explanation and, later, a fallback tag for a note the fuzzy match can't read.
+
+### Data flow, revised 2026-11-21 (Narjit)
+
+Garmin to intervals.icu only carries rides recorded on Garmin hardware. A Zwift ride uploaded to Garmin Connect reaches Garmin but is not forwarded to intervals.icu (forum reports, e.g. [intervals.icu forum](https://forum.intervals.icu/t/virtual-rides-not-syncing-from-garmin/3689); confirmed here: the Nov 11 and Nov 20 Zwift rides are in Strava and absent from intervals.icu). **Switching Zwift to Garmin Connect is therefore not a fix and is dropped.**
+
+| Source | Provides |
+|---|---|
+| intervals.icu | Garmin-recorded rides with zone times and the sweet spot bucket; FTP and zone settings (we read them, never hold them); the only source for any public view; a cross-check for our own fatigue numbers |
+| Strava | Zwift rides, strength, the private note for lift tags |
+| Our engine | Load, CTL, ATL, Form, ramp, matching, reshuffle |
+
+1. **Zwift zones and sweet spot are computed, not read.** For a Strava-sourced ride, fetch the power stream (`/activities/{id}/streams`, one extra call per ride), read FTP and zones from intervals.icu, and compute the seven power zones and sweet spot seconds (88 to 94 percent of FTP, as intervals.icu defines SS) from it. Strava's `/activities/{id}/zones` (verified 2026-11-21: returns sensor-based HR and power distributions for the Zwift and MTB rides) is a cross-check only, because it uses Strava's zone settings and has no sweet spot bucket. No power stream means `unknown`, never a guess.
+2. **Golden test:** the 2026-11-13 MTB ride is in both sources. Compute its zones and sweet spot from the Strava stream and compare with intervals.icu's own `icu_zone_times` and SS. If they differ, fix the method before trusting Zwift rides.
+3. **Own load and fatigue.** Per-ride load from normalized power and FTP (Strava's summary has `weighted_average_watts`, so rides with power need no stream for NP), an HR-based estimate for HR-only rides; CTL as a 42-day exponential average of daily load, ATL as 7 days, Form is CTL minus ATL, ramp is the weekly change in CTL. Why: intervals.icu's fatigue numbers undercount because it misses the Zwift rides (Home showed Form 6.1 and a falling ramp on 2026-11-21 despite a week of riding in Strava). Validate against intervals.icu on Garmin-only weeks. Do this before the readiness pill.
+4. **Strava stays private.** Anything computed from Strava data is treated as Strava data: shown only to Narjit, never used to train a model, never on a public view. A public view reads intervals.icu or device data only. Re-read the current Strava API agreement before any public view.
+5. **Not chosen:** Strava as the only source (loses the sweet spot bucket, the single owner of FTP and zones, and the public-view source), and linking Strava inside intervals.icu (Phase 0 found Strava-sourced rows arrive as stubs with no zone data).
 
 ## Earlier assumptions (superseded by the list above)
 
