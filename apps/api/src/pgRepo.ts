@@ -1,5 +1,5 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { activities, decisions, goalChanges, liftTargets, manualDone, programSettings, syncState, type Db } from "@sweetspot/db";
+import { activities, decisions, goalChanges, liftTargets, manualDone, programSettings, sourceTokens, syncState, type Db } from "@sweetspot/db";
 import type { IntervalsActivity } from "@sweetspot/engine";
 import type { Repo } from "./repo";
 
@@ -25,19 +25,32 @@ export function pgRepo(db: Db): Repo {
         .select()
         .from(activities)
         .where(and(gte(activities.date, oldest), lte(activities.date, newest)));
-      return rows.map((r) => ({ id: r.id, date: r.date, type: r.type, raw: r.raw as IntervalsActivity }));
+      return rows.map((r) => ({ id: r.id, date: r.date, type: r.type, source: r.source, raw: r.raw as IntervalsActivity }));
     },
     async upsertActivities(rows) {
       // Chunked so a first backfill stays under parameter limits.
       for (let i = 0; i < rows.length; i += 100) {
         await db
           .insert(activities)
-          .values(rows.slice(i, i + 100).map((r) => ({ id: r.id, date: r.date, type: r.type, raw: r.raw })))
+          .values(rows.slice(i, i + 100).map((r) => ({ id: r.id, date: r.date, type: r.type, source: r.source, raw: r.raw })))
           .onConflictDoUpdate({
             target: activities.id,
-            set: { date: sql`excluded.date`, type: sql`excluded.type`, raw: sql`excluded.raw`, fetchedAt: sql`now()` },
+            set: { date: sql`excluded.date`, type: sql`excluded.type`, source: sql`excluded.source`, raw: sql`excluded.raw`, fetchedAt: sql`now()` },
           });
       }
+    },
+    async stravaToken() {
+      const [r] = await db.select().from(sourceTokens).where(eq(sourceTokens.source, "strava")).limit(1);
+      return r ? { refreshToken: r.refreshToken, accessToken: r.accessToken, expiresAt: r.expiresAt } : null;
+    },
+    async saveStravaToken(t) {
+      await db
+        .insert(sourceTokens)
+        .values({ source: "strava", refreshToken: t.refreshToken, accessToken: t.accessToken, expiresAt: t.expiresAt })
+        .onConflictDoUpdate({
+          target: sourceTokens.source,
+          set: { refreshToken: t.refreshToken, accessToken: t.accessToken, expiresAt: t.expiresAt, updatedAt: sql`now()` },
+        });
     },
     async syncState() {
       const [r] = await db.select().from(syncState).limit(1);

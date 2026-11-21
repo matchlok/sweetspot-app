@@ -6,11 +6,14 @@ import { readEnv } from "./env";
 import { googleConfigFromEnv } from "./google";
 import { pgLoginStore } from "./pgStore";
 import { pgRepo } from "./pgRepo";
+import { routingFromEnv } from "./routing";
 import { intervalsFromEnv, liveSources } from "./sources";
+import { stravaConfigFromEnv } from "./strava";
 
 const db = connect();
+const repo = pgRepo(db);
 const env = readEnv();
-const app = createApp({ env, logins: pgLoginStore(db), data: { repo: pgRepo(db), sources: liveSources(googleConfigFromEnv(), intervalsFromEnv()) } });
+const app = createApp({ env, logins: pgLoginStore(db), data: { repo, routing: routingFromEnv(), sources: liveSources(googleConfigFromEnv(), intervalsFromEnv(), stravaConfigFromEnv(repo)) } });
 const { token } = await signSession(env.JWT_SECRET);
 const get = async (p: string) => {
   const r = await app.request(p, { headers: { cookie: `sweetspot_session=${token}` } });

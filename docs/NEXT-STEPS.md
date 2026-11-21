@@ -1,14 +1,18 @@
 # Next steps
 
-Updated 2026-11-21. The web shell is merged (all five v4 screens built), the passphrase is reset locally, and the local API and web run together. **Pick up here:**
+Updated 2026-11-21. The web shell is merged (all five v4 screens built). Strava is a second source on branch `strava-source` (pushed, not merged; PR when ready). **Pick up here:**
 
-1. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves. Start on a new branch.
-2. **Readiness pill:** Form, ramp rate and recent hard days, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
-3. **Fix prod `/api/home`:** it logs `Google Calendar events -> HTTP 404` (2026-11-20, Vercel logs). Login works in prod. Suspect `GOOGLE_CALENDAR_ID` or `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel's Production env (secrets can't be read back, so re-set them from `.env.local`, JSON without the single quotes, then `vercel redeploy`). Also confirm `APP_PASSPHRASE_HASH` in Vercel matches the reset local hash.
-4. **Local live check:** the local app loaded and ran (2026-11-21). Still to do: go through each screen against real data and confirm the date shows Denver today. Apply only on a session you mean to change.
-5. **Small fix:** Home and the other screens sit on "Loading…" forever if the API is unreachable. Show an error instead.
-6. Dev note: if the app says "Loading…" locally, make sure both servers were started fresh. A stale Vite process returned the HTML page for `/api/*` calls.
-7. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
+1. **Merge `strava-source`** (open the PR, then redeploy; Strava client ID and secret are already in Vercel). After the redeploy, check prod `/api/sync` stores the Zwift rides with zones.
+2. **Own load and fatigue (was 0c), next to build.** Per-ride load, CTL (42-day), ATL (7-day), Form (CTL minus ATL) and weekly ramp, computed from rides in both sources. Use Strava `weighted_average_watts` and intervals.icu FTP for rides with power, an HR-based estimate for HR-only rides, and `unknown` for neither. Validate against intervals.icu on Garmin-only weeks (the Nov 11 and Nov 20 Zwift rides are why intervals.icu undercounts). Put it in `packages/engine/src/fatigue.ts` beside the existing wellness-based version, with tests. Start on a new branch off `main` once `strava-source` is merged. Spec: "Data flow, revised 2026-11-21", item 3, below.
+3. **Strength tags, category matching by week, auto-reshuffle** (decided 2026-11-21, below). Build order: tags and the Strength bar, then matching, then reshuffle. Fold into item 4.
+4. **Engine rework for the 2026-11-20 rules** (below): no alternation, recovery weeks cut volume only, skip or not done in the week is a miss, cross-week moves.
+5. **Readiness pill:** Form, ramp rate and recent hard days from item 2, worst-of rule, provisional thresholds, inputs shown on tap, each reading logged with a prediction. Then wire it into the API and Home.
+6. **Local live check:** go through each screen against real data and confirm the date shows Denver today. Apply only on a session you mean to change. Include the Zwift rides now that they have zones.
+7. **Small fix:** Home and the other screens sit on "Loading…" forever if the API is unreachable. Show an error instead.
+8. Dev note: if the app says "Loading…" locally, make sure both servers were started fresh. A stale Vite process returned the HTML page for `/api/*` calls.
+9. Still missing: Calendar Week/Month toggle and next-week navigation, drag-to-close on the day sheet, pull to refresh (`POST /api/sync`), the "What changed?" card (needs `/api/replan`), a PWA manifest, web tests, and deleting `apps/poc-web`.
+
+Done this session (2026-11-21): Strava retry with backoff; Zwift zones and sweet spot computed from Strava power streams (golden check passed; `VirtualRide` routes from Strava by default); prod `/api/home` Google Calendar 404 fixed (Narjit).
 
 Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
 
@@ -50,6 +54,40 @@ The API between the app and the engine is in [plans/API.md](plans/API.md): endpo
 
 Engine and API changes these imply are not done yet.
 
+## Decided 2026-11-21 (Narjit)
+
+Source: rereading how Muse handled it (`reference/muse/strava_tracker.py`, `data/private/week-plans-export.json`). Muse's matching was deterministic code; the reshuffle was the Muse agent editing the calendar by hand. Neither needs an LLM here.
+
+1. **Two sources, routed by activity type.** intervals.icu supplies everything (zones and power come from Garmin). Strava supplies strength only, configurable with `ACTIVITY_SOURCES`. If both hold the same activity, intervals.icu wins. Built. (Superseded for Zwift: see "Data flow, revised 2026-11-21".)
+2. **Match by what was done, not the planned date** (Muse's `_ride_match`, ported to the engine):
+   - an exact category match wins;
+   - a quality ride (sweet spot or VO2) satisfies either quality session, and the substitution is recorded;
+   - an endurance session accepts any categorized ride;
+   - a quality session with only an endurance-category ride is a miss;
+   - a ride with no zone data counts for endurance if it is 30 minutes or more, so a data gap never creates a miss;
+   - off-plan rides still count in the weekly zone minutes.
+3. **Lifts are "strength hit" first.** Any strength activity of 15 minutes or more counts as one hit, wherever in the week it falls. A tag then puts it in the upper or lower bucket. Never guess: an untagged lift stays untagged and prompts for a tag.
+4. **Tags come from** (a) a code fuzzy match on the Strava private note, description and title (upper, lower, legs, arms, squat, push, pull; "Lift A" is lower and "Lift B" is upper; one-character typos tolerated), read from Strava's single-activity endpoint (the list endpoint omits the note; verified 2026-11-21 that the endpoint returns description and returns `private_note` only when one is set), and (b) a tap in the app.
+5. **One Strength bar on Home.** Total target 2 (shows 0/2), with a sub-counter for upper (0/1) and lower (0/1). An untagged lift fills the total and shows "tag it" until it is tagged. Lift goals stay adjustable from 0 to 7 per type ([2026-11-10](#decided-2026-11-10-narjit)); the total is the sum.
+6. **The reshuffle applies automatically** (reverses the earlier "replan only proposes"). Once activities are matched, the engine re-plans the rest of the week and writes the moves to the Training calendar itself. This is half the value of the app. Guardrails: the rule gate (`options.ts`) can still block a move; each automatic move is written to the decision log with its inputs; the "What changed?" card shows it; one tap undoes it; it never moves a past or done session, never touches the work calendar, and the 2026-11-20 rules (no alternation, recovery cuts volume only, cross-week moves) govern it. The 6:05 am message reports what moved.
+7. **No AI in matching or reshuffling.** Category matching, lift tagging and the reshuffle are tested TypeScript (AGENTS rule 1). Claude's role is the "What changed?" explanation and, later, a fallback tag for a note the fuzzy match can't read.
+
+### Data flow, revised 2026-11-21 (Narjit)
+
+Garmin to intervals.icu only carries rides recorded on Garmin hardware. A Zwift ride uploaded to Garmin Connect reaches Garmin but is not forwarded to intervals.icu (forum reports, e.g. [intervals.icu forum](https://forum.intervals.icu/t/virtual-rides-not-syncing-from-garmin/3689); confirmed here: the Nov 11 and Nov 20 Zwift rides are in Strava and absent from intervals.icu). **Switching Zwift to Garmin Connect is therefore not a fix and is dropped.**
+
+| Source | Provides |
+|---|---|
+| intervals.icu | Garmin-recorded rides with zone times and the sweet spot bucket; FTP and zone settings (we read them, never hold them); the only source for any public view; a cross-check for our own fatigue numbers |
+| Strava | Zwift rides, strength, the private note for lift tags |
+| Our engine | Load, CTL, ATL, Form, ramp, matching, reshuffle |
+
+1. **Zwift zones and sweet spot are computed, not read.** For a Strava-sourced ride, fetch the power stream (`/activities/{id}/streams`, one extra call per ride), read FTP and zones from intervals.icu, and compute the seven power zones and sweet spot seconds from it. Fitted method: 1 Hz, stopped samples dropped (Strava `moving`), 5 s trailing mean in whole watts, inclusive zone tops in watts. Sweet spot uses intervals.icu's own `sweet_spot_min/max` (live 84 and 97; our earlier "88 to 94" was wrong), as whole watts floor(FTP x pct). Strava's `/activities/{id}/zones` (verified 2026-11-21: returns sensor-based HR and power distributions for the Zwift and MTB rides) is a cross-check only, because it uses Strava's zone settings and has no sweet spot bucket. No power stream means `unknown`, never a guess.
+2. **Golden test (passed 2026-11-21):** the 2026-11-13 MTB ride is in both sources. Compute its zones and sweet spot from the Strava stream and compare with intervals.icu's own `icu_zone_times` and SS. If they differ, fix the method before trusting Zwift rides.
+3. **Own load and fatigue.** Per-ride load from normalized power and FTP (Strava's summary has `weighted_average_watts`, so rides with power need no stream for NP), an HR-based estimate for HR-only rides; CTL as a 42-day exponential average of daily load, ATL as 7 days, Form is CTL minus ATL, ramp is the weekly change in CTL. Why: intervals.icu's fatigue numbers undercount because it misses the Zwift rides (Home showed Form 6.1 and a falling ramp on 2026-11-21 despite a week of riding in Strava). Validate against intervals.icu on Garmin-only weeks. Do this before the readiness pill.
+4. **Strava stays private.** Anything computed from Strava data is treated as Strava data: shown only to Narjit, never used to train a model, never on a public view. A public view reads intervals.icu or device data only. Re-read the current Strava API agreement before any public view.
+5. **Not chosen:** Strava as the only source (loses the sweet spot bucket, the single owner of FTP and zones, and the public-view source), and linking Strava inside intervals.icu (Phase 0 found Strava-sourced rows arrive as stubs with no zone data).
+
 ## Earlier assumptions (superseded by the list above)
 
 The 2026-11-11 review assumed an answer for the first four so the screens could be finished. The API contract was written to these assumptions.
@@ -88,7 +126,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 
 ## Later
 
-- **Replan engine.** It weighs the variables from the brainstorm: day of week, historical ride times, weather windows against actual ride times, morning cold (confidence drops below 50°F; below 40°F means trainer or skip), daylight, the family calendar (read-only), a trainer-OK tag per workout, and a 3 pm early-exit window that Narji declares. It never reads the work calendar. Replan proposes and never moves anything on its own.
+- **Replan engine.** It weighs the variables from the brainstorm: day of week, historical ride times, weather windows against actual ride times, morning cold (confidence drops below 50°F; below 40°F means trainer or skip), daylight, the family calendar (read-only), a trainer-OK tag per workout, and a 3 pm early-exit window that Narji declares. It never reads the work calendar. Moves are applied automatically inside the rule gate, logged and undoable (decided 2026-11-21); the weather, daylight and family-calendar inputs above feed it later.
 - **6:05 am push job.** It looks forward only and never opens with a miss.
 - **"Sweetspot Ops" view** for AI accuracy and error bars, separate from the athlete app.
 - **Public demo,** designed together with the website redesign.

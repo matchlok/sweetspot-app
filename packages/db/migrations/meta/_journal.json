@@ -8,6 +8,13 @@
       "when": 1794625719304,
       "tag": "0000_shallow_crusher_hogan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795282831513,
+      "tag": "0002_strava_source",
+      "breakpoints": true
     }
   ]
 }
