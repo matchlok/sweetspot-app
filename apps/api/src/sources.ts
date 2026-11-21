@@ -1,4 +1,5 @@
 import type { CalendarEvent, IntervalsActivity, WellnessRow } from "@sweetspot/engine";
+import { fetchStravaActivities, type StravaConfig } from "./strava";
 import { fetchEvents, patchEvent, type EventPatch, type GoogleConfig } from "./google";
 
 /** Everything fetched from outside. Routes take this interface so tests can fake it. */
@@ -6,6 +7,8 @@ export interface Sources {
   events(oldest: string, newest: string): Promise<CalendarEvent[]>;
   activities(oldest: string, newest: string): Promise<IntervalsActivity[]>;
   wellness(oldest: string, newest: string): Promise<WellnessRow[]>;
+  /** Absent when Strava isn't configured. Private to the athlete; see routing.ts. */
+  stravaActivities?(oldest: string, newest: string): Promise<IntervalsActivity[]>;
   /** Patch one calendar instance (a move or a skip). Never the series. */
   patchEvent(instanceId: string, patch: EventPatch): Promise<void>;
 }
@@ -28,8 +31,9 @@ async function icu<T>(c: IntervalsCreds, path: string, oldest: string, newest: s
   return body as T[];
 }
 
-export function liveSources(google: GoogleConfig, intervals: IntervalsCreds): Sources {
+export function liveSources(google: GoogleConfig, intervals: IntervalsCreds, strava?: StravaConfig | null): Sources {
   return {
+    ...(strava ? { stravaActivities: (o: string, n: string) => fetchStravaActivities(strava, o, n) } : {}),
     events: (o, n) => fetchEvents(google, o, n),
     activities: (o, n) => icu<IntervalsActivity>(intervals, "activities", o, n),
     wellness: (o, n) => icu<WellnessRow>(intervals, "wellness", o, n),

@@ -10,7 +10,8 @@ import {
   type ViewData,
   type WeekPlan,
 } from "@sweetspot/engine";
-import { toGoalChange, type Repo } from "./repo";
+import { DEFAULT_ROUTING, selectActivities, type ActivityRouting } from "./routing";
+import { toGoalChange, type Repo, type StoredActivity } from "./repo";
 import type { Sources } from "./sources";
 
 export interface DataDeps {
@@ -18,6 +19,8 @@ export interface DataDeps {
   sources: Sources;
   /** Injected so tests control the clock. */
   now?: () => Date;
+  /** Which source supplies which activity types. Defaults to intervals.icu for all, Strava for strength. */
+  routing?: ActivityRouting;
 }
 
 const STALE_MS = 15 * 60_000;
@@ -41,13 +44,24 @@ export async function syncActivities(d: DataDeps): Promise<SyncResult> {
   try {
     const raw = await d.sources.activities(oldest, today);
     const existing = new Set((await d.repo.activities(oldest, today)).map((a) => a.id));
-    const rows = raw.flatMap((a) => {
-      const date = a.start_date_local?.slice(0, 10);
-      if (a.id === undefined || !date) return [];
-      return [{ id: String(a.id), date, type: a.type ?? null, raw: a }];
-    });
+    const toRows = (list: typeof raw, source: StoredActivity["source"]): StoredActivity[] =>
+      list.flatMap((a) => {
+        const date = a.start_date_local?.slice(0, 10);
+        if (a.id === undefined || !date) return [];
+        return [{ id: String(a.id), date, type: a.type ?? null, source, raw: a }];
+      });
+    const rows = toRows(raw, "intervals");
+    // Strava is a second feed. If it fails, intervals.icu data still lands and the error is recorded, not thrown.
+    let stravaError: string | null = null;
+    if (d.sources.stravaActivities) {
+      try {
+        rows.push(...toRows(await d.sources.stravaActivities(oldest, today), "strava"));
+      } catch (e) {
+        stravaError = `strava: ${e instanceof Error ? e.message : "sync failed"}`;
+      }
+    }
     await d.repo.upsertActivities(rows);
-    await d.repo.saveSyncState({ lastSyncedAt: now, lastError: null });
+    await d.repo.saveSyncState({ lastSyncedAt: now, lastError: stravaError });
     return { lastSyncedAt: now.toISOString(), newActivities: rows.filter((r) => !existing.has(r.id)).length };
   } catch (e) {
     await d.repo.saveSyncState({ lastSyncedAt: state.lastSyncedAt, lastError: e instanceof Error ? e.message : "sync failed" });
@@ -93,7 +107,7 @@ export async function loadViewData(d: DataDeps, today?: string): Promise<ViewDat
   ]);
 
   const plans: WeekPlan[] = mondays(program.startWeek, lastMonday).map((m) => readWeek(events, m));
-  const raws = stored.map((s) => s.raw);
+  const raws = selectActivities(stored, d.routing ?? DEFAULT_ROUTING).map((s) => s.raw);
 
   // Lift targets are one undated setting for now (STATUS): use the row in force this week.
   const inForce = liftRows.filter((r) => r.effectiveWeek <= thisMonday).at(-1);

@@ -20,6 +20,8 @@ export interface StoredActivity {
   id: string;
   date: string;
   type: string | null;
+  /** Where it came from. Defaults to intervals.icu. */
+  source: "intervals" | "strava";
   raw: IntervalsActivity;
 }
 
@@ -50,6 +52,9 @@ export interface Repo {
   manualDone(): Promise<{ sessionId: string; date: string; kind: string }[]>;
   activities(oldest: string, newest: string): Promise<StoredActivity[]>;
   upsertActivities(rows: StoredActivity[]): Promise<void>;
+  /** Strava OAuth tokens, kept here because Strava rotates the refresh token. */
+  stravaToken(): Promise<{ refreshToken: string; accessToken: string | null; expiresAt: Date | null } | null>;
+  saveStravaToken(t: { refreshToken: string; accessToken: string | null; expiresAt: Date | null }): Promise<void>;
   syncState(): Promise<SyncState>;
   saveSyncState(s: SyncState): Promise<void>;
   /** Appends a goal_changes row. The engine replays rows in order, so a save never rewrites a judged week. */
@@ -83,6 +88,7 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
   const decisionLog: DecisionEntry[] = [];
   let nextId = 1;
   let sync: SyncState = { lastSyncedAt: null, lastError: null };
+  let strava: Awaited<ReturnType<Repo["stravaToken"]>> = null;
   return {
     activitiesStore: store,
     decisionLog,
@@ -103,6 +109,12 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
     },
     async upsertActivities(rows) {
       for (const r of rows) store.set(r.id, r);
+    },
+    async stravaToken() {
+      return strava;
+    },
+    async saveStravaToken(t) {
+      strava = t;
     },
     async syncState() {
       return sync;
