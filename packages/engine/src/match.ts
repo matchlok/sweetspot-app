@@ -106,3 +106,44 @@ export function matchRides(sessions: readonly PlannedSession[], rides: readonly 
   }
   return out;
 }
+
+/**
+ * A ride logged after its planned day (SWE-41). For ride sessions that found no
+ * ride on their own date, looks for a free ride on a later day of the same week
+ * and matches it with the same per-kind rules as `matchRides`, by running them
+ * on the ride's day. Exact category matches settle first, so an endurance plan
+ * can't take the sweet spot ride a sweet spot plan is waiting for. A ride
+ * satisfies one session only. Returns the session id -> match and the ride's date.
+ *
+ * `matches` is the output of `matchRides` for the same sessions and rides.
+ */
+export function matchLateRides(
+  sessions: readonly PlannedSession[],
+  rides: readonly RideZones[],
+  matches: ReadonlyMap<string, RideMatch>,
+  weekStart: string,
+  weekEnd: string,
+): Map<string, { match: RideMatch; date: string }> {
+  const out = new Map<string, { match: RideMatch; date: string }>();
+  const taken = new Set<string>();
+  for (const m of matches.values()) if (m.ride) taken.add(m.ride.id);
+  const open = sessions
+    .filter((s) => s.status !== "skipped" && !isLift(s.kind) && !matches.get(s.id)?.ride)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  for (const exactOnly of [true, false]) {
+    for (const s of open) {
+      if (out.has(s.id)) continue;
+      const days = [...new Set(rides.filter((r) => r.date > s.date && r.date >= weekStart && r.date <= weekEnd && !taken.has(r.id)).map((r) => r.date))].sort();
+      for (const day of days) {
+        const free = rides.filter((r) => r.date === day && !taken.has(r.id));
+        const m = matchRides([{ ...s, date: day }], free).get(s.id);
+        if (!m?.ride || (exactOnly && m.substituted)) continue;
+        taken.add(m.ride.id);
+        out.set(s.id, { match: m, date: day });
+        break;
+      }
+    }
+  }
+  return out;
+}

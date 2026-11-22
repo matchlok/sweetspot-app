@@ -95,5 +95,6 @@
       ]
     }
   ],
-  "nextWeekNote": null
+  "nextWeekNote": null,
+  "scheduleGap": null
 }

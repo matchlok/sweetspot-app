@@ -159,6 +159,7 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
         <>
           <Status load={week} />
           <div className="muted" style={{ fontSize: 14, marginBottom: 4 }}>Tap a session to open it.</div>
+          {w.scheduleGap && <div className="nudge" role="status" style={{ marginTop: 0, marginBottom: 8 }}>{w.scheduleGap.text}</div>}
       {w.days.map((day) => {
         const { dow, num } = parts(day.date);
         if (day.sessions.length === 0) {
