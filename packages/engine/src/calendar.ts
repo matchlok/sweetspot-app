@@ -125,6 +125,7 @@ export function eventDate(e: CalendarEvent): string | null {
  * - A session moved in from another week replaces this week's own session of
  *   the same kind, so the week never carries two (no 3/2 counts). The replaced
  *   one is dropped, whether the calendar still shows it or has cancelled it.
+ *   Exception: on the same day nothing is replaced, both sessions stay.
  */
 export function readWeek(events: readonly CalendarEvent[], weekStart: string): WeekPlan {
   const weekEnd = addDays(weekStart, 6);
@@ -160,10 +161,13 @@ export function readWeek(events: readonly CalendarEvent[], weekStart: string): W
     }
   }
 
+  // Replaced only when the moved session lands on a different day. On the same
+  // day both stay, so the day shows the clash instead of hiding a session.
   const movedIn = sessions.filter((s) => s.movedFrom && s.status === "planned");
   if (movedIn.length > 0) {
-    const kinds = new Set(movedIn.map((s) => s.kind));
-    sessions = sessions.filter((s) => !(kinds.has(s.kind) && !s.movedFrom && !s.movedTo));
+    sessions = sessions.filter(
+      (s) => s.movedFrom || s.movedTo || !movedIn.some((m) => m.kind === s.kind && m.date !== s.date),
+    );
   }
 
   sessions.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
