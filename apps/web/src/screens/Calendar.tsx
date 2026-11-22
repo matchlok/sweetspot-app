@@ -57,10 +57,10 @@ function Nav({ label, onPrev, onNext, onToday, prevLabel, nextLabel, atToday }: 
   label: string; onPrev: () => void; onNext: () => void; onToday: () => void; prevLabel: string; nextLabel: string; atToday: boolean;
 }) {
   return (
-    <div className="row" style={{ gap: 8 }}>
-      <div style={{ fontSize: 24, fontWeight: 700 }}>{label}</div>
-      <div style={{ display: "flex", gap: 4 }}>
-        {!atToday && <button className="iconb" onClick={onToday} style={{ fontSize: 13, fontWeight: 600, padding: "0 10px" }}>Today</button>}
+    <div className="calnav">
+      <div className="ttl">{label}</div>
+      <div className="btns">
+        {!atToday && <button className="iconb today" onClick={onToday}>Today</button>}
         <button className="iconb" aria-label={prevLabel} onClick={onPrev}><Arrow dir="prev" /></button>
         <button className="iconb" aria-label={nextLabel} onClick={onNext}><Arrow dir="next" /></button>
       </div>
@@ -198,7 +198,7 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
               onClick={() => (s.status === "planned" || s.status === "not_logged" || (s.status === "skipped" && !s.id.endsWith("~origin"))) && onOpen(s)}
             >
               <div className="dn"><b style={day.isToday ? { color: "var(--accent)" } : undefined}>{dow}</b><span>{num}</span></div>
-              <div style={{ flex: 1 }}>
+              <div className="dbody">
                 <div className="t">{s.title}</div>
                 <div className="m" style={t.color ? { color: t.color } : undefined}>{t.text}</div>
               </div>
