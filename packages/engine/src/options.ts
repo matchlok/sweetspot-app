@@ -19,8 +19,9 @@ import type { ResolvedStatus } from "./plan";
  * - one ride a day (hard)
  * - quality rides on back-to-back days, or a lift on a quality day, are
  *   allowed with a warning
- * A planned session may also move into the following week (rule 4, 2026-11-20):
- * this week records a miss for it, and it replaces next week's own session of
+ * A planned, not-logged or skipped session of any kind may also move into the following
+ * week (rule 4, 2026-11-20; not-logged added for SWE-23): this week records a
+ * miss for it (a not-logged or skipped one already has), and it replaces next week's own session of
  * the same kind, so next week never carries two (no 3/2 counts).
  */
 
@@ -190,12 +191,8 @@ const lc = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
  * refused if they would double the day (one_ride_per_day).
  */
 function crossWeekOptions(s: WeekSession, next: readonly WeekSession[], today: string, allowOff: boolean, result: DayOptions): void {
-  if (next.length === 0) return;
+  // An empty next week still offers its days: nothing there to replace or collide with.
   const nextStart = addDays(mondayOf(s.date), 7);
-  if (next.some((x) => x.kind === s.kind && x.movedIn && x.status !== "skipped")) {
-    result.blocked.push({ heading: `Next week`, reason: `${KIND_LABEL[s.kind]} next week already has a session moved in.` });
-    return;
-  }
   const candidates = next.filter((x) => x.kind === s.kind && !x.movedIn && x.status !== "skipped" && x.status !== "done");
   const optional = s.kind === "easy_spin";
 
@@ -216,7 +213,8 @@ function crossWeekOptions(s: WeekSession, next: readonly WeekSession[], today: s
       continue;
     }
     const effects: DayOption["effects"] = [{ text: `${KIND_LABEL[s.kind]} moves to next ${dayName(day)}.`, tone: "plain" }];
-    if (!optional) effects.push({ text: `${KIND_LABEL[s.kind]} counts as missed this week.`, tone: "warn" });
+    // A session already past its day is a miss already: moving it doesn't add one.
+    if (!optional && s.status === "planned") effects.push({ text: `${KIND_LABEL[s.kind]} counts as missed this week.`, tone: "warn" });
     if (replaced.length > 0) effects.push({ text: `It replaces next week's ${lc(KIND_LABEL[s.kind])}, so next week still has one.`, tone: "plain" });
     for (const w of found) effects.push({ text: `${w.warnText ?? w.reason}.`, tone: "warn" });
     const touched = new Set<Rule>(found.map((v) => v.rule));
@@ -341,8 +339,10 @@ export function dayOptions(input: DayOptionsInput): DayOptions {
         rules: RULES.map((rule) => ({ rule, result: touched.has(rule) ? ("warn" as const) : ("pass" as const) })),
       });
     }
-    if (s.status === "planned" && input.nextWeek) {
-      crossWeekOptions(s, input.nextWeek, today, allowOff, result);
+    // Every kind gets the same cross-week days, whether planned, not logged or skipped
+    // (a skipped session is rescheduled like a planned one). Done sessions returned above.
+    if (input.nextWeek) {
+      crossWeekOptions(sessions.find((x) => x.id === s.id)!, input.nextWeek, today, allowOff, result);
     }
     return result;
   }

@@ -326,6 +326,33 @@ describe("apply: move into next week", () => {
   });
 });
 
+describe("apply: move into an empty next week (SWE-23)", () => {
+  it("moves a planned session into a week with no events, and the origin week keeps its stand-in", async () => {
+    const events = seedEvents().filter((e) => e.start.date! <= "2026-11-15");
+    const { app, patches } = setup({ events });
+    const opts = await options(app, "end-1114", "move");
+    const sun = opts.options.find((o: { id: string }) => o.id === "move:2026-11-22");
+    expect(sun).toBeDefined();
+    expect(sun.absorbs).toBeUndefined();
+    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sun.id, planVersion: opts.planVersion });
+    expect(res.status).toBe(200);
+    expect(patches.map((p) => [p.id, p.patch.date])).toEqual([["end-1114", "2026-11-22"]]);
+    const week = (await res.json()).week;
+    expect(week.days[5].sessions[0]).toMatchObject({ status: "skipped", movedTo: "2026-11-22" });
+  });
+
+  it("reschedules a skipped lift whose week is over into next week, bringing it back", async () => {
+    const events = seedEvents().map((e) => (e.id === "lift-b-1109" ? { ...e, status: "cancelled" as const } : e));
+    const { app, patches } = setup({ events, now: "2026-11-17T19:00:00Z" });
+    const opts = await options(app, "lift-b-1109", "move");
+    const wed = opts.options.find((o: { id: string }) => o.id === "move:2026-11-18");
+    expect(wed).toBeDefined();
+    const res = await call(app, "POST", "/api/sessions/lift-b-1109/apply", { action: "move", optionId: wed.id, planVersion: opts.planVersion });
+    expect(res.status).toBe(200);
+    expect(patches).toEqual([expect.objectContaining({ id: "lift-b-1109", patch: expect.objectContaining({ date: "2026-11-18", status: "confirmed" }) })]);
+  });
+});
+
 describe("apply: two cross-week moves (SWE-32)", () => {
   // Monday Nov 16. Each week has Lift B (upper) Monday and Lift A (lower) Thursday.
   const liftEvents = (): CalendarEvent[] => [

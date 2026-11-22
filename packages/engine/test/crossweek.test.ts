@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { addDays } from "../src/dates";
 import { readWeek, type CalendarEvent } from "../src/calendar";
 import { homeView, sessionOptionsView, weekView } from "../src/views";
 import { v4Scenario as D } from "./fixtures/scenario";
@@ -123,12 +124,57 @@ describe("option to move into next week", () => {
   it("includes next week in the plan version", () => {
     const without = sessionOptionsView({ ...D, plans: D.plans.filter((p) => p.weekStart !== "2026-11-16") }, "w2-ss", "move");
     expect(without.planVersion).not.toBe(opts.planVersion);
-    expect(without.options.every((o) => !o.heading.endsWith("next week"))).toBe(true);
   });
 
-  it("is not offered for a session that is already not logged", () => {
+  it("offers next week's days even when next week has no plan or events", () => {
+    const empty = sessionOptionsView({ ...D, plans: D.plans.filter((p) => p.weekStart !== "2026-11-16") }, "w2-ss", "move");
+    const next = empty.options.filter((o) => o.heading.endsWith("next week"));
+    expect(next.map((o) => o.id)).toEqual(["move:2026-11-16", "move:2026-11-17", "move:2026-11-18", "move:2026-11-19", "move:2026-11-20", "move:2026-11-21", "move:2026-11-22"]);
+    expect(next.every((o) => !o.absorbs)).toBe(true);
+  });
+
+  it("a skipped session whose week is over gets exactly what a planned one gets", () => {
+    const late = { ...D, today: "2026-11-17", now: new Date("2026-11-17T14:30:00Z") };
+    const skipAt = (kind: string) => ({
+      ...late,
+      plans: late.plans.map((p) => ({ ...p, sessions: p.sessions.map((s) => (s.kind === kind && p.weekStart === "2026-11-09" ? { ...s, status: "skipped" as const } : s)) })),
+    });
+    for (const [id, kind] of [["w2-ss", "sweet_spot"], ["w2-lower", "lift_lower"]] as const) {
+      const planned = sessionOptionsView(late, id, "move");
+      const skipped = sessionOptionsView(skipAt(kind), id, "move");
+      expect(skipped.session.status).toBe("skipped");
+      const ids = (o: typeof planned) => o.options.map((x) => x.id);
+      expect(ids(skipped).length, id).toBeGreaterThan(0);
+      expect(ids(skipped).every((i) => i >= "move:2026-11-16"), id).toBe(true);
+      expect(ids(skipped), id).toEqual(ids(planned));
+    }
+  });
+
+  it("a skipped session still can't double a day: the one-ride rule applies", () => {
+    const late = { ...D, today: "2026-11-17", now: new Date("2026-11-17T14:30:00Z") };
+    const data = { ...late, plans: late.plans.map((p) => ({ ...p, sessions: p.sessions.map((s) => (s.id === "w2-ss" ? { ...s, status: "skipped" as const } : s)) })) };
+    const o = sessionOptionsView(data, "w2-ss", "move");
+    expect(o.options.some((x) => x.id === "move:2026-11-19")).toBe(false); // next week's VO2 is there
+    expect(o.blocked.some((b) => b.reason === "Already a ride that day")).toBe(true);
+  });
+
+  it("is offered for every kind, including a session that is already not logged", () => {
+    // w2-upper (Mon Nov 9) is not logged; w2-ss and w2-vo2 are planned. Each gets days in next week.
+    for (const [id, kind] of [["w2-ss", "sweet_spot"], ["w2-vo2", "vo2"], ["w2-upper", "lift_upper"]] as const) {
+      const o = sessionOptionsView(D, id, "move");
+      expect(o.session.kind).toBe(kind);
+      const next = o.options.filter((x) => x.heading.endsWith("next week"));
+      expect(next.length, id).toBeGreaterThan(0);
+      // At least 7 days ahead of the session's own day is reachable across the boundary.
+      expect(next.some((x) => x.id.slice(5) >= addDays(o.session.date, 7)), id).toBe(true);
+    }
+  });
+
+  it("a not-logged session is already a miss, so moving it doesn't say it counts as missed", () => {
     const late = sessionOptionsView(D, "w2-upper", "move");
-    expect(late.options.every((o) => !o.heading.endsWith("next week"))).toBe(true);
+    const o = late.options.find((x) => x.id === "move:2026-11-17")!;
+    expect(o.effects.map((e) => e.text)).not.toEqual(expect.arrayContaining([expect.stringContaining("counts as missed")]));
+    expect(late.canMarkDone).toBe(true);
   });
 
   it("week view shows the stand-in and the moved session once the move is in the calendar", () => {
