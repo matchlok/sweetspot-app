@@ -15,6 +15,13 @@
       "when": 1795282831513,
       "tag": "0002_strava_source",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795312322830,
+      "tag": "0002_reflective_jazinda",
+      "breakpoints": true
     }
   ]
 }
