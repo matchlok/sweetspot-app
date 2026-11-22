@@ -35,7 +35,9 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
     api.options(sessionId, action).then(setData, (e) => setErr(e.message));
   }, [sessionId, action]);
 
-  const missed = data?.session.status === "not_logged";
+  const skipped = data?.session.status === "skipped";
+  // A skipped session is just not done yet, so it gets the same move-or-mark-done view as a missed one.
+  const missed = data?.session.status === "not_logged" || skipped;
   const opt = data?.options[pick];
 
   async function run(fn: () => Promise<unknown>) {
@@ -105,7 +107,9 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
               <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{data.session.title}</div>
               <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
                 {missed
-                  ? "Planned for this day. Nothing was logged."
+                  ? skipped
+                    ? "Skipped. Not done yet."
+                    : "Planned for this day. Nothing was logged."
                   : (data.session.detail ?? (data.session.minutes ? `About ${data.session.minutes} min` : ""))}
               </div>
             </div>
