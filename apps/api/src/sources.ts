@@ -1,6 +1,6 @@
 import { zonesFromPowerStream, type CalendarEvent, type ComputedPowerZones, type IntervalsActivity, type LoadSettings, type PowerSettings, type WellnessRow } from "@sweetspot/engine";
 import { fetchActivityNote, fetchPowerStream, fetchStravaActivities, type StravaConfig } from "./strava";
-import { fetchEvents, patchEvent, type EventPatch, type GoogleConfig } from "./google";
+import { createEvent, deleteEvent, fetchEvents, patchEvent, type EventPatch, type GoogleConfig, type NewEvent } from "./google";
 
 /** Everything fetched from outside. Routes take this interface so tests can fake it. */
 export interface Sources {
@@ -20,6 +20,9 @@ export interface Sources {
   stravaNote?(stravaId: string): Promise<{ description: string | null; private_note: string | null }>;
   /** Patch one calendar instance (a move or a skip). Never the series. */
   patchEvent(instanceId: string, patch: EventPatch): Promise<void>;
+  /** Create one single all-day event; returns its id. Used by the calendar writer. */
+  createEvent?(ev: NewEvent): Promise<string>;
+  deleteEvent?(eventId: string): Promise<void>;
 }
 
 export interface IntervalsCreds {
@@ -82,6 +85,8 @@ export function liveSources(google: GoogleConfig, intervals: IntervalsCreds, str
     wellness: (o, n) => icu<WellnessRow>(intervals, "wellness", o, n),
     loadSettings: () => fetchLoadSettings(intervals),
     patchEvent: (id, patch) => patchEvent(google, id, patch),
+    createEvent: (ev) => createEvent(google, ev),
+    deleteEvent: (id) => deleteEvent(google, id),
   };
 }
 
