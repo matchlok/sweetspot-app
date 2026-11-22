@@ -8,7 +8,7 @@ Updated 2026-11-21. The web shell, Strava as a second source, the 2026-11-20 eng
 
    Build in this order, one branch per step, no commits until Narjit reviews:
    1. **Review the prototype** and list what to change in the 10 screens. Fix the screen 5 layout (it puts sweet spot the day after the lower lift, which the generator rule forbids).
-   2. **Schema:** `programs` and `planned_sessions` tables in `packages/db`, migration applied to Neon, repo methods in `apps/api`.
+   2. **Schema:** (built 2026-11-21, SWE-2, PR open; migration not yet applied) `programs` and `planned_sessions` tables in `packages/db`, migration applied to Neon, repo methods in `apps/api`.
    3. **Generator** (`packages/engine/src/generate.ts`): `generateProgram(history, availability, purpose)`. Tests: every progress goal gets a session in every non-recovery week (the VO2 gap), no quality ride the day after a lower lift, no quality on consecutive days, lifts placed by the generator, recovery weeks follow the streak rule.
    4. **Calendar writer** in `apps/api/src/google.ts`: `createEvent` and `deleteEvent` next to `patchEvent`, events tagged `sweetspotKind` and `sweetspotProgram`, no recurring series, plus a Sunday cron that writes the week two ahead. Test against the fake calendar, then one throwaway week in the real one.
    5. **Read path flip:** the Week, Home and Month views read `planned_sessions` from Neon. The calendar reader stays only to pick up moves and skips made by hand in Google Calendar.
