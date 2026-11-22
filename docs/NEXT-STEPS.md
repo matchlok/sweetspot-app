@@ -1,31 +1,43 @@
 # Next steps
 
-Updated 2026-11-21. The web shell, Strava as a second source, the 2026-11-20 engine rules, the readiness pill, Week/Month, pull to refresh, error states and the PWA manifest are all on `main` (PR #11 and the web-shell rework merge). **Pick up here:**
+Updated 2026-11-21. **The work queue is Linear: team SWE, https://linear.app/narjitdev/team/SWE.** Run `/cos` to build the next ready issues and `/review-queue` to review them. Don't keep a numbered to-do list in this file; it goes stale. This file keeps what Linear can't: the decisions and why, where we are, and ideas not yet tracked.
 
-0. **Next major feature: program onboarding and the coach** (plan approved 2026-11-21). Plan: [plans/ONBOARDING-COACH.md](plans/ONBOARDING-COACH.md). Prototype canvas: https://claude.ai/artifact/5U7s7ZvZTjHV7ZFHwDysD1 (10 screens, not yet reviewed by Narjit). The app builds the program, Neon owns the plan, and the calendar becomes a two-week projection. `pnpm --filter api calendar:clear` (dry run; `--yes` deletes) empties the agent-owned calendar to test it. Finding: VO2 vanished from the Week page because the Muse-era VO2 series ended 2026-10-22. The coach absorbs item 4 (`/api/replan`).
+How decisions flow: an issue that needs one is labelled `needs-decision` and carries a "Decisions needed" section (question, options, recommendation). Answer in a comment on the issue or in a prompt. `/cos` moves the answer into "Decisions made". Anything that changes a rule or the product goes into a dated "Decided" section below, and a big one gets a record in `decisions/`.
 
-   Decided 2026-11-21 (Narjit): auto-reshuffle may move sessions inside a week without a tap, and the coach never writes the calendar without one; the plan is written two weeks rolling, each Sunday; a rebuild touches only events the app wrote (tagged `sweetspotProgram`), which is every event once the calendar is wiped; the generator places lift days.
+**On `main` as of 2026-11-21:** the web shell, Strava as a second source, the 2026-11-20 engine rules, own load and fatigue, the readiness pill, Week/Month, pull to refresh, error states, the PWA manifest, strength tags, the program generator (`generateProgram`, SWE-1) and the `programs` and `planned_sessions` tables with repo methods (SWE-2). The SWE-2 migration was applied to Neon (the `sweetspot-dev` branch Production uses) on 2026-11-21.
 
-   Build in this order, one branch per step, no commits until Narjit reviews:
-   1. **Review the prototype** and list what to change in the 10 screens. Fix the screen 5 layout (it puts sweet spot the day after the lower lift, which the generator rule forbids).
-   2. **Schema:** (built 2026-11-21, SWE-2, PR open; migration not yet applied) `programs` and `planned_sessions` tables in `packages/db`, migration applied to Neon, repo methods in `apps/api`.
-   3. **Generator** (built 2026-11-21, SWE-1, PR open) (`packages/engine/src/generate.ts`): `generateProgram(history, availability, purpose)`. Tests: every progress goal gets a session in every non-recovery week (the VO2 gap), no quality ride the day after a lower lift, no quality on consecutive days, lifts placed by the generator, recovery weeks follow the streak rule.
-   4. **Calendar writer** in `apps/api/src/google.ts`: `createEvent` and `deleteEvent` next to `patchEvent`, events tagged `sweetspotKind` and `sweetspotProgram`, no recurring series, plus a Sunday cron that writes the week two ahead. Test against the fake calendar, then one throwaway week in the real one.
-   5. **Read path flip:** the Week, Home and Month views read `planned_sessions` from Neon. The calendar reader stays only to pick up moves and skips made by hand in Google Calendar.
-   6. **Program routes:** `POST /api/program/draft` (history, availability and purpose in; a card, preview and forecast out), `POST /api/program/commit` (clears and writes the calendar, logs the decision with its forecast).
-   7. **Onboarding screens 1 to 9 in `apps/web`**, coach off (chips make deterministic edits). End-to-end test: `calendar:clear --yes`, onboard, check the Week page and the calendar.
-   8. **Coach** (screens 5, 6 and 10) once Narjit says yes to Anthropic API spend: Messages API tools over the engine, rule gate on every edit, every turn logged, turn cap. This replaces `/api/replan`.
+## Next major feature: program onboarding and the coach
 
-1. **Check own load on prod after the deploy.** Built 2026-11-21: Home Form, ramp and the readiness pill now use own load (`fatigueFor` in `fatigue.ts`) from rides in both sources, seeded from intervals.icu wellness the day before the program starts, with intervals.icu wellness as the fallback if FTP can't be read. Validated on Garmin-only rides with `apps/api/src/loadcheck.ts`: power rides median 1.05x intervals.icu's ride load, CTL/ATL/Form within 0.3 on five dates. After the deploy, Form should differ from intervals.icu by the Nov 11 and Nov 20 Zwift rides; confirm that, and that Home's fatigue note reads sensibly. Strava rides older than the 14-day sync window carry no power or HR fields until a backfill sync, so they count as unknown. The HR-only estimate has a provisional 0.77 factor (`HR_LOAD_FACTOR`, fitted on 8 rides, same rides it was checked on): re-run `loadcheck.ts` as more accumulate.
-2. **Category matching and auto-reshuffle** (decided 2026-11-21, below; not built). Strength tags and the Strength bar are built (2026-11-21, branch `strength-tags`, awaiting review): any strength activity counts once per week with no minimum length, tagged from a tap, then the Strava note, title or description, then a planned lift that day; untagged ones fill the total and ask for a tag. Build on the merged engine: `readWeek`/`crossWeekOptions` in `calendar.ts` and `options.ts` already handle skips as misses and cross-week moves, so matching and the reshuffle must go through them, not around them. Order now: matching, then reshuffle.
-3. **Cross-week move, live check.** Try one on a throwaway series before applying anything real: the unit tests fake Google, and the logic relies on Google keeping `originalStartTime` on a moved instance. Date this note once checked.
-4. **"What changed?" with Claude** (`POST /api/replan`, the four chips on Programming: Cooked, Short on time, Extra time, Something else). Not built. It spends on the Anthropic API, so it waits for a yes. Needs `ANTHROPIC_API_KEY`, a prompt version, and the rule gate on every proposal. Log each proposal with its inputs and a prediction.
-5. **Local live check.** Go through each screen against real data (Week/Month toggle, week arrows, pull to refresh, the readiness tap, Zwift rides), and confirm the date shows Denver today.
-6. **Readiness record.** Each day's first Home read logs a `readiness_reading` decision and the next sync scores it as `readiness_scored`. After a few weeks, adjust the provisional thresholds in `packages/engine/src/readiness.ts` (bump `READINESS_VERSION`).
-7. **Lower priority:** web push for the 6:05 am message, post-ride feedback, performance predictions, the "Sweetspot Ops" view. No service worker on purpose: nothing offline-cached for an authenticated API.
-8. Dev note: if the app says "Loading…" locally, start both servers fresh; a stale Vite process returned HTML for `/api/*`.
+Plan approved 2026-11-21: [plans/ONBOARDING-COACH.md](plans/ONBOARDING-COACH.md). Prototype canvas: https://claude.ai/artifact/5U7s7ZvZTjHV7ZFHwDysD1 (10 screens). The app builds the program, Neon owns the plan, and the calendar becomes a two-week projection. `pnpm --filter api calendar:clear` (dry run; `--yes` deletes) empties the agent-owned calendar to test it. VO2 vanished from the Week page because the Muse-era VO2 series ended 2026-10-22; the generator closes that gap.
 
-Keep "Next steps" in [AGENTS.md](../AGENTS.md) in sync with this list.
+Decided 2026-11-21 (Narjit): auto-reshuffle may move sessions inside a week without a tap, and the coach never writes the calendar without one; the plan is written two weeks rolling, each Sunday; a rebuild touches only events the app wrote (tagged `sweetspotProgram`), which is every event once the calendar is wiped; the generator places lift days.
+
+Anthropic API spend for the coach: approved 2026-11-21 (recorded on SWE-14).
+
+Build order, one branch per step, no commits until Narjit reviews. Status lives on the issues.
+
+| Step | Issue |
+|---|---|
+| Review the prototype, fix screen 5 | SWE-5 (Narjit) |
+| Schema | SWE-2 |
+| Generator | SWE-1 |
+| Calendar writer and Sunday cron | SWE-3 |
+| Read path flip | SWE-10 |
+| Program routes | SWE-11 |
+| Onboarding screens 1 to 9, end-to-end test | SWE-13 |
+| Coach (replaces `/api/replan`) | SWE-14 |
+
+## Other open work
+
+| Work | Issue |
+|---|---|
+| Check own load on prod | SWE-6 (Narjit) |
+| Activity category matching, then auto-reshuffle (through `readWeek`/`crossWeekOptions`, not around them) | SWE-4, then SWE-12 |
+| Live cross-week move check on a throwaway series (date this note once checked) | SWE-7 (Narjit) |
+| Local live check of each screen against real data | SWE-8 (Narjit) |
+| Tune the readiness thresholds after a few weeks of scored readings | SWE-9 |
+| `comeback` and `hold` purposes | SWE-17 |
+| Migration journal tidy, atomic `createProgram` | SWE-15, SWE-16 |
 
 ## Where we are
 
@@ -111,7 +123,7 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 6. **Lift counts above 1.** The plan has one upper and one lower event a week. If the count goes to 2, decide whether the app adds the event to the calendar or only tracks the count.
 7. **The readiness pill.** HRV, resting HR and sleep are null, so only Form, ramp and recent hard days are available. Either drive the pill from those with provisional thresholds, and show the inputs when it's tapped, or leave it off Home until there is more to base it on. The API returns `readiness: null` until this is decided.
 
-## Build order
+## Build order (original, mostly done; the live queue is Linear)
 
 1. **Plan and goals in the engine. DONE 2026-11-13** (branch `engine-plan-goals-fatigue`; see [STATUS](STATUS.md)). The sub-items below describe what was built. Still to do from this step: run the planned-weeks rule against the Muse history, and check the wellness field names on live data.
    - Calendar reader: expand the recurring series for a week and return sessions with a kind. Read the kind from `extendedProperties.private.sweetspotKind` once events are tagged, and from the title until then. Check the result against the Muse export.
@@ -138,7 +150,8 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 ## Later
 
 - **Replan engine.** It weighs the variables from the brainstorm: day of week, historical ride times, weather windows against actual ride times, morning cold (confidence drops below 50°F; below 40°F means trainer or skip), daylight, the family calendar (read-only), a trainer-OK tag per workout, and a 3 pm early-exit window that Narji declares. It never reads the work calendar. Moves are applied automatically inside the rule gate, logged and undoable (decided 2026-11-21); the weather, daylight and family-calendar inputs above feed it later.
-- **6:05 am push job.** It looks forward only and never opens with a miss.
+- **6:05 am push job.** It looks forward only and never opens with a miss. Web push, with no service worker on purpose: nothing offline-cached for an authenticated API.
+- **Post-ride feedback.** Not designed yet.
 - **"Sweetspot Ops" view** for AI accuracy and error bars, separate from the athlete app.
 - **Public demo,** designed together with the website redesign.
 - **Prediction:** predict whether Narjit will be performant (complete intervals at prescribed power) given the planned workouts, not whether he'll do them. Log and score every prediction.
@@ -146,6 +159,8 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 ## Housekeeping
 
 - `apps/poc-web` is deleted (2026-11-21).
+- If the app says "Loading�" locally, start both servers fresh; a stale Vite process returned HTML for `/api/*`.
+- Migrations: from the repo root run `corepack pnpm --filter @sweetspot/db migrate`. The runner (`packages/db/src/migrate.ts`) applies every `migrations/*.sql` in filename order and records each in `_migrations`; it ignores the Drizzle journal. It writes to the Neon branch Production uses, so Narjit runs it and agents never do.
 
 ## Findings to keep in mind
 
@@ -154,3 +169,4 @@ The 2026-11-11 review assumed an answer for the first four so the screens could 
 - 4 rides are family rides with no zones. They stay `unknown`.
 - HRV, resting HR and sleep are null in intervals.icu because Garmin isn't sending them.
 - The Training calendar's events are all-day recurring series, so the app places them in time itself.
+- Strava rides older than the 14-day sync window carry no power or HR fields until a backfill sync, so they count as unknown for own load. The HR-only load estimate has a provisional 0.77 factor (`HR_LOAD_FACTOR`, fitted on 8 rides): re-run `apps/api/src/loadcheck.ts` as more accumulate.

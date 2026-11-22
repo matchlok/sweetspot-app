@@ -2,6 +2,8 @@
 
 Moved out of `AGENTS.md` so the agent guide stays short. Newest entries go at the top of each group. `AGENTS.md` keeps only the current phase and next action.
 
+- **Done (2026-11-21):** migration `0002_reflective_jazinda` (`programs`, `planned_sessions`) applied to Neon by Narjit. Workflow change: tasks now live in Linear (team SWE), not in NEXT-STEPS; decisions go on the issue ("Decisions needed" then "Decisions made") and rules in dated "Decided" sections. Anthropic API spend for the coach approved (SWE-14).
+
 - **Done (2026-11-21, branch `swe-1-program-generator`, PR open, SWE-1):** program generator. `generateProgram(history, availability, purpose)` in `packages/engine/src/generate.ts` returns a program card (goals, block length, dated sessions per week, lift days). It tries week layouts through the `options.ts` rule gate (new export `planViolations`). Recovery weeks come from the streak rule on an all-hit path and scale ride minutes by `recoveryFactor`. 24 new tests. Open product rules: what `comeback` and `hold` do to the goals (SWE-17); lifts fixed at 45 min.
 
 - **Done (2026-11-21, branch `swe-2-schema-programs`, PR open, SWE-2):** `programs` and `planned_sessions` tables in `packages/db` (migration `0002_reflective_jazinda`, generated, **not applied to Neon**) and four repo methods (`createProgram`, `plannedSessions`, `updatePlannedSession`, `deletePlannedSession`) in the memory and Postgres repos, 4 new tests. neon-http has no transactions, so `createProgram` deletes the program if a session chunk fails. Check the journal numbering (SWE-15) before applying the migration.
