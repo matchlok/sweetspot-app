@@ -89,7 +89,7 @@ describe("state changes flow through", () => {
   it("a VO2 ride shows in the bar and marks today done", () => {
     const rides = [
       ...D.rides,
-      { id: "r3", date: "2026-11-10", movingSeconds: 3600, category: "unknown" as const, categorySource: null, power: [300, 1200, 0, 0, 540, 0, 0] },
+      { id: "r3", date: "2026-11-10", movingSeconds: 3600, category: "vo2" as const, categorySource: "power" as const, power: [300, 1200, 0, 0, 540, 0, 0] },
     ];
     const home = homeView({ ...D, rides });
     expect(home.goals.find((g) => g.key === "vo2")).toMatchObject({ actual: 9, hit: true });
