@@ -1,5 +1,5 @@
 import { addDays, mondayOf, weekdayMon0 } from "./dates";
-import type { SessionKind, WeekPlan, PlannedSession } from "./calendar";
+import { isOriginStandIn, type SessionKind, type WeekPlan, type PlannedSession } from "./calendar";
 import { weekStrength, type WeekLift, type WeekStrength } from "./strength";
 import { fatigueFor, type LoadRide, type LoadSettings, type WellnessRow } from "./fatigue";
 import { predictFor, readiness, type Readiness, type ReadinessOutcome, type ReadinessPrediction } from "./readiness";
@@ -220,7 +220,8 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
     if (p.status !== "skipped" && settled.has(p.id) && status !== "done") {
       status = "done";
       doneSource = "intervals";
-    } else if (p.status !== "skipped" && manual.has(p.id)) {
+    } else if (manual.has(p.id) && !isOriginStandIn(p.id)) {
+      // A skipped session marked done by hand is done: skip is not a lock.
       status = "done";
       doneSource = "manual";
     } else if (status === "done") {
@@ -236,7 +237,7 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   const manualLifts: Record<LiftKey, number> = { upper: 0, lower: 0 };
   for (const p of planned) {
     const k = liftOf(p.kind);
-    if (k && p.status !== "skipped" && manual.has(p.id) && !settled.has(p.id)) manualLifts[k] += 1;
+    if (k && manual.has(p.id) && !isOriginStandIn(p.id) && !settled.has(p.id)) manualLifts[k] += 1;
   }
 
   return {

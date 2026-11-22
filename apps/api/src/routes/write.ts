@@ -3,6 +3,7 @@ import {
   GOAL_KEYS,
   MAX_LIFT_TARGET,
   denverToday,
+  isOriginStandIn,
   goalView,
   homeView,
   mondayOf,
@@ -42,6 +43,8 @@ interface CalendarChange {
   from: string;
   /** Null means cancel the instance. */
   to: string | null;
+  /** The instance is cancelled (a skipped session). Moving it brings it back. */
+  wasCancelled?: boolean;
 }
 
 /** Turn a chosen option into calendar changes, from the plan as read just now. */
@@ -56,7 +59,7 @@ function changesFor(sessionId: string, action: OptionAction, option: DayOption, 
   } else if (action === "move") {
     const to = option.id.slice("move:".length);
     if (!option.id.startsWith("move:") || !DAY.test(to)) return null;
-    out.push({ sessionId, kind: main.kind, from: main.date, to });
+    out.push({ sessionId, kind: main.kind, from: main.date, to, ...(main.status === "skipped" ? { wasCancelled: true } : {}) });
   } else {
     const other = byId.get(option.id.slice("swap:".length));
     if (!option.id.startsWith("swap:") || !other) return null;
@@ -146,7 +149,7 @@ export function writeRoutes(data: DataDeps) {
 
     for (const ch of changes) {
       try {
-        await data.sources.patchEvent(ch.sessionId, ch.to === null ? { status: "cancelled", tags: tags(ch.kind) } : { date: ch.to, tags: tags(ch.kind) });
+        await data.sources.patchEvent(ch.sessionId, ch.to === null ? { status: "cancelled", tags: tags(ch.kind) } : { date: ch.to, ...(ch.wasCancelled ? { status: "confirmed" as const } : {}), tags: tags(ch.kind) });
         done.push(ch);
       } catch (e) {
         error = e instanceof Error ? e.message : "calendar write failed";
@@ -159,7 +162,7 @@ export function writeRoutes(data: DataDeps) {
       for (const ch of [...done].reverse()) {
         if (ch.to === null) continue;
         try {
-          await data.sources.patchEvent(ch.sessionId, { date: ch.from });
+          await data.sources.patchEvent(ch.sessionId, { date: ch.from, ...(ch.wasCancelled ? { status: "cancelled" as const } : {}) });
         } catch {
           revertFailed = true;
         }
@@ -204,7 +207,7 @@ export function writeRoutes(data: DataDeps) {
     if (session.kind !== "lift_upper" && session.kind !== "lift_lower") {
       return fail(c, 422, "blocked", "Only lifts can be marked done by hand. Rides come from intervals.icu.");
     }
-    if (session.status === "skipped") return fail(c, 422, "blocked", "A skipped session stays skipped.");
+    if (isOriginStandIn(sessionId)) return fail(c, 422, "blocked", "This session was moved to another day. Mark it done from there.");
     if (session.status === "done") {
       if (session.doneSource === "manual") return c.json({ home: homeView(d) }); // already marked: idempotent
       return fail(c, 409, "conflict", "This lift is already logged from a recording.");

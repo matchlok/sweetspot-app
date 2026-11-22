@@ -224,6 +224,64 @@ describe("settings", () => {
   });
 });
 
+describe("a skipped session", () => {
+  /** Monday's upper lift was skipped: its instance is cancelled on the calendar. */
+  const skipLiftB = (events: CalendarEvent[]) => {
+    events.find((e) => e.id === "lift-b-1109")!.status = "cancelled";
+  };
+
+  it("can be moved to a later day, which brings it back on the calendar", async () => {
+    const { app, patches, events, repo } = setup();
+    skipLiftB(events);
+    const week = await (await call(app, "GET", "/api/week?start=2026-11-09")).json();
+    expect(week.days[0].sessions[0]).toMatchObject({ id: "lift-b-1109", status: "skipped" });
+
+    const opts = await options(app, "lift-b-1109", "move");
+    const wed = opts.options.find((o: { id: string }) => o.id === "move:2026-11-11");
+    expect(wed).toBeDefined();
+
+    const res = await call(app, "POST", "/api/sessions/lift-b-1109/apply", { action: "move", optionId: wed.id, planVersion: opts.planVersion });
+    expect(res.status).toBe(200);
+    expect(patches).toHaveLength(1);
+    expect(patches[0]).toMatchObject({ id: "lift-b-1109", patch: { date: "2026-11-11", status: "confirmed" } });
+    expect(repo.decisionLog.at(-1)).toMatchObject({ trigger: "apply_move", status: "applied" });
+
+    const out = await res.json();
+    const day = out.week.days[2];
+    expect(day.date).toBe("2026-11-11");
+    expect(day.sessions[0]).toMatchObject({ id: "lift-b-1109", status: "planned" });
+  });
+
+  it("stays skipped when the calendar write fails", async () => {
+    const { app, events } = setup({ failOn: (id) => id === "lift-b-1109" });
+    skipLiftB(events);
+    const opts = await options(app, "lift-b-1109", "move");
+    const res = await call(app, "POST", "/api/sessions/lift-b-1109/apply", { action: "move", optionId: "move:2026-11-11", planVersion: opts.planVersion });
+    expect(res.status).toBe(502);
+    expect(events.find((e) => e.id === "lift-b-1109")!.status).toBe("cancelled");
+  });
+
+  it("can be marked done on its own day, and the status updates", async () => {
+    const { app, repo, events } = setup();
+    skipLiftB(events);
+    const res = await call(app, "POST", "/api/sessions/lift-b-1109/done");
+    expect(res.status).toBe(200);
+    expect((await res.json()).home.strength.upper.actual).toBe(1);
+    const week = await (await call(app, "GET", "/api/week?start=2026-11-09")).json();
+    expect(week.days[0].sessions[0]).toMatchObject({ id: "lift-b-1109", status: "done", doneSource: "manual" });
+    expect(repo.decisionLog.map((d) => d.trigger)).toEqual(["mark_done"]);
+  });
+
+  it("refuses to mark done the stand-in a moved session leaves behind", async () => {
+    const { app, events } = setup();
+    const e = events.find((x) => x.id === "lift-b-1109")!;
+    e.originalStartTime = { date: "2026-11-09" };
+    e.start = { date: "2026-11-17" }; // moved to next week
+    const res = await call(app, "POST", "/api/sessions/lift-b-1109~origin/done");
+    expect(res.status).toBe(422);
+  });
+});
+
 describe("apply: move into next week", () => {
   it("moves the session, cancels the one it replaces, and the origin week records a miss", async () => {
     const { app, repo, patches } = setup();

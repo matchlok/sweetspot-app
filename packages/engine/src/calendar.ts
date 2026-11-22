@@ -115,6 +115,9 @@ export function eventDate(e: CalendarEvent): string | null {
   return null;
 }
 
+/** A stand-in left on a session's original day after it moved out of the week. It is a record, not a session to act on. */
+export const isOriginStandIn = (id: string): boolean => id.endsWith("~origin");
+
 /**
  * Sessions in the Mon-Sun week starting `weekStart`, sorted by date then title.
  * Pass events from the neighbouring weeks too, so moves across weeks resolve:

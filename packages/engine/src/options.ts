@@ -1,5 +1,5 @@
 import { addDays, mondayOf, weekdayMon0 } from "./dates";
-import type { SessionKind } from "./calendar";
+import { isOriginStandIn, type SessionKind } from "./calendar";
 import type { ResolvedStatus } from "./plan";
 
 /**
@@ -10,7 +10,9 @@ import type { ResolvedStatus } from "./plan";
  *
  * First-version rules:
  * - nothing moves into or out of the past; options start today
- * - completed (and skipped) sessions don't move
+ * - completed sessions don't move; a skipped session is just not done yet, so it
+ *   can be moved to a day that is left (or marked done). Skip is not a lock.
+ *   The stand-in a moved session leaves behind is a record and stays put.
  * - no lower-body lift the day before a quality ride (hard); a quality ride
  *   moved there pulls the lift to another day when one fits
  * - the long ride (endurance) keeps the weekend slot unless overridden
@@ -229,21 +231,32 @@ function crossWeekOptions(s: WeekSession, next: readonly WeekSession[], today: s
 // ---- Builder ----
 
 export function dayOptions(input: DayOptionsInput): DayOptions {
-  const { sessions, sessionId, action, today } = input;
+  const { sessionId, action, today } = input;
+  let { sessions } = input;
   const allowOff = input.allowLongRideOffWeekend ?? false;
   const s = sessions.find((x) => x.id === sessionId);
   if (!s) throw new Error(`unknown session ${sessionId}`);
 
   const result: DayOptions = { sessionId, action, planVersion: planVersion([...sessions, ...(input.nextWeek ?? [])]), options: [], blocked: [] };
-  if (s.status === "not_logged" && isLift(s.kind)) result.canMarkDone = true;
+  const skipped = s.status === "skipped";
+  // A skipped lift can be marked done on its own day, once that day has come.
+  if ((s.status === "not_logged" || (skipped && !isOriginStandIn(s.id) && s.date <= today)) && isLift(s.kind)) result.canMarkDone = true;
 
-  if (s.status === "done" || s.status === "skipped") {
-    result.blocked.push({
-      heading: s.status === "done" ? "Completed" : "Skipped",
-      reason: s.status === "done" ? "Completed sessions don't move." : "A skipped session stays skipped.",
-    });
+  if (s.status === "done") {
+    result.blocked.push({ heading: "Completed", reason: "Completed sessions don't move." });
     return result;
   }
+  if (skipped && isOriginStandIn(s.id)) {
+    result.blocked.push({ heading: "Moved", reason: "This session was moved to another day. Move it from there." });
+    return result;
+  }
+  if (skipped && action !== "move") {
+    result.blocked.push({ heading: "Skipped", reason: "Already skipped. Move it to a day that is left, or mark it done." });
+    return result;
+  }
+
+  // Once it is being rescheduled, a skipped session counts like a planned one for the rules.
+  if (skipped) sessions = sessions.map((x) => (x.id === s.id ? { ...x, status: "planned" as const } : x));
 
   const base = violations(sessions, new Map(), allowOff);
   const baseKeys = new Set(base.map((v) => v.key));

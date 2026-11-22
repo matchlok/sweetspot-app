@@ -37,7 +37,7 @@ function sub(s: Session, isToday: boolean): { text: string; color?: string } {
   if (s.status === "not_logged") return { text: "Not logged. Tap to reschedule", color: WARN };
   if (s.status === "done") return { text: "Done", color: "#8fe0bd" };
   if (s.movedTo) return { text: `Moved to ${short(s.movedTo)}. Counts as missed this week.`, color: WARN };
-  if (s.status === "skipped") return { text: "Skipped" };
+  if (s.status === "skipped") return s.id.endsWith("~origin") ? { text: "Skipped" } : { text: "Skipped. Tap to reschedule", color: WARN };
   if (s.movedFrom) return { text: `Moved in from ${short(s.movedFrom)}`, color: "var(--text-2)" };
   const d = s.detail ?? (s.minutes ? `${s.minutes} min` : "");
   return { text: isToday ? `Today${d ? ` · ${d}` : ""}` : d, color: isToday ? "var(--text-2)" : undefined };
@@ -195,7 +195,7 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
               key={s.id}
               className="day"
               style={day.isToday ? { borderColor: "var(--today-line)", background: "var(--today-bg)" } : undefined}
-              onClick={() => (s.status === "planned" || s.status === "not_logged") && onOpen(s)}
+              onClick={() => (s.status === "planned" || s.status === "not_logged" || (s.status === "skipped" && !s.id.endsWith("~origin"))) && onOpen(s)}
             >
               <div className="dn"><b style={day.isToday ? { color: "var(--accent)" } : undefined}>{dow}</b><span>{num}</span></div>
               <div style={{ flex: 1 }}>

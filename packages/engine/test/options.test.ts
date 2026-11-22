@@ -56,6 +56,42 @@ describe("not_logged lift", () => {
   });
 });
 
+describe("skipped session", () => {
+  const skippedB = v4.map((s) => (s.id === "liftB" ? { ...s, status: "skipped" as const } : s));
+
+  it("moves like any other session, to a day that is left", () => {
+    const o = dayOptions({ sessions: skippedB, sessionId: "liftB", action: "move", today: TODAY });
+    expect(o.options.map((x) => x.id)).toContain("move:2026-11-11");
+    expect(o.options.map((x) => x.id)).not.toContain("move:2026-11-09");
+    expect(o.blocked.some((b) => /stays skipped/.test(b.reason))).toBe(false);
+  });
+  it("still obeys the rules once it is back in play", () => {
+    // Lower lift moved onto Monday would sit the day before Tuesday's VO2.
+    const lower = v4.map((s) => (s.id === "liftA" ? { ...s, status: "skipped" as const } : s));
+    const o = dayOptions({ sessions: lower, sessionId: "liftA", action: "move", today: "2026-11-09" });
+    expect(o.options.map((x) => x.id)).not.toContain("move:2026-11-09");
+    expect(o.blocked).toContainEqual({ heading: "Monday, Nov 9", reason: "Lower lift the day before vo2 intervals" });
+  });
+  it("can be marked done once its day has come, not before", () => {
+    expect(dayOptions({ sessions: skippedB, sessionId: "liftB", action: "move", today: TODAY }).canMarkDone).toBe(true);
+    expect(dayOptions({ sessions: skippedB, sessionId: "liftB", action: "move", today: "2026-11-08" }).canMarkDone).toBeUndefined();
+  });
+  it("offers no second skip or swap", () => {
+    for (const action of ["skip", "swap"] as const) {
+      const o = dayOptions({ sessions: skippedB, sessionId: "liftB", action, today: TODAY });
+      expect(o.options).toEqual([]);
+      expect(o.blocked[0]!.heading).toBe("Skipped");
+    }
+  });
+  it("leaves the stand-in for a moved session alone", () => {
+    const standIn = v4.map((s) => (s.id === "liftB" ? { ...s, id: "liftB~origin", status: "skipped" as const } : s));
+    const o = dayOptions({ sessions: standIn, sessionId: "liftB~origin", action: "move", today: TODAY });
+    expect(o.options).toEqual([]);
+    expect(o.canMarkDone).toBeUndefined();
+    expect(o.blocked[0]!.heading).toBe("Moved");
+  });
+});
+
 describe("completed sessions", () => {
   it("don't move", () => {
     const sessions = v4.map((s) => (s.id === "liftB" ? { ...s, status: "done" as const } : s));
