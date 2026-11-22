@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coach's proposal</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090c;--card:#13151c;--line:#262a36;--nav:#0d0f14;--track:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--accent:#c9cffc;--endurance:#7c8cf8;--vo2:#ee7480;--ss:#e0b25c;--lift:#c4c6d2;--todaybg:#1a1d33;--todayline:#3d4680}
+body{margin:0;background:#08090c}
+*{box-sizing:border-box}
+.s{width:390px;height:844px;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.b{flex:1;min-height:0;overflow-y:auto;padding:20px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.m{font-size:13px;color:var(--muted)}
+.foot{padding:8px 16px 20px;display:flex;flex-direction:column;gap:2px}
+a.cta{display:flex;align-items:center;justify-content:center;height:48px;border-radius:14px;background:var(--endurance);color:#0a0b14;font-weight:700;font-size:16px;text-decoration:none}
+a.back{display:flex;align-items:center;justify-content:center;height:44px;color:var(--muted);font-weight:600;font-size:15px;text-decoration:none}
+.av{width:32px;height:32px;border-radius:10px;background:var(--todaybg);border:1px solid var(--todayline);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pr{display:flex;align-items:center;gap:10px;min-height:34px;border-top:1px solid var(--track);font-size:14px}
+.pr.first{border-top:0}
+.dot{width:10px;height:10px;border-radius:5px;flex-shrink:0}
+.chip{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--text2);font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+.chip.on{background:var(--todaybg);border-color:var(--todayline);color:var(--accent)}
+.tb{width:100%;height:48px;border-radius:14px;border:1px solid var(--line);background:#0f1116;color:var(--text);font:500 15px Inter,system-ui,sans-serif;padding:0 14px}
+.tb:disabled{color:var(--muted);background:var(--bg)}
+</style>
+</helmet>
+<div class="s">
+<div class="b">
+<div style="display: flex; align-items: center; gap: 10px">
+<div class="av"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 3 4-8 5 6"></path><circle cx="20" cy="8" r="1.5"></circle></svg></div>
+<div><div style="font-size: 15px; font-weight: 700">Coach</div><div class="m">Step 4 of 4 · Proposal</div></div>
+</div>
+<div class="card" style="font-size: 15px; line-height: 1.5; color: var(--text2)">You painted 4 h 30 min for a week you usually ride 3 h 30 min, so week 1 asks for an hour more than you've been doing. Endurance sits on Saturday's long trail ride, sweet spot on Tuesday and VO2 on Thursday, never on back-to-back days. Lifts go on Monday and Friday, your two off days, with the lower lift on Friday so no hard ride follows it. Sunday is an easy spin.</div>
+<div class="card" style="padding: 8px 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0 8px">
+<div class="lbl">Program card</div>
+<div class="m">Block 1 · 8 weeks · Nov 23 to Jan 17</div>
+</div>
+<div class="pr first"><span class="dot" style="background: var(--endurance)"></span><span style="font-weight: 600">Endurance</span><span style="flex: 1; text-align: right; color: var(--text2)">Hold 90 min · Sat</span></div>
+<div class="pr"><span class="dot" style="background: var(--ss)"></span><span style="font-weight: 600">Sweet spot</span><span style="flex: 1; text-align: right; color: var(--text2)">Progress 20 min, +1 · Tue</span></div>
+<div class="pr"><span class="dot" style="background: var(--vo2)"></span><span style="font-weight: 600">VO2</span><span style="flex: 1; text-align: right; color: var(--text2)">Progress 8 min, +1 · Thu</span></div>
+<div class="pr"><span class="dot" style="background: var(--muted)"></span><span style="font-weight: 600">Threshold</span><span style="flex: 1; text-align: right; color: var(--muted)">Off</span></div>
+<div class="pr"><span class="dot" style="background: var(--lift)"></span><span style="font-weight: 600">Lifts</span><span style="flex: 1; text-align: right; color: var(--text2)">Lower 1 · Fri, upper 1 · Mon</span></div>
+<div class="pr"><span class="dot" style="background: var(--muted)"></span><span style="font-weight: 600">Easy spin</span><span style="flex: 1; text-align: right; color: var(--text2)">45 min · Sun</span></div>
+<div class="pr"><span class="dot" style="background: var(--track); border: 1px solid var(--muted)"></span><span style="font-weight: 600">Recovery</span><span style="flex: 1; text-align: right; color: var(--text2)">Week after 3 all-hit weeks</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+<button class="{{c.cls}}" onClick="{{c.pick}}">{{c.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{coachOff}}" hint-placeholder-val="{{ false }}">
+<div class="m" style="line-height: 1.4">Coach is off. The chips make fixed edits to the card.</div>
+</sc-if>
+<input class="tb" type="text" placeholder="{{placeholder}}" disabled="{{coachOff}}" aria-label="Message the coach">
+</div>
+<div class="foot">
+<sc-if value="{{toPreview}}" hint-placeholder-val="{{ false }}">
+<a class="cta" href="Preview.dc.html">{{ctaLabel}}</a>
+</sc-if>
+<sc-if value="{{toAdjust}}" hint-placeholder-val="{{ true }}">
+<a class="cta" href="Adjusting.dc.html">{{ctaLabel}}</a>
+</sc-if>
+<a class="back" href="YourWeek.dc.html">Back to your week</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"coachOn":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+state = { sel: 'fewer' };
+renderVals() {
+const coachOn = this.props.coachOn !== false;
+const items = [
+{ id: 'less', label: 'Less intensity' },
+{ id: 'lift', label: 'More lifting' },
+{ id: 'fewer', label: 'Fewer trainer days' },
+{ id: 'explain', label: 'Explain this' },
+{ id: 'good', label: 'Looks good' }
+];
+const sel = this.state.sel;
+const chips = items.map((c) => ({
+label: c.label,
+cls: c.id === sel ? 'chip on' : 'chip',
+pick: () => this.setState({ sel: c.id })
+}));
+const cur = items.find((c) => c.id === sel);
+const good = sel === 'good';
+return {
+chips,
+coachOff: !coachOn,
+placeholder: coachOn ? 'Tell the coach...' : 'Coach is off. Turn it on in Settings.',
+toPreview: good,
+toAdjust: !good,
+ctaLabel: good ? 'Looks good, preview the weeks' : (coachOn ? 'Ask the coach: ' : 'Apply: ') + cur.label
+};
+}
+}
+</script>
+</body>
+</html>

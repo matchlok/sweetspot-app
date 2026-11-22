@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Welcome</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090c;--card:#13151c;--line:#262a36;--nav:#0d0f14;--track:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--accent:#c9cffc;--endurance:#7c8cf8;--vo2:#ee7480;--ss:#e0b25c;--todaybg:#1a1d33;--todayline:#3d4680}
+body{margin:0;background:#08090c}
+*{box-sizing:border-box}
+.s{width:390px;height:844px;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.b{flex:1;min-height:0;overflow-y:auto;padding:24px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.h1{font-size:30px;line-height:1.15;font-weight:700;margin:0;letter-spacing:-.01em}
+.p{font-size:15px;line-height:1.45;color:var(--text2);margin:0}
+.m{font-size:13px;color:var(--muted)}
+.foot{padding:8px 16px 24px;display:flex;flex-direction:column;gap:4px}
+a.cta{display:flex;align-items:center;justify-content:center;height:48px;border-radius:14px;background:var(--endurance);color:#0a0b14;font-weight:700;font-size:16px;text-decoration:none}
+.li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--track)}
+.li:first-child{border-top:0}
+.ic{width:32px;height:32px;border-radius:10px;background:var(--todaybg);border:1px solid var(--todayline);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.t{font-size:15px;font-weight:600}
+</style>
+</helmet>
+<div class="s">
+<div class="b" style="justify-content: center; gap: 20px">
+<div style="width: 56px; height: 56px; border-radius: 16px; background: var(--todaybg); border: 1px solid var(--todayline); display: flex; align-items: center; justify-content: center">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 3 4-8 5 6"></path><circle cx="20" cy="8" r="1.5"></circle></svg>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h1 class="h1">Let's build your next block.</h1>
+<p class="p">I read your last 8 weeks of rides first, then ask two things: what this block is for, and what your week looks like.</p>
+</div>
+<div class="card" style="padding: 4px 16px">
+<div class="li">
+<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"></path></svg></div>
+<div><div class="t">Reads</div><div class="m" style="margin-top: 2px">Rides and strength from intervals.icu and Strava, plus your FTP and Form.</div></div>
+</div>
+<div class="li">
+<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"></path></svg></div>
+<div><div class="t">Asks</div><div class="m" style="margin-top: 2px">The goal of the block and which days you can ride.</div></div>
+</div>
+<div class="li">
+<div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></svg></div>
+<div><div class="t">Writes</div><div class="m" style="margin-top: 2px">The next two weeks to your Training calendar, only after you tap Start.</div></div>
+</div>
+</div>
+</div>
+<div class="foot">
+<a class="cta" href="WhatISee.dc.html">Read my last 8 weeks</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

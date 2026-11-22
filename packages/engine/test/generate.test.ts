@@ -140,4 +140,16 @@ describe("generator inputs", () => {
   it("throws when availability can't hold the rides", () => {
     expect(() => generateProgram(HISTORY, { minutes: [0, 60, 0, 60, 0, 0, 0] }, { kind: "faster" })).toThrow();
   });
+  // The onboarding prototype's screen 4 -> 5 week (docs/build-writeup/2026-11-22-onboarding-prototype/README.md).
+  it("builds the onboarding prototype's week, with no ride the day after the lower lift", () => {
+    const card = generateProgram({ asOf: "2026-11-21", liftsPerWeek: 2 }, { minutes: [0, 60, 0, 45, 0, 120, 45] }, { kind: "faster" });
+    expect(card.weeks[0]!.sessions.map((s) => `${weekdayMon0(s.date)} ${s.kind} ${s.minutes}`)).toEqual([
+      "0 lift_upper 30",
+      "1 sweet_spot 60",
+      "3 vo2 45",
+      "4 lift_lower 30",
+      "5 endurance 120",
+      "6 easy_spin 45",
+    ]);
+  });
 });
