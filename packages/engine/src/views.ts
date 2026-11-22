@@ -13,6 +13,7 @@ import {
   type ResolvedStatus,
 } from "./plan";
 import { weeklyZoneRows } from "./scorecard";
+import { matchRides, type RideMatch } from "./match";
 import {
   GOAL_KEYS,
   programState,
@@ -48,6 +49,8 @@ export interface Session {
   detail: string | null;
   status: SessionStatus;
   doneSource?: "intervals" | "manual";
+  /** The ride that counted for this session. `substituted` when it was not the planned category. */
+  matchedRide?: { activityId: string; detected: string; substituted: boolean };
   /** Moved in from an earlier week: the date it was planned for. */
   movedFrom?: Day;
   /** Moved out to a later week. This is the stand-in on its original day, and it counts as a miss. */
@@ -204,7 +207,8 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   const plan = planFor(d, weekStart);
   const manual = new Set((d.manualDone ?? []).map((m) => m.sessionId));
   const logged = {
-    rideDates: new Set(d.rides.map((r) => r.date)),
+    // Rides count by category through matchRides, not by date alone.
+    rideDates: new Set<string>(),
     liftDates: new Set(d.lifts.map((l) => l.date)),
   };
   const now = d.now ?? new Date(`${d.today}T19:00:00Z`);
@@ -214,8 +218,11 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   const strength = weekStrength(planned, weekLifts, new Map(Object.entries(d.liftTags ?? {})));
   const settled = new Set(strength.lifts.flatMap((l) => (l.sessionId ? [l.sessionId] : [])));
 
+  const matches: Map<string, RideMatch> = matchRides(planned, d.rides);
+
   const sessions: Session[] = planned.map((p) => {
-    let status: SessionStatus = sessionStatus(p, logged, now);
+    const m = matches.get(p.id);
+    let status: SessionStatus = m?.ride ? "done" : sessionStatus(p, logged, now);
     let doneSource: Session["doneSource"];
     if (p.status !== "skipped" && settled.has(p.id) && status !== "done") {
       status = "done";
@@ -229,6 +236,7 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
     }
     const s: Session = { id: p.id, date: p.date, kind: p.kind, title: p.title, minutes: p.minutes, detail: null, status };
     if (doneSource) s.doneSource = doneSource;
+    if (m?.ride) s.matchedRide = { activityId: m.ride.id, detected: m.detected ?? "unknown", substituted: m.substituted };
     if (p.movedFrom) s.movedFrom = p.movedFrom;
     if (p.movedTo) s.movedTo = p.movedTo;
     return s;

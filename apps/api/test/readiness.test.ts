@@ -53,14 +53,14 @@ describe("readiness log", () => {
   });
 
   it("scores the reading once the day is over, and only once", async () => {
-    // A ride with 4 min in Z5 on Nov 10: short of the 8 min target, so a shortfall, which yellow predicted.
+    // A ride with 5 min in Z5 on Nov 10 (a VO2 ride): short of the 8 min target, so a shortfall, which yellow predicted.
     const ride: IntervalsActivity = {
       id: "a1",
       type: "Ride",
       start_date_local: "2026-11-10T07:30:00",
       moving_time: 3600,
       device_watts: true,
-      icu_zone_times: [{ id: "Z1", secs: 600 }, { id: "Z2", secs: 2400 }, { id: "Z3", secs: 300 }, { id: "Z4", secs: 0 }, { id: "Z5", secs: 240 }, { id: "Z6", secs: 0 }, { id: "Z7", secs: 0 }],
+      icu_zone_times: [{ id: "Z1", secs: 600 }, { id: "Z2", secs: 2400 }, { id: "Z3", secs: 300 }, { id: "Z4", secs: 0 }, { id: "Z5", secs: 300 }, { id: "Z6", secs: 0 }, { id: "Z7", secs: 0 }],
     };
     const { repo, data, home, setNow } = setup([ride]);
     await home();
@@ -72,7 +72,7 @@ describe("readiness log", () => {
     const scored = repo.decisionLog.filter((d) => d.trigger === "readiness_scored");
     expect(scored).toHaveLength(1);
     expect(scored[0]!.choice).toMatchObject({
-      outcome: { date: "2026-11-10", done: true, completed: false, goalMinutes: 4 },
+      outcome: { date: "2026-11-10", done: true, completed: false, goalMinutes: 5 },
       score: { correct: true, predicted: "shortfall", actual: "shortfall" },
     });
   });

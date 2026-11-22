@@ -80,13 +80,13 @@ describe("prediction and scoring", () => {
     expect(scoreReading(p, missed)).toEqual({ correct: false, predicted: "completes", actual: "shortfall" });
 
     // A ride with 10 min in Z5 meets the 9 min target.
-    const rides = [...D.rides, { id: "r9", date: "2026-11-10", movingSeconds: 3600, category: "unknown" as const, categorySource: null, power: [300, 1200, 0, 0, 600, 0, 0] }];
+    const rides = [...D.rides, { id: "r9", date: "2026-11-10", movingSeconds: 3600, category: "vo2" as const, categorySource: "power" as const, power: [300, 1200, 0, 0, 600, 0, 0] }];
     const hit = readinessOutcome({ ...next, rides }, p)!;
     expect(hit).toMatchObject({ done: true, goalMinutes: 10, targetMin: 9, completed: true });
     expect(scoreReading(p, hit).correct).toBe(true);
 
     // A ride short of target is a shortfall, which a yellow or red reading would have called right.
-    const shortRides = [...D.rides, { id: "r9", date: "2026-11-10", movingSeconds: 3600, category: "unknown" as const, categorySource: null, power: [300, 1200, 0, 0, 300, 0, 0] }];
+    const shortRides = [...D.rides, { id: "r9", date: "2026-11-10", movingSeconds: 3600, category: "vo2" as const, categorySource: "power" as const, power: [300, 1200, 0, 0, 300, 0, 0] }];
     const short = readinessOutcome({ ...next, rides: shortRides }, p)!;
     expect(short).toMatchObject({ done: true, completed: false, goalMinutes: 5 });
   });

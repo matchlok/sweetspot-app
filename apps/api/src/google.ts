@@ -125,3 +125,48 @@ export async function patchEvent(cfg: GoogleConfig, instanceId: string, patch: E
   // Status only: never echo the body.
   if (!res.ok) throw new Error(`Google Calendar patch -> HTTP ${res.status}`);
 }
+
+/** One new all-day event. `tags` go to extendedProperties.private (sweetspotKind, sweetspotProgram). */
+export interface NewEvent {
+  /** "YYYY-MM-DD", America/Denver. */
+  date: string;
+  summary: string;
+  description?: string;
+  tags: Record<string, string>;
+}
+
+/**
+ * Create one single (non-recurring) all-day event and return its id. One event
+ * per session; never a series.
+ */
+export async function createEvent(cfg: GoogleConfig, ev: NewEvent): Promise<string> {
+  const f = cfg.fetch ?? fetch;
+  const token = await accessToken(cfg);
+  const body: Record<string, unknown> = {
+    summary: ev.summary,
+    start: { date: ev.date },
+    end: { date: nextDay(ev.date) },
+    extendedProperties: { private: ev.tags },
+  };
+  if (ev.description) body.description = ev.description;
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cfg.calendarId)}/events`;
+  const res = await f(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  // Status only: never echo the body.
+  if (!res.ok) throw new Error(`Google Calendar create -> HTTP ${res.status}`);
+  const made = (await res.json()) as { id?: string };
+  if (!made.id) throw new Error("Google Calendar create: no event id");
+  return made.id;
+}
+
+/** Delete one event. An event that is already gone (404 or 410) counts as deleted. */
+export async function deleteEvent(cfg: GoogleConfig, eventId: string): Promise<void> {
+  const f = cfg.fetch ?? fetch;
+  const token = await accessToken(cfg);
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cfg.calendarId)}/events/${encodeURIComponent(eventId)}`;
+  const res = await f(url, { method: "DELETE", headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok && res.status !== 404 && res.status !== 410) throw new Error(`Google Calendar delete -> HTTP ${res.status}`);
+}

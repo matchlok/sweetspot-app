@@ -17,6 +17,7 @@ import {
 } from "@sweetspot/engine";
 import { loadViewData, logReadiness, syncActivities, syncIfStale, type DataDeps } from "../data";
 import { fail } from "../errors";
+import { writeWeekTwoAhead } from "../calendarWriter";
 
 /** How far ahead the calendar screens may look. Keeps the Google fetch bounded. */
 const MAX_AHEAD_DAYS = 26 * 7;
@@ -104,5 +105,7 @@ export function readRoutes(data: DataDeps) {
 export function cronRoutes(data: DataDeps) {
   const r = new Hono();
   r.get("/sync", async (c) => c.json(await syncActivities(data)));
+  // Sunday night: write the week two ahead from the planned sessions.
+  r.get("/write-week", async (c) => c.json(await writeWeekTwoAhead(data)));
   return r;
 }

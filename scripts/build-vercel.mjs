@@ -36,7 +36,11 @@ writeFileSync(
     {
       version: 3,
       routes: [{ handle: "filesystem" }, { src: "/api(?:/.*)?", dest: "/api" }],
-      crons: [{ path: "/api/cron/sync", schedule: "0 10 * * *" }],
+      crons: [
+        { path: "/api/cron/sync", schedule: "0 10 * * *" },
+        // Monday 05:00 UTC is Sunday 22:00 MST or 23:00 MDT, so the Denver date is still Sunday.
+        { path: "/api/cron/write-week", schedule: "0 5 * * 1" },
+      ],
     },
     null,
     2,
