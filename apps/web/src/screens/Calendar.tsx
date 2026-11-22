@@ -35,7 +35,8 @@ export function shiftDate(date: string, days: number) {
 
 function sub(s: Session, isToday: boolean): { text: string; color?: string } {
   if (s.status === "not_logged") return { text: "Not logged. Tap to reschedule", color: WARN };
-  if (s.status === "done") return { text: "Done", color: "#8fe0bd" };
+  if (s.status === "done") return { text: s.shifted ? `Done · planned ${short(s.shifted.from)}` : "Done", color: "#8fe0bd" };
+  if (s.shifted) return { text: `Moved from ${short(s.shifted.from)} to fit this week`, color: "var(--text-2)" };
   if (s.movedTo) return { text: `Moved to ${short(s.movedTo)}. Counts as missed this week.`, color: WARN };
   if (s.status === "skipped") return s.id.endsWith("~origin") ? { text: "Skipped" } : { text: "Skipped. Tap to reschedule", color: WARN };
   if (s.movedFrom) return { text: `Moved in from ${short(s.movedFrom)}`, color: "var(--text-2)" };
@@ -177,6 +178,7 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
         <>
           <Status load={week} />
           <div className="muted" style={{ fontSize: 14, marginBottom: 4 }}>Tap a session to move, swap or skip it.</div>
+          {w.scheduleGap && <div className="nudge" role="status" style={{ marginTop: 0, marginBottom: 8 }}>{w.scheduleGap.text}</div>}
       {w.days.map((day) => {
         const { dow, num } = parts(day.date);
         if (day.sessions.length === 0) {

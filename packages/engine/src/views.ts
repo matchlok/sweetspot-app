@@ -13,7 +13,7 @@ import {
   type ResolvedStatus,
 } from "./plan";
 import { weeklyZoneRows } from "./scorecard";
-import { matchRides, type RideMatch } from "./match";
+import { matchLateRides, matchRides, type RideMatch } from "./match";
 import {
   GOAL_KEYS,
   programState,
@@ -55,6 +55,18 @@ export interface Session {
   movedFrom?: Day;
   /** Moved out to a later week. This is the stand-in on its original day, and it counts as a miss. */
   movedTo?: Day;
+  /**
+   * Shown on a different day of its own week than the calendar has it (SWE-41, derived, not written to the
+   * calendar). `ride`: a ride logged on a later day counted for it. `reshuffle`: it was missed and re-placed
+   * into a day that is left.
+   */
+  shifted?: { from: Day; reason: "ride" | "reshuffle" };
+}
+
+/** Missed ride sessions that could not be re-placed into the days left this week. */
+export interface ScheduleGap {
+  text: string;
+  sessionIds: string[];
 }
 
 export interface GoalBar {
@@ -201,6 +213,50 @@ interface ResolvedWeek {
   strength: WeekStrength;
   /** Planned lift sessions marked done by hand with no activity behind them. */
   manualLifts: Record<LiftKey, number>;
+  /** Set only for the week that holds today. */
+  gap: ScheduleGap | null;
+}
+
+const QUALITY_KINDS: ReadonlySet<SessionKind> = new Set(["sweet_spot", "threshold", "vo2"]);
+
+const toWeekSession =(s: Session): WeekSession => ({
+  id: s.id,
+  date: s.date,
+  kind: s.kind,
+  title: s.title,
+  minutes: s.minutes,
+  status: s.status,
+  ...(s.movedFrom ? { movedIn: true } : {}),
+});
+
+/**
+ * Re-places missed ride sessions into the days left this week, Saturday and Sunday first, through the same
+ * rule gate as the day sheet (`dayOptions`). A day is used only when the option passes every rule, moves
+ * nothing else and replaces nothing. Whatever doesn't fit stays missed and is returned for the prompt.
+ * Order: quality (sweet spot, threshold, VO2) before endurance, earliest missed first within each. Lifts and optional easy spins are left alone.
+ */
+function reshuffleMissed(sessions: Session[], today: Day, weekStart: Day): string[] {
+  const left = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter((day) => day >= today);
+  const weekend = left.filter((day) => weekdayMon0(day) >= 5);
+  const order = [...weekend, ...left.filter((day) => !weekend.includes(day))];
+  const missed = sessions
+    .filter((s) => s.status === "not_logged" && !liftOf(s.kind) && s.kind !== "easy_spin")
+    .sort((a, b) => Number(!QUALITY_KINDS.has(a.kind)) - Number(!QUALITY_KINDS.has(b.kind)) || a.date.localeCompare(b.date));
+  const unplaced: string[] = [];
+  for (const s of missed) {
+    const opts = dayOptions({ sessions: sessions.map(toWeekSession), sessionId: s.id, action: "move", today }).options;
+    const day = order.find((dd) =>
+      opts.some((o) => o.id === `move:${dd}` && o.alsoMoves.length === 0 && !o.absorbs && o.rules.every((r) => r.result === "pass")),
+    );
+    if (!day) {
+      unplaced.push(s.id);
+      continue;
+    }
+    s.shifted = { from: s.date, reason: "reshuffle" };
+    s.date = day;
+    s.status = "planned";
+  }
+  return unplaced;
 }
 
 function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
@@ -219,9 +275,13 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   const settled = new Set(strength.lifts.flatMap((l) => (l.sessionId ? [l.sessionId] : [])));
 
   const matches: Map<string, RideMatch> = matchRides(planned, d.rides);
+  // A ride logged on a later day of the week counts for the session it was planned for (SWE-41).
+  const late = matchLateRides(planned, d.rides, matches, weekStart, addDays(weekStart, 6));
+  for (const [id, l] of late) matches.set(id, l.match);
 
   const sessions: Session[] = planned.map((p) => {
     const m = matches.get(p.id);
+    const lateRide = late.get(p.id);
     let status: SessionStatus = m?.ride ? "done" : sessionStatus(p, logged, now);
     let doneSource: Session["doneSource"];
     if (p.status !== "skipped" && settled.has(p.id) && status !== "done") {
@@ -239,8 +299,24 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
     if (m?.ride) s.matchedRide = { activityId: m.ride.id, detected: m.detected ?? "unknown", substituted: m.substituted };
     if (p.movedFrom) s.movedFrom = p.movedFrom;
     if (p.movedTo) s.movedTo = p.movedTo;
+    if (lateRide && status === "done") {
+      s.date = lateRide.date;
+      s.shifted = { from: p.date, reason: "ride" };
+    }
     return s;
   });
+
+  let gap: ScheduleGap | null = null;
+  if (d.today >= weekStart && d.today <= addDays(weekStart, 6)) {
+    const unplaced = reshuffleMissed(sessions, d.today, weekStart);
+    if (unplaced.length > 0) {
+      const names = unplaced.map((id) => sessions.find((s) => s.id === id)!.title);
+      gap = {
+        text: `${unplaced.length === 1 ? "1 session" : `${unplaced.length} sessions`} didn't fit in the days left this week (${names.join(", ")}). Fill in the schedule.`,
+        sessionIds: unplaced,
+      };
+    }
+  }
 
   const manualLifts: Record<LiftKey, number> = { upper: 0, lower: 0 };
   for (const p of planned) {
@@ -251,18 +327,11 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
   return {
     start: weekStart,
     sessions,
-    weekSessions: sessions.map((s) => ({
-      id: s.id,
-      date: s.date,
-      kind: s.kind,
-      title: s.title,
-      minutes: s.minutes,
-      status: s.status,
-      ...(s.movedFrom ? { movedIn: true } : {}),
-    })),
+    weekSessions: sessions.map(toWeekSession),
     plan,
     strength,
     manualLifts,
+    gap,
   };
 }
 
@@ -280,6 +349,8 @@ export interface HomeView {
   strength: StrengthBar | null;
   offGoals: OffGoal[];
   fatigue: null | { form: number; ramp: number | null; load: number | null; note: string | null };
+  /** Missed sessions that could not be re-placed this week. Null when everything is placed. */
+  scheduleGap: ScheduleGap | null;
   lastSyncedAt: string;
 }
 
@@ -369,6 +440,7 @@ export function homeView(d: ViewData, date: Day = d.today): HomeView {
     strength,
     offGoals,
     fatigue: f ? { form: f.form, ramp: f.rampRate, load: null, note: fr?.note ?? null } : null,
+    scheduleGap: wk.gap,
     lastSyncedAt: d.lastSyncedAt,
   };
 }
@@ -380,6 +452,8 @@ export interface WeekView {
   label: string;
   days: { date: Day; isToday: boolean; isPast: boolean; sessions: Session[] }[];
   nextWeekNote: string | null;
+  /** Missed sessions that could not be re-placed this week. Null when everything is placed. */
+  scheduleGap: ScheduleGap | null;
 }
 
 export function weekView(d: ViewData, start: Day = mondayOf(d.today)): WeekView {
@@ -409,7 +483,7 @@ export function weekView(d: ViewData, start: Day = mondayOf(d.today)): WeekView 
     nextWeekNote = lines.length > 0 ? lines.join(" ") : null;
   }
 
-  return { start: monday, label: weekLabel(monday), days, nextWeekNote };
+  return { start: monday, label: weekLabel(monday), days, nextWeekNote, scheduleGap: wk.gap };
 }
 
 // ---- Month ----

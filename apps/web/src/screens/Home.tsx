@@ -216,6 +216,13 @@ export function Home({ onOpen }: { onOpen: (sessionId: string) => void }) {
         </div>
       )}
 
+      {v.scheduleGap && (
+        <button className="nudge" style={{ marginTop: 0, marginBottom: 12 }} onClick={() => onOpen(v.scheduleGap!.sessionIds[0]!)}>
+          <span>{v.scheduleGap.text}</span>
+          <Chevron />
+        </button>
+      )}
+
       <div className="card">
         <div className="lbl">This week</div>
         {v.goals.map((g) => <Bar key={g.key} g={g} onOpen={onOpen} />)}

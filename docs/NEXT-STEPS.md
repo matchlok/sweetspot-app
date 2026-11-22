@@ -34,6 +34,10 @@ Build order, one branch per step, no commits until Narjit reviews. Status lives 
 | Check own load on prod | SWE-6 (Narjit) |
 | Activity category matching, then auto-reshuffle (through `readWeek`/`crossWeekOptions`, not around them) | SWE-4, then SWE-12 |
 | Live cross-week move check on a throwaway series (date this note once checked) | SWE-7 (Narjit) |
+| Move sheet redesign: status header, day tiles with no text, one summary above the button | SWE-42 |
+| Skipped means "not done" until the week is over | SWE-43 |
+| Undo for moves, skips and mark done (four decisions open) | SWE-44 |
+| Persist the late-ride re-placement through the calendar writer (it is a derived view only, per STATUS 2026-11-22) | SWE-12 |
 | Local live check of each screen against real data | SWE-8 (Narjit) |
 | Tune the readiness thresholds after a few weeks of scored readings | SWE-9 |
 | `comeback` and `hold` purposes | SWE-17 |
