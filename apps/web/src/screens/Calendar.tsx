@@ -1,19 +1,10 @@
-import type { MonthView, Session, SessionKind, WeekView } from "@sweetspot/engine";
+import type { MonthView, Session, WeekView } from "@sweetspot/engine";
 import { useState } from "react";
 import { api, fixtureMode } from "../api";
 import { Status } from "../Status";
 import { useLoad } from "../useLoad";
 
-const DOT: Record<SessionKind, string> = {
-  endurance: "#7c8cf8",
-  sweet_spot: "#e0b25c",
-  threshold: "#e0b25c",
-  vo2: "#ee7480",
-  easy_spin: "#7c8cf8",
-  lift_upper: "#c4c6d2",
-  lift_lower: "#c4c6d2",
-};
-const WARN = "#e8bd62";
+import { statusDotColor } from "./dots";
 
 function parts(date: string) {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
@@ -33,15 +24,15 @@ export function shiftDate(date: string, days: number) {
   return t.toISOString().slice(0, 10);
 }
 
-function sub(s: Session, isToday: boolean): { text: string; color?: string } {
-  if (s.status === "not_logged") return { text: "Not logged. Tap to reschedule", color: WARN };
-  if (s.status === "done") return { text: s.shifted ? `Done · planned ${short(s.shifted.from)}` : "Done", color: "#8fe0bd" };
-  if (s.shifted) return { text: `Moved from ${short(s.shifted.from)} to fit this week`, color: "var(--text-2)" };
-  if (s.movedTo) return { text: `Moved to ${short(s.movedTo)}. Counts as missed this week.`, color: WARN };
-  if (s.status === "skipped") return s.id.endsWith("~origin") ? { text: "Skipped" } : { text: "Skipped. Tap to reschedule", color: WARN };
-  if (s.movedFrom) return { text: `Moved in from ${short(s.movedFrom)}`, color: "var(--text-2)" };
-  const d = s.detail ?? (s.minutes ? `${s.minutes} min` : "");
-  return { text: isToday ? `Today${d ? ` · ${d}` : ""}` : d, color: isToday ? "var(--text-2)" : undefined };
+/**
+ * Design rule (app-wide): a calendar tile shows at most 2 lines, the title and one short meta line,
+ * each cut off with an ellipsis rather than wrapped. Status is carried by the dot (see dots.ts), never by
+ * tile text. Anything longer, such as "Not logged", "Skipped" or "Moved to ...", belongs in the day detail
+ * view (DaySheet). Don't add a third line here.
+ */
+function meta(s: Session, isToday: boolean): string {
+  const d = s.minutes ? `${s.minutes} min` : (s.detail ?? "");
+  return isToday ? `Today${d ? ` · ${d}` : ""}` : d;
 }
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
@@ -90,17 +81,7 @@ function Month({ m, onPickDay }: { m: MonthView; onPickDay: (weekStart: string) 
               <span style={{ fontSize: 14, fontWeight: d.isToday ? 700 : 500, color: d.isToday ? "var(--accent)" : "var(--text)" }}>{Number(d.date.slice(8))}</span>
               <span style={{ display: "flex", gap: 3, minHeight: 10, justifyContent: "center" }}>
                 {d.sessions.map((s) => (
-                  <span
-                    key={s.id}
-                    className="dot"
-                    style={
-                      s.status === "not_logged"
-                        ? { width: 9, height: 9, border: `2px solid ${WARN}` }
-                        : s.status === "skipped"
-                          ? { width: 7, height: 7, border: "1.5px solid var(--muted)" }
-                          : { width: 7, height: 7, background: DOT[s.kind] }
-                    }
-                  />
+                  <span key={s.id} className="dot" style={{ width: 7, height: 7, background: statusDotColor(s.status, s.kind) }} />
                 ))}
               </span>
             </button>
@@ -177,7 +158,7 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
       {!w ? <Status load={week} /> : (
         <>
           <Status load={week} />
-          <div className="muted" style={{ fontSize: 14, marginBottom: 4 }}>Tap a session to move, swap or skip it.</div>
+          <div className="muted" style={{ fontSize: 14, marginBottom: 4 }}>Tap a session to open it.</div>
           {w.scheduleGap && <div className="nudge" role="status" style={{ marginTop: 0, marginBottom: 8 }}>{w.scheduleGap.text}</div>}
       {w.days.map((day) => {
         const { dow, num } = parts(day.date);
@@ -190,8 +171,6 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
           );
         }
         return day.sessions.map((s) => {
-          const t = sub(s, day.isToday);
-          const hollow = s.status === "not_logged";
           return (
             <button
               key={s.id}
@@ -202,9 +181,9 @@ export function Calendar({ onOpen, refreshKey = 0 }: { onOpen: (s: Session) => v
               <div className="dn"><b style={day.isToday ? { color: "var(--accent)" } : undefined}>{dow}</b><span>{num}</span></div>
               <div className="dbody">
                 <div className="t">{s.title}</div>
-                <div className="m" style={t.color ? { color: t.color } : undefined}>{t.text}</div>
+                <div className="m" style={day.isToday ? { color: "var(--text-2)" } : undefined}>{meta(s, day.isToday)}</div>
               </div>
-              <span className="dot" style={hollow ? { border: `2px solid ${WARN}` } : { background: DOT[s.kind] }} />
+              <span className="dot" style={{ background: statusDotColor(s.status, s.kind) }} />
             </button>
           );
         });

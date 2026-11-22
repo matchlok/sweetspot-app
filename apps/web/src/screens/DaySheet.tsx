@@ -112,6 +112,19 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
                     : "Planned for this day. Nothing was logged."
                   : (data.session.detail ?? (data.session.minutes ? `About ${data.session.minutes} min` : ""))}
               </div>
+              {data.session.movedTo && (
+                <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
+                  Moved to {longDate(data.session.movedTo)}. Counts as missed this week.
+                </div>
+              )}
+              {data.session.shifted && (
+                <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
+                  {data.session.status === "done" ? `Done. Planned for ${longDate(data.session.shifted.from)}.` : `Moved from ${longDate(data.session.shifted.from)} to fit this week.`}
+                </div>
+              )}
+              {data.session.movedFrom && (
+                <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>Moved in from {longDate(data.session.movedFrom)}.</div>
+              )}
             </div>
 
             {missed && data.canMarkDone && (
