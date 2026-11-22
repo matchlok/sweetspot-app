@@ -39,6 +39,14 @@ export interface CalendarEvent {
   extendedProperties?: { private?: Record<string, string> };
 }
 
+/**
+ * Key under extendedProperties.private holding the day a session was planned
+ * for, written by every move. Google only keeps `originalStartTime` on moved
+ * instances of a recurring series; the app writes single events, which carry
+ * no origin, so without this tag a cross-week move leaves no trace.
+ */
+export const ORIGIN_TAG = "sweetspotOrigin";
+
 export interface PlannedSession {
   id: string;
   /** "YYYY-MM-DD", America/Denver. */
@@ -51,6 +59,8 @@ export interface PlannedSession {
   kindSource: "tag" | "title";
   /** Set on a session that moved in from another week: the date it was planned for. */
   movedFrom?: string;
+  /** Set on a session moved to another day (same week or not): the day it was planned for. */
+  origin?: string;
   /**
    * Set on the stand-in for a session that moved out of this week, dated on its
    * original day and `skipped`: the origin week records a miss for it.
@@ -139,7 +149,13 @@ export function readWeek(events: readonly CalendarEvent[], weekStart: string): W
   for (const e of events) {
     const date = eventDate(e);
     if (!date) continue;
-    const origin = e.originalStartTime ? (eventDate({ id: e.id, start: e.originalStartTime }) ?? date) : date;
+    // Google's originalStartTime first (recurring instances), then the tag the app writes on a move.
+    const tagged = e.extendedProperties?.private?.[ORIGIN_TAG];
+    const origin = e.originalStartTime
+      ? (eventDate({ id: e.id, start: e.originalStartTime }) ?? date)
+      : tagged && /^\d{4}-\d{2}-\d{2}$/.test(tagged)
+        ? tagged
+        : date;
     const here = inWeek(date);
     const originHere = inWeek(origin);
     if (!here && !originHere) continue;
@@ -154,6 +170,7 @@ export function readWeek(events: readonly CalendarEvent[], weekStart: string): W
     const base = { kind, title, minutes: minutesFromTitle(title), kindSource: (isKind(tag) ? "tag" : "title") as "tag" | "title" };
     if (here) {
       const s: PlannedSession = { id: e.id, date, ...base, status: cancelled ? "skipped" : "planned" };
+      if (origin !== date) s.origin = origin;
       if (origin !== date && !originHere) s.movedFrom = origin;
       sessions.push(s);
     } else {
