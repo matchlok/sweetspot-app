@@ -11,3 +11,4 @@ export * from "./views";
 export * from "./powerzones";
 export * from "./readiness";
 export * from "./strength";
+export * from "./generate";

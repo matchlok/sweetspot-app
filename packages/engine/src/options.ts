@@ -362,3 +362,21 @@ export function dayOptions(input: DayOptionsInput): DayOptions {
   }
   return result;
 }
+
+// ---- Rule gate for whole plans ----
+
+export interface PlanViolation {
+  rule: string;
+  /** Hard violations are refused by the day sheet. Soft ones only warn. */
+  hard: boolean;
+  reason: string;
+}
+
+/**
+ * The same rules the day sheet enforces, run over a plan as it stands. The
+ * program generator uses it to check what it lays out. Pass sessions across
+ * the week boundary (two weeks) to catch Sunday-to-Monday cases.
+ */
+export function planViolations(sessions: readonly WeekSession[], allowLongRideOffWeekend = false): PlanViolation[] {
+  return violations(sessions, new Map(), allowLongRideOffWeekend).map((v) => ({ rule: v.rule, hard: v.hard, reason: v.reason }));
+}
