@@ -1,6 +1,6 @@
 # Next steps
 
-Updated 2026-11-21. **The work queue is Linear: team SWE, https://linear.app/narjitdev/team/SWE.** Run `/cos` to build the next ready issues and `/review-queue` to review them. Don't keep a numbered to-do list in this file; it goes stale. This file keeps what Linear can't: the decisions and why, where we are, and ideas not yet tracked.
+Updated 2026-11-22. **The work queue is Linear: team SWE, https://linear.app/narjitdev/team/SWE.** Run `/cos` to build the next ready issues and `/review-queue` to review them. Don't keep a numbered to-do list in this file; it goes stale. This file keeps what Linear can't: the decisions and why, where we are, and ideas not yet tracked.
 
 How decisions flow: an issue that needs one is labelled `needs-decision` and carries a "Decisions needed" section (question, options, recommendation). Answer in a comment on the issue or in a prompt. `/cos` moves the answer into "Decisions made". Anything that changes a rule or the product goes into a dated "Decided" section below, and a big one gets a record in `decisions/`.
 
@@ -8,7 +8,7 @@ How decisions flow: an issue that needs one is labelled `needs-decision` and car
 
 ## Next major feature: program onboarding and the coach
 
-Plan approved 2026-11-21: [plans/ONBOARDING-COACH.md](plans/ONBOARDING-COACH.md). Prototype canvas: https://claude.ai/artifact/5U7s7ZvZTjHV7ZFHwDysD1 (10 screens). The app builds the program, Neon owns the plan, and the calendar becomes a two-week projection. `pnpm --filter api calendar:clear` (dry run; `--yes` deletes) empties the agent-owned calendar to test it. VO2 vanished from the Week page because the Muse-era VO2 series ended 2026-10-22; the generator closes that gap.
+Plan approved 2026-11-21: [plans/ONBOARDING-COACH.md](plans/ONBOARDING-COACH.md). Prototype canvas: https://claude.ai/artifact/5U7s7ZvZTjHV7ZFHwDysD1 (10 screens; the fixed source is in [build-writeup/2026-11-22-onboarding-prototype](build-writeup/2026-11-22-onboarding-prototype/README.md)). The app builds the program, Neon owns the plan, and the calendar becomes a two-week projection. `pnpm --filter api calendar:clear` (dry run; `--yes` deletes) empties the agent-owned calendar to test it. VO2 vanished from the Week page because the Muse-era VO2 series ended 2026-10-22; the generator closes that gap.
 
 Decided 2026-11-21 (Narjit): auto-reshuffle may move sessions inside a week without a tap, and the coach never writes the calendar without one; the plan is written two weeks rolling, each Sunday; a rebuild touches only events the app wrote (tagged `sweetspotProgram`), which is every event once the calendar is wiped; the generator places lift days.
 
@@ -18,7 +18,7 @@ Build order, one branch per step, no commits until Narjit reviews. Status lives 
 
 | Step | Issue |
 |---|---|
-| Review the prototype, fix screen 5 | SWE-5 (Narjit) |
+| Review the prototype, fix screen 5 | SWE-5 (screen 5 fixed 2026-11-22, source in `build-writeup/2026-11-22-onboarding-prototype/`; the 10-screen review is Narjit's) |
 | Schema | SWE-2 |
 | Generator | SWE-1 |
 | Calendar writer and Sunday cron | SWE-3 |
@@ -70,7 +70,7 @@ The API between the app and the engine is in [plans/API.md](plans/API.md): endpo
 1. **Skip:** a session skipped or not done within its week counts as a miss.
 2. **Goal edits** apply from the current week on.
 3. **Lifts** never count toward the hit streak.
-4. **Moves can cross weeks.** If a session moves out of its week, that week records a miss for it, and the following week does not program another session of that type (no 3/2 counts).
+4. **Moves can cross weeks.** If a session moves out of its week, that week records a miss for it, and the following week does not program another session of that type (no 3/2 counts). Exception (2026-11-22): if the target day is the same day as that week's session of the same kind, nothing is replaced. Both events stay, and `one_ride_per_day` refuses the move rather than doubling the day. This holds for a day chosen by hand too, with no override.
 5. **Every week has endurance, sweet spot and VO2.** No alternation. Recovery weeks cut volume to about 60 to 70 percent with the same workouts and the same intensity. The engine's alternating-Tuesday logic and recovery-follows-third-hit-week rule need reworking to match.
 6. **Lift counts above 1:** follows rule 4. No extra tracking for overflow.
 7. **Readiness pill:** build it now with provisional thresholds from Form, ramp rate and recent hard days, show the inputs on tap, log each reading with a prediction, and score it.

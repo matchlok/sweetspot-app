@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Your week</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090c;--card:#13151c;--line:#262a36;--nav:#0d0f14;--track:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--accent:#c9cffc;--endurance:#7c8cf8;--vo2:#ee7480;--ss:#e0b25c;--todaybg:#1a1d33;--todayline:#3d4680}
+body{margin:0;background:#08090c}
+*{box-sizing:border-box}
+.s{width:390px;height:844px;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.b{flex:1;min-height:0;overflow-y:auto;padding:24px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.h1{font-size:28px;line-height:1.15;font-weight:700;margin:0;letter-spacing:-.01em}
+.p{font-size:15px;line-height:1.45;color:var(--text2);margin:0}
+.m{font-size:13px;color:var(--muted)}
+.foot{padding:8px 16px 24px;display:flex;flex-direction:column;gap:4px}
+a.cta{display:flex;align-items:center;justify-content:center;height:48px;border-radius:14px;background:var(--endurance);color:#0a0b14;font-weight:700;font-size:16px;text-decoration:none}
+a.back{display:flex;align-items:center;justify-content:center;height:44px;color:var(--muted);font-weight:600;font-size:15px;text-decoration:none}
+.dn{width:42px;flex-shrink:0}
+.dn b{display:block;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.dn span{font-size:20px;font-weight:700}
+.dur{width:64px;height:44px;flex-shrink:0;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font:700 15px Inter,system-ui,sans-serif;cursor:pointer}
+.dur.on{background:var(--todaybg);border-color:var(--todayline);color:var(--accent)}
+.seg{display:flex;flex:1;background:#0f1116;border:1px solid var(--line);border-radius:12px;padding:2px}
+.sg{flex:1;height:38px;border-radius:10px;border:0;background:transparent;color:var(--muted);font:600 12px Inter,system-ui,sans-serif;cursor:pointer;padding:0}
+.sg.on{background:var(--todaybg);color:var(--accent)}
+.lift{width:44px;height:44px;flex-shrink:0;border-radius:12px;border:1px solid var(--line);background:#0f1116;color:var(--muted);font:600 12px Inter,system-ui,sans-serif;cursor:pointer;padding:0}
+.lift.on{background:var(--todaybg);border-color:var(--todayline);color:var(--text2)}
+</style>
+</helmet>
+<div class="s">
+<div class="b">
+<div class="lbl">Step 3 of 4 · Your week</div>
+<h1 class="h1">Paint your week.</h1>
+<p class="p">Tap a duration to cycle Off, 30, 45, 60, 90, 2 h+. Fixed commitments are just Off.</p>
+<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+<div style="display: flex; gap: 8px; padding: 0 0 2px">
+<div style="width: 42px"></div>
+<div class="lbl" style="width: 64px; font-size: 11px">Time</div>
+<div class="lbl" style="flex: 1; font-size: 11px">Where</div>
+<div class="lbl" style="width: 44px; font-size: 11px; text-align: center">Lift</div>
+</div>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+<div style="display: flex; align-items: center; gap: 8px">
+<div class="dn"><b>{{d.name}}</b><span>{{d.date}}</span></div>
+<button class="{{d.durCls}}" onClick="{{d.cycle}}" aria-label="{{d.durAria}}">{{d.durLabel}}</button>
+<sc-if value="{{d.riding}}" hint-placeholder-val="{{ true }}">
+<div class="seg">
+<button class="{{d.tCls}}" onClick="{{d.pickTrail}}">Trail</button>
+<button class="{{d.rCls}}" onClick="{{d.pickTrainer}}">Trainer</button>
+<button class="{{d.eCls}}" onClick="{{d.pickEither}}">Either</button>
+</div>
+</sc-if>
+<sc-if value="{{d.resting}}" hint-placeholder-val="{{ false }}">
+<div class="m" style="flex: 1; padding-left: 4px">Not riding</div>
+</sc-if>
+<button class="{{d.liftCls}}" onClick="{{d.toggleLift}}" aria-label="{{d.liftAria}}">Lift</button>
+</div>
+</sc-for>
+</div>
+<div class="card" style="margin-top: 6px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px">
+<div>
+<div class="lbl">Week total</div>
+<div style="font-size: 24px; font-weight: 700; margin-top: 2px">{{totalText}}</div>
+</div>
+<div style="text-align: right; font-size: 13px; color: var(--text2); line-height: 1.4">{{vsText}}<br><span class="m">{{liftText}}</span></div>
+</div>
+</div>
+</div>
+<div class="foot">
+<a class="cta" href="Proposal.dc.html">Send to the coach</a>
+<a class="back" href="Purpose.dc.html">Back</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+state = {
+days: [0, 3, 0, 2, 0, 5, 2],
+modes: ['e', 'r', 'e', 'e', 'e', 't', 'e'],
+lifts: [true, false, false, true, false, false, false]
+};
+fmt(min) {
+const h = Math.floor(min / 60);
+const m = min % 60;
+if (min === 0) return '0 h';
+if (h === 0) return m + ' min';
+if (m === 0) return h + ' h';
+return h + ' h ' + m + ' min';
+}
+renderVals() {
+const mins = [0, 30, 45, 60, 90, 120];
+const labels = ['Off', '30 min', '45 min', '60 min', '90 min', '2 h+'];
+const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const dates = [23, 24, 25, 26, 27, 28, 29];
+const st = this.state;
+let total = 0;
+let liftCount = 0;
+const days = names.map((n, i) => {
+const idx = st.days[i];
+total += mins[idx];
+if (st.lifts[i]) liftCount += 1;
+const mode = st.modes[i];
+return {
+name: n,
+date: dates[i],
+durLabel: labels[idx],
+durCls: idx === 0 ? 'dur' : 'dur on',
+durAria: n + ' ' + dates[i] + ', ' + labels[idx] + '. Tap to change.',
+riding: idx !== 0,
+resting: idx === 0,
+tCls: mode === 't' ? 'sg on' : 'sg',
+rCls: mode === 'r' ? 'sg on' : 'sg',
+eCls: mode === 'e' ? 'sg on' : 'sg',
+liftCls: st.lifts[i] ? 'lift on' : 'lift',
+liftAria: n + ' lift ' + (st.lifts[i] ? 'on' : 'off'),
+cycle: () => {
+const next = st.days.slice();
+next[i] = (next[i] + 1) % 6;
+this.setState({ days: next });
+},
+pickTrail: () => { const m = st.modes.slice(); m[i] = 't'; this.setState({ modes: m }); },
+pickTrainer: () => { const m = st.modes.slice(); m[i] = 'r'; this.setState({ modes: m }); },
+pickEither: () => { const m = st.modes.slice(); m[i] = 'e'; this.setState({ modes: m }); },
+toggleLift: () => { const l = st.lifts.slice(); l[i] = !l[i]; this.setState({ lifts: l }); }
+};
+});
+const avg = 210;
+const diff = total - avg;
+let vsText = 'Matches your 3 h 30 min average';
+if (diff > 0) vsText = this.fmt(diff) + ' more than your 3 h 30 min average';
+if (diff < 0) vsText = this.fmt(-diff) + ' less than your 3 h 30 min average';
+return {
+days,
+totalText: this.fmt(total),
+vsText,
+liftText: liftCount + (liftCount === 1 ? ' lift' : ' lifts') + ' a week'
+};
+}
+}
+</script>
+</body>
+</html>

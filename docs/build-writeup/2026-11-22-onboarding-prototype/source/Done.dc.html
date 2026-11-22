@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home with new block</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090c;--card:#13151c;--line:#262a36;--nav:#0d0f14;--track:#1d2029;--text:#e7e8ee;--text2:#c4c6d2;--muted:#8d90a0;--accent:#c9cffc;--endurance:#7c8cf8;--vo2:#ee7480;--ss:#e0b25c;--lift:#c4c6d2;--todaybg:#1a1d33;--todayline:#3d4680}
+body{margin:0;background:#08090c}
+*{box-sizing:border-box}
+.s{width:390px;height:844px;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.b{flex:1;min-height:0;overflow-y:auto;padding:24px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.m{font-size:13px;color:var(--muted)}
+.row{display:flex;align-items:center;justify-content:space-between}
+.track{height:8px;border-radius:4px;background:var(--track);overflow:hidden;margin-top:8px}
+.fill{height:8px;border-radius:4px}
+.n{font-size:15px;font-weight:600}
+.f{font-size:15px;color:var(--text2)}
+.nav{flex-shrink:0;background:var(--nav);border-top:1px solid var(--track);display:flex;padding:8px 0 12px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);background:none;border:0;font-family:inherit;cursor:pointer;min-height:44px;text-decoration:none}
+.tab.on{color:var(--accent)}
+.dot{width:10px;height:10px;border-radius:5px;flex-shrink:0}
+</style>
+</helmet>
+<div class="s">
+<div class="b">
+<div style="display: flex; align-items: center; gap: 10px; background: var(--todaybg); border: 1px solid var(--todayline); border-radius: 14px; padding: 12px 14px; min-height: 44px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c9cffc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M5 12l5 5 9-10"></path></svg>
+<div style="font-size: 14px; font-weight: 600; color: var(--accent)">Block 1 of 8 started. Week 1 begins Monday.</div>
+</div>
+<div class="card" style="border-color: var(--todayline); background: var(--todaybg)">
+<div class="lbl" style="color: #9aa6fb">Today · Sat Nov 21</div>
+<div style="font-size: 22px; font-weight: 700; margin-top: 6px">Rest day</div>
+<div style="font-size: 14px; color: var(--text2); margin-top: 4px">Next up: Monday, upper lift. Calendar events for Nov 23 to Dec 6 are written.</div>
+</div>
+<div class="card">
+<div class="row"><div class="lbl">Week of Nov 23 · targets</div><div class="m">3 h 30 min</div></div>
+<div style="margin-top: 12px">
+<div class="row"><span class="n"><span class="dot" style="display: inline-block; background: var(--endurance); margin-right: 8px"></span>Endurance</span><span class="f">0 of 90 min</span></div>
+<div class="track"><div class="fill" style="width: 0%; background: var(--endurance)"></div></div>
+</div>
+<div style="margin-top: 12px">
+<div class="row"><span class="n"><span class="dot" style="display: inline-block; background: var(--ss); margin-right: 8px"></span>Sweet spot</span><span class="f">0 of 20 min</span></div>
+<div class="track"><div class="fill" style="width: 0%; background: var(--ss)"></div></div>
+</div>
+<div style="margin-top: 12px">
+<div class="row"><span class="n"><span class="dot" style="display: inline-block; background: var(--vo2); margin-right: 8px"></span>VO2</span><span class="f">0 of 8 min</span></div>
+<div class="track"><div class="fill" style="width: 0%; background: var(--vo2)"></div></div>
+</div>
+<div style="margin-top: 12px">
+<div class="row"><span class="n"><span class="dot" style="display: inline-block; background: var(--lift); margin-right: 8px"></span>Lifts</span><span class="f">0 of 2 sessions</span></div>
+<div class="track"><div class="fill" style="width: 0%; background: var(--lift)"></div></div>
+</div>
+</div>
+<div class="card" style="display: flex; justify-content: space-between; align-items: center">
+<div><div class="lbl">Form</div><div style="font-size: 20px; font-weight: 700; margin-top: 2px">-6</div></div>
+<div class="m" style="text-align: right">Fitness (CTL) 42<br>FTP 248 W</div>
+</div>
+</div>
+<div class="nav">
+<a class="tab on" href="Done.dc.html" aria-label="Home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></svg>Home</a>
+<button class="tab" aria-label="Calendar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></svg>Calendar</button>
+<a class="tab" href="CoachSheet.dc.html" aria-label="Programming"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>Programming</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
