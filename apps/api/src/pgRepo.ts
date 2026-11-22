@@ -1,7 +1,11 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { activities, decisions, goalChanges, liftTargets, manualDone, programSettings, sourceTokens, syncState, type Db } from "@sweetspot/db";
+import { activities, decisions, goalChanges, liftTargets, manualDone, plannedSessions, programs, programSettings, sourceTokens, syncState, type Db } from "@sweetspot/db";
 import type { IntervalsActivity } from "@sweetspot/engine";
-import type { Repo } from "./repo";
+import type { PlannedSession, Repo } from "./repo";
+
+function toPlanned(r: typeof plannedSessions.$inferSelect): PlannedSession {
+  return { id: r.id, programId: r.programId, date: r.date, kind: r.kind, minutes: r.minutes, title: r.title, calendarEventId: r.calendarEventId, status: r.status };
+}
 
 export function pgRepo(db: Db): Repo {
   return {
@@ -100,6 +104,50 @@ export function pgRepo(db: Db): Repo {
     async decisionsFor(trigger) {
       const rows = await db.select({ inputs: decisions.inputs, choice: decisions.choice }).from(decisions).where(eq(decisions.trigger, trigger)).orderBy(decisions.id);
       return rows;
+    },
+    async createProgram(p, sessions = []) {
+      const [row] = await db
+        .insert(programs)
+        .values({ purpose: p.purpose, raceDate: p.raceDate, blockWeeks: p.blockWeeks, availability: p.availability ?? {}, card: p.card ?? {} })
+        .returning();
+      const program = { id: row!.id, purpose: row!.purpose, raceDate: row!.raceDate, blockWeeks: row!.blockWeeks, availability: row!.availability, card: row!.card, status: row!.status };
+      const made: PlannedSession[] = [];
+      try {
+        for (let i = 0; i < sessions.length; i += 100) {
+          const rows = await db
+            .insert(plannedSessions)
+            .values(sessions.slice(i, i + 100).map((s) => ({ programId: program.id, date: s.date, kind: s.kind, minutes: s.minutes, title: s.title ?? null })))
+            .returning();
+          made.push(...rows.map(toPlanned));
+        }
+      } catch (err) {
+        // neon-http has no transactions, so undo by hand: deleting the program cascades to any sessions already written.
+        await db.delete(programs).where(eq(programs.id, program.id));
+        throw err;
+      }
+      return { program, sessions: made };
+    },
+    async plannedSessions(oldest, newest) {
+      const rows = await db
+        .select()
+        .from(plannedSessions)
+        .where(and(gte(plannedSessions.date, oldest), lte(plannedSessions.date, newest)))
+        .orderBy(plannedSessions.date, plannedSessions.id);
+      return rows.map(toPlanned);
+    },
+    async updatePlannedSession(id, patch) {
+      // Drop undefined keys: Drizzle ignores them, so a patch of only undefined values has nothing to set.
+      const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
+      if (Object.keys(clean).length === 0) {
+        const [r] = await db.select().from(plannedSessions).where(eq(plannedSessions.id, id)).limit(1);
+        return r ? toPlanned(r) : null;
+      }
+      const [r] = await db.update(plannedSessions).set(clean).where(eq(plannedSessions.id, id)).returning();
+      return r ? toPlanned(r) : null;
+    },
+    async deletePlannedSession(id) {
+      const gone = await db.delete(plannedSessions).where(eq(plannedSessions.id, id)).returning({ id: plannedSessions.id });
+      return gone.length > 0;
     },
   };
 }

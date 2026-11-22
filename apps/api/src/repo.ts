@@ -44,6 +44,43 @@ export interface DecisionEntry {
   status: DecisionStatus;
 }
 
+export interface NewProgram {
+  purpose: string;
+  raceDate: string | null;
+  blockWeeks: number;
+  availability: unknown;
+  card: unknown;
+}
+
+export interface StoredProgramRow extends NewProgram {
+  id: number;
+  status: "active" | "archived";
+}
+
+export type PlannedStatus = "planned" | "done" | "skipped";
+
+export interface NewPlannedSession {
+  /** YYYY-MM-DD, America/Denver. */
+  date: string;
+  kind: string;
+  minutes: number;
+  title?: string | null;
+}
+
+export interface PlannedSession {
+  id: number;
+  programId: number;
+  date: string;
+  kind: string;
+  minutes: number;
+  title: string | null;
+  /** Set once the event is written to Google Calendar. */
+  calendarEventId: string | null;
+  status: PlannedStatus;
+}
+
+export type PlannedSessionPatch = Partial<Pick<PlannedSession, "date" | "kind" | "minutes" | "title" | "calendarEventId" | "status">>;
+
 export interface Repo {
   program(): Promise<StoredProgram | null>;
   goalChanges(): Promise<StoredGoalChange[]>;
@@ -70,6 +107,14 @@ export interface Repo {
   logDecision(d: DecisionEntry): Promise<void>;
   /** Logged entries for one trigger, oldest first. Readiness uses it to log once a day and to find unscored readings. */
   decisionsFor(trigger: string): Promise<{ inputs: unknown; choice: unknown }[]>;
+  /** Creates a program and its planned sessions together. Returns both as stored. */
+  createProgram(p: NewProgram, sessions?: NewPlannedSession[]): Promise<{ program: StoredProgramRow; sessions: PlannedSession[] }>;
+  /** Sessions with `oldest <= date <= newest` (inclusive), by date then id. */
+  plannedSessions(oldest: string, newest: string): Promise<PlannedSession[]>;
+  /** Returns the updated row, or null if the id doesn't exist. */
+  updatePlannedSession(id: number, patch: PlannedSessionPatch): Promise<PlannedSession | null>;
+  /** True if a row was removed. */
+  deletePlannedSession(id: number): Promise<boolean>;
 }
 
 export function toGoalChange(r: StoredGoalChange): GoalChange {
@@ -90,6 +135,9 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
   const decisionLog: DecisionEntry[] = [];
   let nextId = 1;
   let sync: SyncState = { lastSyncedAt: null, lastError: null };
+  const planned = new Map<number, PlannedSession>();
+  let nextProgramId = 1;
+  let nextSessionId = 1;
   let strava: Awaited<ReturnType<Repo["stravaToken"]>> = null;
   return {
     activitiesStore: store,
@@ -144,6 +192,31 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
     },
     async decisionsFor(trigger) {
       return decisionLog.filter((d) => d.trigger === trigger).map((d) => ({ inputs: d.inputs, choice: d.choice }));
+    },
+    async createProgram(p, sessions = []) {
+      const program: StoredProgramRow = { ...p, id: nextProgramId++, status: "active" };
+      const made = sessions.map((s) => {
+        const row: PlannedSession = { id: nextSessionId++, programId: program.id, date: s.date, kind: s.kind, minutes: s.minutes, title: s.title ?? null, calendarEventId: null, status: "planned" };
+        planned.set(row.id, row);
+        return { ...row };
+      });
+      return { program, sessions: made };
+    },
+    async plannedSessions(oldest, newest) {
+      return [...planned.values()]
+        .filter((s) => s.date >= oldest && s.date <= newest)
+        .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
+        .map((s) => ({ ...s }));
+    },
+    async updatePlannedSession(id, patch) {
+      const cur = planned.get(id);
+      if (!cur) return null;
+      const next = { ...cur, ...patch };
+      planned.set(id, next);
+      return { ...next };
+    },
+    async deletePlannedSession(id) {
+      return planned.delete(id);
     },
   };
 }

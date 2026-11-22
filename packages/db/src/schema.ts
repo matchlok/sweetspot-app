@@ -90,6 +90,36 @@ export const decisions = pgTable("decisions", {
   status: text("status", { enum: ["applied", "blocked", "failed"] }).notNull(),
 });
 
+/** A program built in the app (docs/plans/ONBOARDING-COACH.md). `card` is the signed program card; `availability` is what onboarding asked. */
+export const programs = pgTable("programs", {
+  id: serial("id").primaryKey(),
+  purpose: text("purpose").notNull(),
+  raceDate: date("race_date", { mode: "string" }),
+  blockWeeks: integer("block_weeks").notNull(),
+  availability: jsonb("availability").notNull(),
+  card: jsonb("card").notNull(),
+  status: text("status", { enum: ["active", "archived"] }).notNull().default("active"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Neon owns the plan; the calendar is a projection. `date` is America/Denver. `calendarEventId` is set once the Google event is written. */
+export const plannedSessions = pgTable(
+  "planned_sessions",
+  {
+    id: serial("id").primaryKey(),
+    programId: integer("program_id")
+      .notNull()
+      .references(() => programs.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    kind: text("kind").notNull(),
+    minutes: integer("minutes").notNull(),
+    title: text("title"),
+    calendarEventId: text("calendar_event_id"),
+    status: text("status", { enum: ["planned", "done", "skipped"] }).notNull().default("planned"),
+  },
+  (t) => [index("planned_sessions_date_idx").on(t.date), index("planned_sessions_program_idx").on(t.programId)],
+);
+
 /** For the 5-a-minute login limit. Prune rows older than a day. */
 export const loginAttempts = pgTable(
   "login_attempts",
