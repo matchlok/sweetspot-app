@@ -106,7 +106,7 @@ interface DayOptions {
 }
 ```
 
-For a session with status `not_logged`, `action=move` returns only days left in the current week, and the response adds `canMarkDone: true` for lifts.
+For `action=move`, every session that is planned, `not_logged` or skipped (not a moved-from stand-in) gets the days left in its week plus all seven days of the following week, whatever its kind. A skipped session is rescheduled exactly like a planned one. Next week's days are offered even when it has no events yet. A move onto a day that already has a ride is still refused (one ride a day), and a same-kind session on another day of the target week is replaced (rule 4). The response adds `canMarkDone: true` for lifts.
 
 ### `GET /api/program`
 

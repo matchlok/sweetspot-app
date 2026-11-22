@@ -223,6 +223,306 @@
           "result": "warn"
         }
       ]
+    },
+    {
+      "id": "move:2026-11-16",
+      "heading": "Monday, Nov 16, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Monday.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Monday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-17",
+      "heading": "Tuesday, Nov 17, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Tuesday.",
+          "tone": "plain"
+        },
+        {
+          "text": "It replaces next week's upper lift, so next week still has one.",
+          "tone": "plain"
+        },
+        {
+          "text": "Lift and quality ride on one day.",
+          "tone": "warn"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Tuesday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "warn"
+        }
+      ],
+      "absorbs": [
+        {
+          "sessionId": "w3-upper"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-18",
+      "heading": "Wednesday, Nov 18, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Wednesday.",
+          "tone": "plain"
+        },
+        {
+          "text": "It replaces next week's upper lift, so next week still has one.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Wednesday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ],
+      "absorbs": [
+        {
+          "sessionId": "w3-upper"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-19",
+      "heading": "Thursday, Nov 19, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Thursday.",
+          "tone": "plain"
+        },
+        {
+          "text": "It replaces next week's upper lift, so next week still has one.",
+          "tone": "plain"
+        },
+        {
+          "text": "Lift and quality ride on one day.",
+          "tone": "warn"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Thursday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "warn"
+        }
+      ],
+      "absorbs": [
+        {
+          "sessionId": "w3-upper"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-20",
+      "heading": "Friday, Nov 20, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Friday.",
+          "tone": "plain"
+        },
+        {
+          "text": "It replaces next week's upper lift, so next week still has one.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Friday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ],
+      "absorbs": [
+        {
+          "sessionId": "w3-upper"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-21",
+      "heading": "Saturday, Nov 21, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Saturday.",
+          "tone": "plain"
+        },
+        {
+          "text": "It replaces next week's upper lift, so next week still has one.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Saturday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ],
+      "absorbs": [
+        {
+          "sessionId": "w3-upper"
+        }
+      ]
+    },
+    {
+      "id": "move:2026-11-22",
+      "heading": "Sunday, Nov 22, next week",
+      "effects": [
+        {
+          "text": "Upper lift moves to next Sunday.",
+          "tone": "plain"
+        },
+        {
+          "text": "It replaces next week's upper lift, so next week still has one.",
+          "tone": "plain"
+        }
+      ],
+      "alsoMoves": [],
+      "cta": "Move to next Sunday",
+      "rules": [
+        {
+          "rule": "lower_lift_before_quality",
+          "result": "pass"
+        },
+        {
+          "rule": "one_ride_per_day",
+          "result": "pass"
+        },
+        {
+          "rule": "long_ride_weekend",
+          "result": "pass"
+        },
+        {
+          "rule": "quality_back_to_back",
+          "result": "pass"
+        },
+        {
+          "rule": "lift_with_quality",
+          "result": "pass"
+        }
+      ],
+      "absorbs": [
+        {
+          "sessionId": "w3-upper"
+        }
+      ]
     }
   ],
   "blocked": [],

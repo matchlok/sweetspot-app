@@ -472,8 +472,8 @@ export function sessionOptionsView(d: ViewData, sessionId: string, action: Optio
   if (!plan) throw new Error(`unknown session ${sessionId}`);
   const wk = resolveWeek(d, plan.weekStart);
   const session = wk.sessions.find((s) => s.id === sessionId)!;
-  const hasNext = planFor(d, addDays(plan.weekStart, 7)) !== undefined;
-  const nextWeek = hasNext ? resolveWeek(d, addDays(plan.weekStart, 7)).weekSessions : undefined;
+  // An empty next week still offers its days (no plan there means nothing to replace).
+  const nextWeek = resolveWeek(d, addDays(plan.weekStart, 7)).weekSessions;
   return { session, ...dayOptions({ sessions: wk.weekSessions, sessionId, action, today: d.today, nextWeek }) };
 }
 
