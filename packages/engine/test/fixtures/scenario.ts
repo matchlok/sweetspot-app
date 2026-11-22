@@ -9,7 +9,7 @@ import type { ViewData } from "../../src/views";
  * week. Monday's upper lift wasn't logged. Today is VO2. Thursday is the lower
  * lift and Saturday the endurance ride. Under the 2026-11-20 rules every week
  * carries endurance, sweet spot and VO2 (no alternation), so week 1's hit also
- * stepped VO2 up to 9 min and sweet spot to 22 min for week 2. Week 2's sweet
+ * stepped VO2 up to 9 min and sweet spot to 21 min for week 2. Week 2's sweet
  * spot sits on Sunday, so no hard rule trips on the base plan.
  */
 const ev = (id: string, date: string, summary: string): CalendarEvent => ({ id, summary, status: "confirmed", start: { date } });

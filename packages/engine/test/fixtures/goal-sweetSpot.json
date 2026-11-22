@@ -3,37 +3,37 @@
   "label": "Sweet spot",
   "definition": "Time at 88 to 94% of FTP, power rides only",
   "mode": "progress",
-  "target": 22,
-  "stepMin": 2,
+  "target": 21,
+  "stepMin": 1,
   "preview": [
     {
       "date": "2026-11-15",
-      "target": 22,
+      "target": 21,
       "isRecovery": false
     },
     {
       "date": "2026-11-17",
-      "target": 24,
+      "target": 22,
       "isRecovery": false
     },
     {
       "date": "2026-11-23",
-      "target": 16,
+      "target": 14,
       "isRecovery": true
     },
     {
       "date": "2026-11-30",
-      "target": 26,
+      "target": 23,
       "isRecovery": false
     },
     {
       "date": "2026-12-07",
-      "target": 28,
+      "target": 24,
       "isRecovery": false
     },
     {
       "date": "2026-12-14",
-      "target": 30,
+      "target": 25,
       "isRecovery": false
     }
   ]

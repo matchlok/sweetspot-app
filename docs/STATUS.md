@@ -54,3 +54,6 @@ Moved out of `AGENTS.md` so the agent guide stays short. Newest entries go at th
 - **Decided (2026-11-07):** zones change over time, and that's normal. The engine takes each ride's stored zones as correct for its date, with no flags or reconciliation across changes. Muse-era history comes from the export, not intervals.icu.
 - **Open:** auth library. Add the GitHub remote and push when ready.
 
+- **Decided (2026-11-21):** default sweet spot step is +1 min per hit week (was +2); VO2 was already +1. Only affects `DEFAULT_PROGRAM`; saved `goal_changes` rows keep their own step. Uncommitted on `main`.
+- **Planned (2026-11-21):** program onboarding plus an in-app coach ([plan](plans/ONBOARDING-COACH.md)), from a PM/UX round-table. Neon becomes the plan source of truth and the calendar a two-week projection. Added `apps/api/src/clearCalendar.ts` (dry run by default). The dry run found 42 events, with the Muse VO2 series ending 2026-10-22, which is why VO2 was missing from the Week page.
+- **Decided (2026-11-21, Narjit):** onboarding and coach plan approved. Auto-reshuffle may move sessions within a week without a tap (the coach never writes without one); two weeks rolling, written each Sunday; rebuilds touch only app-written events; the generator places lift days. Build order is in NEXT-STEPS item 0.

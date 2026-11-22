@@ -12,9 +12,9 @@
       "key": "sweetSpot",
       "label": "Sweet spot",
       "mode": "progress",
-      "target": 22,
-      "stepMin": 2,
-      "summary": "22 min, up 2 after each hit week"
+      "target": 21,
+      "stepMin": 1,
+      "summary": "21 min, up 1 after each hit week"
     },
     {
       "key": "threshold",
