@@ -185,7 +185,9 @@ const lc = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 /**
  * Days in the following week a planned session can move to. The move counts as
- * a miss for its own week and replaces next week's session of the same kind.
+ * a miss for its own week and replaces next week's session of the same kind,
+ * unless that session is on the chosen day: then both stay and the move is
+ * refused if they would double the day (one_ride_per_day).
  */
 function crossWeekOptions(s: WeekSession, next: readonly WeekSession[], today: string, allowOff: boolean, result: DayOptions): void {
   if (next.length === 0) return;
@@ -194,15 +196,18 @@ function crossWeekOptions(s: WeekSession, next: readonly WeekSession[], today: s
     result.blocked.push({ heading: `Next week`, reason: `${KIND_LABEL[s.kind]} next week already has a session moved in.` });
     return;
   }
-  const replaced = next.filter((x) => x.kind === s.kind && !x.movedIn && x.status !== "skipped" && x.status !== "done");
-  // The replaced session leaves the plan, so it can't cause or fix a violation.
-  const rest = next.filter((x) => !replaced.includes(x));
-  const baseKeys = new Set(violations(rest, new Map(), allowOff).map((v) => v.key));
+  const candidates = next.filter((x) => x.kind === s.kind && !x.movedIn && x.status !== "skipped" && x.status !== "done");
   const optional = s.kind === "easy_spin";
 
   for (let i = 0; i < 7; i++) {
     const day = addDays(nextStart, i);
     if (day < today) continue;
+    // Only a session on a different day is replaced. On the same day both stay,
+    // so one_ride_per_day refuses the move rather than doubling the day.
+    const replaced = candidates.filter((x) => x.date !== day);
+    // The replaced session leaves the plan, so it can't cause or fix a violation.
+    const rest = next.filter((x) => !replaced.includes(x));
+    const baseKeys = new Set(violations(rest, new Map(), allowOff).map((v) => v.key));
     const moved: WeekSession = { ...s, date: day, movedIn: true };
     const found = violations([...rest, moved], new Map(), allowOff).filter((v) => !baseKeys.has(v.key));
     const hard = found.filter((v) => v.hard);

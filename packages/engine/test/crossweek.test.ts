@@ -12,9 +12,9 @@ const ev = (id: string, date: string, summary: string, extra: Partial<CalendarEv
 });
 
 describe("moves across weeks (rule 4, 2026-11-20)", () => {
-  // Week 2's sweet spot (Sun Nov 15) moved to Tuesday Nov 17, where week 3 has its own.
+  // Week 2's sweet spot (Sun Nov 15) moved to Wednesday Nov 18; week 3 has its own on Tuesday.
   const events = [
-    ev("w2-ss", "2026-11-17", "Sweet Spot Intervals (~1 hr)", { originalStartTime: { date: "2026-11-15" } }),
+    ev("w2-ss", "2026-11-18", "Sweet Spot Intervals (~1 hr)", { originalStartTime: { date: "2026-11-15" } }),
     ev("w3-ss", "2026-11-17", "Sweet Spot Intervals (~1 hr)"),
     ev("w3-vo2", "2026-11-19", "VO2 Max Intervals (~1 hr)"),
   ];
@@ -22,8 +22,15 @@ describe("moves across weeks (rule 4, 2026-11-20)", () => {
   it("leaves a skipped stand-in on the original day of the origin week", () => {
     const w2 = readWeek(events, "2026-11-09");
     expect(w2.sessions).toEqual([
-      expect.objectContaining({ id: "w2-ss~origin", date: "2026-11-15", status: "skipped", movedTo: "2026-11-17" }),
+      expect.objectContaining({ id: "w2-ss~origin", date: "2026-11-15", status: "skipped", movedTo: "2026-11-18" }),
     ]);
+  });
+
+  it("on the same day nothing is replaced: both events stay", () => {
+    const same = events.map((e) => (e.id === "w2-ss" ? { ...e, start: { date: "2026-11-17" } } : e));
+    const w3 = readWeek(same, "2026-11-16");
+    expect(w3.sessions.map((s) => s.id)).toEqual(["w2-ss", "w3-ss", "w3-vo2"]);
+    expect(w3.sessions.filter((s) => s.kind === "sweet_spot").every((s) => s.date === "2026-11-17")).toBe(true);
   });
 
   it("the destination week keeps one sweet spot: the moved one replaces its own", () => {
@@ -84,6 +91,14 @@ describe("option to move into next week", () => {
     expect(o.absorbs).toEqual([{ sessionId: "w3-ss" }]);
   });
 
+  it("refuses the day of next week's same-kind session instead of replacing it", () => {
+    // w3-ss is on Tuesday Nov 17: moving onto it would double the day.
+    expect(opts.options.some((o) => o.id === "move:2026-11-17")).toBe(false);
+    expect(opts.blocked).toEqual(
+      expect.arrayContaining([expect.objectContaining({ heading: "Tuesday, Nov 17, next week", reason: "Already a ride that day" })]),
+    );
+  });
+
   it("applies the rule gate to next week's layout", () => {
     // Thursday Nov 19 already has next week's VO2: one ride a day.
     expect(opts.blocked).toEqual(expect.arrayContaining([expect.objectContaining({ heading: "Thursday, Nov 19, next week" })]));
@@ -105,7 +120,7 @@ describe("option to move into next week", () => {
     const w2 = D.plans.find((p) => p.weekStart === "2026-11-09")!;
     const w3 = D.plans.find((p) => p.weekStart === "2026-11-16")!;
     const events = [
-      ev("w2-ss", "2026-11-17", "Sweet Spot Intervals (~1 hr)", { originalStartTime: { date: "2026-11-15" } }),
+      ev("w2-ss", "2026-11-18", "Sweet Spot Intervals (~1 hr)", { originalStartTime: { date: "2026-11-15" } }),
       ev("w3-ss", "2026-11-17", "Sweet Spot Intervals (~1 hr)"),
     ];
     const plans = [
@@ -115,8 +130,8 @@ describe("option to move into next week", () => {
     const rest = D.plans.filter((p) => p.weekStart !== w2.weekStart && p.weekStart !== w3.weekStart);
     const data = { ...D, plans: [...rest, ...plans] };
     const wk2 = weekView(data, "2026-11-09");
-    expect(wk2.days[6]!.sessions[0]).toMatchObject({ status: "skipped", movedTo: "2026-11-17" });
-    const ss = weekView(data, "2026-11-16").days[1]!.sessions.filter((s) => s.kind === "sweet_spot");
+    expect(wk2.days[6]!.sessions[0]).toMatchObject({ status: "skipped", movedTo: "2026-11-18" });
+    const ss = weekView(data, "2026-11-16").days[2]!.sessions.filter((s) => s.kind === "sweet_spot");
     expect(ss).toHaveLength(1);
     expect(ss[0]).toMatchObject({ id: "w2-ss", movedFrom: "2026-11-15" });
   });

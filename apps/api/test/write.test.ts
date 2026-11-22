@@ -286,30 +286,40 @@ describe("apply: move into next week", () => {
   it("moves the session, cancels the one it replaces, and the origin week records a miss", async () => {
     const { app, repo, patches } = setup();
     const opts = await options(app, "end-1114", "move");
-    const sat = opts.options.find((o: { id: string }) => o.id === "move:2026-11-21");
-    expect(sat.absorbs).toEqual([{ sessionId: "end-1121" }]);
+    const sun = opts.options.find((o: { id: string }) => o.id === "move:2026-11-22");
+    expect(sun.absorbs).toEqual([{ sessionId: "end-1121" }]);
 
-    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sat.id, planVersion: opts.planVersion });
+    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sun.id, planVersion: opts.planVersion });
     expect(res.status).toBe(200);
     expect(patches.map((p) => [p.id, p.patch.date ?? p.patch.status])).toEqual([
-      ["end-1114", "2026-11-21"],
+      ["end-1114", "2026-11-22"],
       ["end-1121", "cancelled"], // the replaced one goes last
     ]);
     const week = (await res.json()).week;
-    expect(week.days[5].sessions[0]).toMatchObject({ status: "skipped", movedTo: "2026-11-21" });
+    expect(week.days[5].sessions[0]).toMatchObject({ status: "skipped", movedTo: "2026-11-22" });
     expect(repo.decisionLog.at(-1)).toMatchObject({ trigger: "apply_move", status: "applied" });
 
     const next = await (await call(app, "GET", "/api/week?start=2026-11-16")).json();
-    const long = next.days[5].sessions;
+    const long = next.days[6].sessions;
     expect(long).toHaveLength(1);
     expect(long[0]).toMatchObject({ id: "end-1114", movedFrom: "2026-11-14" });
+  });
+
+  it("refuses a move onto the day of next week's same-kind session and keeps both", async () => {
+    const { app, patches } = setup();
+    const opts = await options(app, "end-1114", "move");
+    expect(opts.options.some((o: { id: string }) => o.id === "move:2026-11-21")).toBe(false);
+    expect(opts.blocked).toEqual(expect.arrayContaining([expect.objectContaining({ heading: "Saturday, Nov 21, next week", reason: "Already a ride that day" })]));
+    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: "move:2026-11-21", planVersion: opts.planVersion });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(patches).toEqual([]);
   });
 
   it("reverts the move when the cancel of the replaced session fails", async () => {
     const { app, events } = setup({ failOn: (id, patch) => id === "end-1121" && patch.status === "cancelled" });
     const opts = await options(app, "end-1114", "move");
-    const sat = opts.options.find((o: { id: string }) => o.id === "move:2026-11-21");
-    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sat.id, planVersion: opts.planVersion });
+    const sun = opts.options.find((o: { id: string }) => o.id === "move:2026-11-22");
+    const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sun.id, planVersion: opts.planVersion });
     expect(res.status).toBe(502);
     expect(events.find((e) => e.id === "end-1114")!.start.date).toBe("2026-11-14");
   });
