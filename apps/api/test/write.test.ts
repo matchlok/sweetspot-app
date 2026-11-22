@@ -22,8 +22,8 @@ function seedEvents(): CalendarEvent[] {
   ];
 }
 
-function setup(opts: { failOn?: (id: string, patch: EventPatch) => boolean } = {}) {
-  const events = seedEvents();
+function setup(opts: { failOn?: (id: string, patch: EventPatch) => boolean; recurring?: boolean; events?: CalendarEvent[]; now?: string } = {}) {
+  const events = opts.events ?? seedEvents();
   const patches: { id: string; patch: EventPatch }[] = [];
   const sources: Sources = {
     events: async () => events.map((e) => ({ ...e })),
@@ -35,7 +35,8 @@ function setup(opts: { failOn?: (id: string, patch: EventPatch) => boolean } = {
       patches.push({ id, patch });
       const e = events.find((x) => x.id === id)!;
       if (patch.date) {
-        e.originalStartTime ??= { date: e.start.date! }; // Google keeps where an instance started
+        // Google keeps where an instance started only on instances of a recurring series. The app writes single events.
+        if (opts.recurring) e.originalStartTime ??= { date: e.start.date! };
         e.start = { date: patch.date };
       }
       if (patch.status) e.status = patch.status;
@@ -43,7 +44,7 @@ function setup(opts: { failOn?: (id: string, patch: EventPatch) => boolean } = {
     },
   };
   const repo = memoryRepo();
-  const now = () => new Date("2026-11-10T19:00:00Z");
+  const now = () => new Date(opts.now ?? "2026-11-10T19:00:00Z");
   const app = createApp({
     env: { JWT_SECRET: SECRET, APP_PASSPHRASE_HASH: `scrypt:1:1:1:${randomBytes(4).toString("base64url")}:x`, CRON_SECRET: "cron" },
     logins: memoryLoginStore(),
@@ -91,8 +92,8 @@ describe("apply: move, swap, skip", () => {
     const log = repo.decisionLog;
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({ trigger: "apply_move", status: "applied" });
-    // Each written instance carries its kind and the decision id.
-    expect(patches[0]!.patch.tags).toEqual({ sweetspotKind: "vo2", sweetspotDecisionId: String(log[0]!.id) });
+    // Each written instance carries its kind, the decision id and the day it was planned for.
+    expect(patches[0]!.patch.tags).toEqual({ sweetspotKind: "vo2", sweetspotDecisionId: String(log[0]!.id), sweetspotOrigin: "2026-11-10" });
 
     const vo2Day = out.week.days.find((d: { sessions: { id: string }[] }) => d.sessions.some((s) => s.id === "vo2-1110"));
     expect(vo2Day.date).toBe("2026-11-13");
@@ -322,5 +323,49 @@ describe("apply: move into next week", () => {
     const res = await call(app, "POST", "/api/sessions/end-1114/apply", { action: "move", optionId: sun.id, planVersion: opts.planVersion });
     expect(res.status).toBe(502);
     expect(events.find((e) => e.id === "end-1114")!.start.date).toBe("2026-11-14");
+  });
+});
+
+describe("apply: two cross-week moves (SWE-32)", () => {
+  // Monday Nov 16. Each week has Lift B (upper) Monday and Lift A (lower) Thursday.
+  const liftEvents = (): CalendarEvent[] => [
+    { id: "b16", summary: "Lift B — Upper + Core (30 min)", start: { date: "2026-11-16" } },
+    { id: "a19", summary: "Lift A — Lower Body + Core (30 min)", start: { date: "2026-11-19" } },
+    { id: "b23", summary: "Lift B — Upper + Core (30 min)", start: { date: "2026-11-23" } },
+    { id: "a26", summary: "Lift A — Lower Body + Core (30 min)", start: { date: "2026-11-26" } },
+  ];
+
+  for (const recurring of [false, true]) {
+    it(`each move changes only its own session, and the origin week keeps its misses (${recurring ? "recurring series" : "single events"})`, async () => {
+      const { app, events } = setup({ events: liftEvents(), now: "2026-11-16T15:00:00Z", recurring });
+      const move = async (id: string, to: string) => {
+        const opts = await options(app, id, "move");
+        const res = await call(app, "POST", `/api/sessions/${id}/apply`, { action: "move", optionId: `move:${to}`, planVersion: opts.planVersion });
+        expect(res.status).toBe(200);
+      };
+      await move("a19", "2026-11-23");
+      await move("b16", "2026-11-26");
+
+      const ids = async (start: string) => {
+        const wk = await (await call(app, "GET", `/api/week?start=${start}`)).json();
+        return wk.days.flatMap((d: { date: string; sessions: { id: string; status: string }[] }) => d.sessions.map((s) => `${d.date}:${s.id}:${s.status}`));
+      };
+      // Source week: both moved-out sessions stay as skipped stand-ins on their own days.
+      expect(await ids("2026-11-16")).toEqual(["2026-11-16:b16~origin:skipped", "2026-11-19:a19~origin:skipped"]);
+      // Target week: the two moved-in sessions, once each. The two replaced ones are not shown again as skips.
+      expect(await ids("2026-11-23")).toEqual(["2026-11-23:a19:planned", "2026-11-26:b16:planned"]);
+      expect(events.find((e) => e.id === "b23")!.status).toBe("cancelled");
+      expect(events.find((e) => e.id === "a26")!.status).toBe("cancelled");
+    });
+  }
+
+  it("keeps the first origin when a session moves again", async () => {
+    const { app, events } = setup({ events: liftEvents(), now: "2026-11-16T15:00:00Z" });
+    for (const to of ["2026-11-20", "2026-11-24"]) {
+      const opts = await options(app, "a19", "move");
+      const res = await call(app, "POST", "/api/sessions/a19/apply", { action: "move", optionId: `move:${to}`, planVersion: opts.planVersion });
+      expect(res.status).toBe(200);
+    }
+    expect(events.find((e) => e.id === "a19")!.extendedProperties?.private?.sweetspotOrigin).toBe("2026-11-19");
   });
 });

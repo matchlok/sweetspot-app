@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono";
 import {
   GOAL_KEYS,
   MAX_LIFT_TARGET,
+  ORIGIN_TAG,
   denverToday,
   isOriginStandIn,
   goalView,
@@ -41,6 +42,8 @@ interface CalendarChange {
   sessionId: string;
   kind: string;
   from: string;
+  /** The day the session was first planned for: kept across moves so a cross-week move stays readable. */
+  origin: string;
   /** Null means cancel the instance. */
   to: string | null;
   /** The instance is cancelled (a skipped session). Moving it brings it back. */
@@ -55,26 +58,26 @@ function changesFor(sessionId: string, action: OptionAction, option: DayOption, 
   const out: CalendarChange[] = [];
 
   if (action === "skip") {
-    out.push({ sessionId, kind: main.kind, from: main.date, to: null });
+    out.push({ sessionId, kind: main.kind, from: main.date, origin: main.origin ?? main.date, to: null });
   } else if (action === "move") {
     const to = option.id.slice("move:".length);
     if (!option.id.startsWith("move:") || !DAY.test(to)) return null;
-    out.push({ sessionId, kind: main.kind, from: main.date, to, ...(main.status === "skipped" ? { wasCancelled: true } : {}) });
+    out.push({ sessionId, kind: main.kind, from: main.date, origin: main.origin ?? main.date, to, ...(main.status === "skipped" ? { wasCancelled: true } : {}) });
   } else {
     const other = byId.get(option.id.slice("swap:".length));
     if (!option.id.startsWith("swap:") || !other) return null;
-    out.push({ sessionId, kind: main.kind, from: main.date, to: other.date });
+    out.push({ sessionId, kind: main.kind, from: main.date, origin: main.origin ?? main.date, to: other.date });
   }
   for (const m of option.alsoMoves) {
     const p = byId.get(m.sessionId);
     if (!p) return null;
-    out.push({ sessionId: p.id, kind: p.kind, from: p.date, to: m.to });
+    out.push({ sessionId: p.id, kind: p.kind, from: p.date, origin: p.origin ?? p.date, to: m.to });
   }
   // Sessions a cross-week move replaces are cancelled, last, so a failure above never leaves one cancelled.
   for (const a of option.absorbs ?? []) {
     const p = byId.get(a.sessionId);
     if (!p) return null;
-    out.push({ sessionId: p.id, kind: p.kind, from: p.date, to: null });
+    out.push({ sessionId: p.id, kind: p.kind, from: p.date, origin: p.origin ?? p.date, to: null });
   }
   return out;
 }
@@ -143,13 +146,15 @@ export function writeRoutes(data: DataDeps) {
 
     const decisionId = await data.repo.reserveDecisionId();
     const tags = (kind: string) => ({ sweetspotKind: kind, sweetspotDecisionId: String(decisionId) });
+    // A moved session also records the day it was planned for, so the reader can tell a move from a new session.
+    const moveTags = (ch: CalendarChange) => ({ ...tags(ch.kind), [ORIGIN_TAG]: ch.origin });
     const done: CalendarChange[] = [];
     let error: string | null = null;
     let revertFailed = false;
 
     for (const ch of changes) {
       try {
-        await data.sources.patchEvent(ch.sessionId, ch.to === null ? { status: "cancelled", tags: tags(ch.kind) } : { date: ch.to, ...(ch.wasCancelled ? { status: "confirmed" as const } : {}), tags: tags(ch.kind) });
+        await data.sources.patchEvent(ch.sessionId, ch.to === null ? { status: "cancelled", tags: tags(ch.kind) } : { date: ch.to, ...(ch.wasCancelled ? { status: "confirmed" as const } : {}), tags: moveTags(ch) });
         done.push(ch);
       } catch (e) {
         error = e instanceof Error ? e.message : "calendar write failed";

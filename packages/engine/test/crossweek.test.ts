@@ -44,6 +44,21 @@ describe("moves across weeks (rule 4, 2026-11-20)", () => {
     expect(readWeek(cancelled, "2026-11-16").sessions.map((s) => s.id)).toEqual(["w2-ss", "w3-vo2"]);
   });
 
+  it("reads the origin from the app's tag when Google gives none (a single event, not a series)", () => {
+    const tagged = events.map((e) =>
+      e.id === "w2-ss" ? { ...e, originalStartTime: undefined, extendedProperties: { private: { sweetspotOrigin: "2026-11-15" } } } : e,
+    );
+    expect(readWeek(tagged, "2026-11-09").sessions).toEqual([
+      expect.objectContaining({ id: "w2-ss~origin", date: "2026-11-15", status: "skipped", movedTo: "2026-11-18" }),
+    ]);
+    expect(readWeek(tagged, "2026-11-16").sessions.map((s) => s.id)).toEqual(["w2-ss", "w3-vo2"]);
+  });
+
+  it("ignores a malformed origin tag", () => {
+    const bad = [ev("a", "2026-11-12", "VO2 Max Intervals (~1 hr)", { extendedProperties: { private: { sweetspotOrigin: "last week" } } })];
+    expect(readWeek(bad, "2026-11-09").sessions[0]!.origin).toBeUndefined();
+  });
+
   it("a move inside the same week is not a cross-week move", () => {
     const e = [ev("a", "2026-11-12", "VO2 Max Intervals (~1 hr)", { originalStartTime: { date: "2026-11-10" } })];
     const w = readWeek(e, "2026-11-09");
