@@ -36,7 +36,7 @@ describe("v4 scenario: the story the screens share", () => {
   });
   it("tracks endurance, sweet spot and VO2 every week, stepped up after week 1's hits", () => {
     expect(home.goals.find((g) => g.key === "vo2")).toMatchObject({ actual: 0, target: 9, hit: false });
-    expect(home.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ actual: 0, target: 22, hit: false });
+    expect(home.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ actual: 0, target: 21, hit: false });
     expect(home.goals.find((g) => g.key === "endurance")).toMatchObject({ actual: 0, target: 90 });
     expect(home.offGoals).toEqual([]);
   });
@@ -57,9 +57,9 @@ describe("v4 scenario: the story the screens share", () => {
     expect(w.days[1]!.isToday).toBe(true);
     expect(w.nextWeekNote).toBeNull();
   });
-  it("program shows sweet spot at 22 and the recovery streak", () => {
+  it("program shows sweet spot at 21 and the recovery streak", () => {
     const p = programView(D);
-    expect(p.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ mode: "progress", target: 22, stepMin: 2 });
+    expect(p.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ mode: "progress", target: 21, stepMin: 1 });
     expect(p.goals.find((g) => g.key === "threshold")!.mode).toBe("off");
     expect(p.recovery).toMatchObject({ streak: 1, after: 3 });
   });
@@ -101,10 +101,10 @@ describe("state changes flow through", () => {
 });
 
 describe("goal preview", () => {
-  it("lists planned sweet-spot weeks, starting with this week's Sunday session at 22", () => {
+  it("lists planned sweet-spot weeks, starting with this week's Sunday session at 21", () => {
     const p = goalView(D, "sweetSpot").preview;
-    expect(p[0]).toEqual({ date: "2026-11-15", target: 22, isRecovery: false });
-    expect(p[1]).toEqual({ date: "2026-11-17", target: 24, isRecovery: false });
+    expect(p[0]).toEqual({ date: "2026-11-15", target: 21, isRecovery: false });
+    expect(p[1]).toEqual({ date: "2026-11-17", target: 22, isRecovery: false });
     expect(p.length).toBeGreaterThan(1);
   });
   it("redraws for a draft without saving", () => {

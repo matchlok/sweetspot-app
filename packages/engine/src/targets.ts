@@ -48,7 +48,7 @@ export const DEFAULT_PROGRAM: Program = {
   startWeek: "2026-11-02",
   goals: {
     endurance: { mode: "hold", start: 90, stepMin: 0 },
-    sweetSpot: { mode: "progress", start: 20, stepMin: 2 },
+    sweetSpot: { mode: "progress", start: 20, stepMin: 1 },
     threshold: { mode: "off", start: 10, stepMin: 1 },
     vo2: { mode: "progress", start: 8, stepMin: 1 },
   },

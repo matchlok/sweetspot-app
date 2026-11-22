@@ -57,17 +57,17 @@ describe("a skip is a miss", () => {
       p.weekStart === "2026-11-09" ? { ...p, sessions: p.sessions.map((s) => (s.id === "w2-ss" ? { ...s, status: "skipped" as const } : s)) } : p,
     );
     const home = homeView({ ...D, plans });
-    expect(home.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ target: 22, actual: 0, hit: false });
+    expect(home.goals.find((g) => g.key === "sweetSpot")).toMatchObject({ target: 21, actual: 0, hit: false });
     expect(home.offGoals).toEqual([]);
   });
 
   it("a miss in week 2 repeats the target and resets the streak", () => {
-    // Week 2 is complete by Nov 17: sweet spot skipped, so week 3 repeats 22 and the streak is 0.
+    // Week 2 is complete by Nov 17: sweet spot skipped, so week 3 repeats 21 and the streak is 0.
     const plans = D.plans.map((p) =>
       p.weekStart === "2026-11-09" ? { ...p, sessions: p.sessions.map((s) => (s.id === "w2-ss" ? { ...s, status: "skipped" as const } : s)) } : p,
     );
     const home = homeView({ ...D, plans, today: "2026-11-17", now: new Date("2026-11-17T14:30:00Z") });
-    expect(home.goals.find((g) => g.key === "sweetSpot")!.target).toBe(22);
+    expect(home.goals.find((g) => g.key === "sweetSpot")!.target).toBe(21);
   });
 });
 

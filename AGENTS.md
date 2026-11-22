@@ -31,7 +31,8 @@ Update when a step finishes or a decision is made.
   3. `categorize()`, `weeklyZoneRows()`, `zoneScorecard()` ported. Golden test passes locally. Adapter in `packages/engine/src/intervals.ts` is checked against live data (2026-11-08); next is a spot-check of the HR-only `vo2` rides.
   4. ~~Build order steps 1 to 3~~ Done 2026-11-13 and merged to `main` (PR #6, 2026-11-14): calendar reader, planned-weeks rule, dated goal changes, strength matching, not-logged status, fatigue, day options, view models and fixtures. 117 tests.
   5. ~~Web shell~~ Done and merged (2026-11-15), then completed and merged 2026-11-21 (Week/Month, pull to refresh, error states, PWA manifest, readiness pill, 2026-11-20 engine rules).
-  6. **Now:** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md): check own load on prod, then strength tags, activity matching and auto-reshuffle (built through the existing cross-week logic), a live cross-week move check on a throwaway series, then `/api/replan` once API spend is approved.
+  6. **Next major feature (2026-11-21, plan approved, build order in NEXT-STEPS item 0):** program onboarding and an in-app coach, [docs/plans/ONBOARDING-COACH.md](docs/plans/ONBOARDING-COACH.md). The app writes the calendar, not the other way round.
+  7. **Also open:** full list in [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md): check own load on prod, then strength tags, activity matching and auto-reshuffle (built through the existing cross-week logic), a live cross-week move check on a throwaway series, then `/api/replan` once API spend is approved.
   Rules that bite: intervals.icu owns zones and FTP with no local settings; dates are America/Denver; never print `.env.local` values.
 
 Full history (done, decided, open): [docs/STATUS.md](docs/STATUS.md). Add new entries there; keep only the phase and next action here.

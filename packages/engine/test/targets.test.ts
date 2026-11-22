@@ -3,7 +3,7 @@ import { DEFAULT_PROGRAM, goalStatus, programState, type GoalMinutes, type Progr
 
 // Weeks: 11-02, 11-09, 11-16, 11-23, 11-30, 12-07
 const W = ["2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23", "2026-11-30", "2026-12-07"];
-const P: Program = DEFAULT_PROGRAM; // SS 20 +2, VO2 8 +1, endurance holds at 90, threshold off
+const P: Program = DEFAULT_PROGRAM; // SS 20 +1, VO2 8 +1, endurance holds at 90, threshold off
 
 function acts(rows: Array<Partial<GoalMinutes>>) {
   return new Map(rows.map((r, i) => [W[i]!, r]));
@@ -24,15 +24,15 @@ describe("programState", () => {
   it("steps a goal up only after it was hit, per goal", () => {
     // Week 1: SS hit (25 >= 20), VO2 missed (5 < 8).
     const s = programState(P, acts([{ sweetSpot: 25, vo2: 5 }]), W[1]!);
-    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 22, vo2: 8 });
+    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 21, vo2: 8 });
     expect(s.weeks[0]!.hit).toMatchObject({ sweetSpot: true, vo2: false });
   });
 
   it("repeats the same targets after a miss", () => {
     const s = programState(P, acts([{ sweetSpot: 3, vo2: 10 }, { sweetSpot: 22, vo2: 9 }]), W[2]!);
-    // week 1: SS missed (stays 20), VO2 hit (9). week 2: SS 22 >= 20 hit => 22, VO2 9 >= 9 hit => 10
+    // week 1: SS missed (stays 20), VO2 hit (9). week 2: SS 22 >= 20 hit => 21, VO2 9 >= 9 hit => 10
     expect(s.weeks[1]!.targets).toEqual({ endurance: 90, sweetSpot: 20, vo2: 9 });
-    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 22, vo2: 10 });
+    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 21, vo2: 10 });
   });
 
   it("does not judge or step up the week in progress", () => {
@@ -44,12 +44,12 @@ describe("programState", () => {
 
   it("makes the 4th week a recovery week after 3 all-hit weeks, then resumes", () => {
     const s = programState(P, acts([hitAll, hitAll, hitAll, hitAll]), W[4]!);
-    // after 3 hits: SS 26, VO2 11
+    // after 3 hits: SS 23, VO2 11
     expect(s.weeks[3]!.isRecovery).toBe(true);
-    expect(s.weeks[3]!.targets).toEqual({ endurance: 54, sweetSpot: 16, vo2: 7 }); // 60% of 90/26/11
+    expect(s.weeks[3]!.targets).toEqual({ endurance: 54, sweetSpot: 14, vo2: 7 }); // 60% of 90/23/11
     // recovery week doesn't step anything up, so week 5 resumes at the same full targets
     expect(s.current!.isRecovery).toBe(false);
-    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 26, vo2: 11 });
+    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 23, vo2: 11 });
     expect(s.current!.streakBefore).toBe(0);
   });
 
@@ -77,7 +77,7 @@ describe("programState", () => {
     const s = programState(P, acts([hitAll, hitAll]), W[2]!); // 2 hits so far, third in progress
     expect(s.nextIfHit!.isRecovery).toBe(true);
     const t = programState(P, new Map(), W[0]!);
-    expect(t.nextIfHit!.targets).toEqual({ endurance: 90, sweetSpot: 22, vo2: 9 });
+    expect(t.nextIfHit!.targets).toEqual({ endurance: 90, sweetSpot: 21, vo2: 9 });
   });
 });
 
@@ -101,7 +101,7 @@ describe("planned weeks", () => {
     expect(s.weeks[0]!.hit.vo2).toBeUndefined();
     expect(s.weeks[0]!.targets.vo2).toBeUndefined();
     // VO2 carries over unchanged (no step), SS stepped.
-    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 22, vo2: 8 });
+    expect(s.current!.targets).toEqual({ endurance: 90, sweetSpot: 21, vo2: 8 });
   });
 
   it("leaves the streak alone when no progress goal was judged", () => {
@@ -128,7 +128,7 @@ describe("goal changes", () => {
   it("applies from the effective week and keeps past weeks as judged", () => {
     const changes = [{ effectiveWeek: W[2]!, goal: "sweetSpot" as const, change: { start: 30, stepMin: 3 } }];
     const s = programState(P, acts([hitAll, hitAll]), W[3]!, { changes });
-    expect(s.weeks[1]!.targets.sweetSpot).toBe(22); // unchanged history
+    expect(s.weeks[1]!.targets.sweetSpot).toBe(21); // unchanged history
     expect(s.weeks[2]!.targets.sweetSpot).toBe(30);
     expect(s.current!.targets.sweetSpot).toBe(30); // week 2 not hit (no actuals), no step
   });

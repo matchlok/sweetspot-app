@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node --env-file=../../.env.local --import tsx src/dev.ts",
     "strava-auth": "node --env-file=../../.env.local --import tsx src/stravaAuth.ts",
+    "calendar:clear": "node --env-file=../../.env.local --import tsx src/clearCalendar.ts",
     "smoke": "node --env-file=../../.env.local --import tsx src/smoke.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
