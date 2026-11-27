@@ -1,6 +1,7 @@
 import type { DayOptionsView } from "@sweetspot/engine";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
+import { denverToday, markDoneSummary, optionSummary, sheetStatus } from "./sheetModel";
 
 type Action = "move" | "swap" | "skip";
 
@@ -15,7 +16,8 @@ function longDate(date: string) {
 export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string; onClose: () => void; onChanged: () => void }) {
   const [action, setAction] = useState<Action>("move");
   const [data, setData] = useState<DayOptionsView | null>(null);
-  const [pick, setPick] = useState(0);
+  /** The chosen option: an index into data.options, "done" for Mark done manually, or nothing yet. */
+  const [sel, setSel] = useState<number | "done" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dy, setDy] = useState(0);
@@ -30,7 +32,7 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
 
   useEffect(() => {
     setData(null);
-    setPick(0);
+    setSel(null);
     setErr(null);
     api.options(sessionId, action).then(setData, (e) => setErr(e.message));
   }, [sessionId, action]);
@@ -38,7 +40,26 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
   const skipped = data?.session.status === "skipped";
   // A skipped session is just not done yet, so it gets the same move-or-mark-done view as a missed one.
   const missed = data?.session.status === "not_logged" || skipped;
-  const opt = data?.options[pick];
+  const status = data ? sheetStatus(data.session, denverToday()) : null;
+  const doneSel = sel === "done";
+  // Skip has one option and the Skip tab is the choice, so its summary shows at once.
+  const opt = action === "skip" ? data?.options[0] : typeof sel === "number" ? data?.options[sel] : undefined;
+  // A session that can't move has one blocked entry that explains why, not a day.
+  const lockedReason =
+    data && data.options.length === 0 && data.blocked.length === 1 && ["Completed", "Moved", "Skipped"].includes(data.blocked[0]!.heading)
+      ? data.blocked[0]!.reason
+      : null;
+  const canMarkDone = !!data?.canMarkDone && action === "move";
+  const summary =
+    doneSel && data
+      ? markDoneSummary(data.session.title)
+      : opt
+        ? optionSummary(opt)
+        : action === "skip"
+          ? "Nothing else moves."
+          : null;
+  const warn = !doneSel && !!opt?.effects.some((e) => e.tone === "warn");
+  const ready = doneSel || action === "skip" || !!opt;
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -59,7 +80,8 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
   }
 
   const apply = () => {
-    if (!data || (action !== "skip" && !opt)) return;
+    if (!data || !ready) return;
+    if (doneSel) return run(() => api.markDone(sessionId));
     // A skip has one option from the engine; use it if present.
     const optionId = opt?.id ?? "skip";
     return run(() => api.apply(sessionId, { action, optionId, planVersion: data.planVersion }));
@@ -100,17 +122,19 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
         >
           <div className="grab" />
         </div>
-        {data ? (
+        {data && status ? (
           <>
             <div>
               <div className="lbl">{longDate(data.session.date)}</div>
-              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{data.session.title}</div>
+              <div className="sh-head">
+                <div className="sh-title">{data.session.title}</div>
+                <div className="sh-status" data-testid="sheet-status">
+                  <span className="dot" aria-hidden="true" style={{ background: status.color }} />
+                  {status.label}
+                </div>
+              </div>
               <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
-                {missed
-                  ? skipped
-                    ? `${data.session.statusLabel ?? "Not done"}. You skipped it.`
-                    : `${data.session.statusLabel ?? "Not done"}. Nothing was logged.`
-                  : (data.session.detail ?? (data.session.minutes ? `About ${data.session.minutes} min` : ""))}
+                {data.session.detail ?? (data.session.minutes ? `About ${data.session.minutes} min` : "")}
               </div>
               {data.session.movedTo && (
                 <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
@@ -127,13 +151,6 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
               )}
             </div>
 
-            {missed && data.canMarkDone && (
-              <div className="did">
-                <span>Lifted without recording it?</span>
-                <button disabled={busy} onClick={() => run(() => api.markDone(sessionId))}>Mark it done</button>
-              </div>
-            )}
-
             {!missed && (
               <div className="acts">
                 {(["move", "swap", "skip"] as Action[]).map((a) => (
@@ -144,39 +161,50 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
               </div>
             )}
 
-            <div className="lbl" style={{ marginTop: 4 }}>
-              {action === "skip"
-                ? "What skipping does"
-                : action === "swap"
-                  ? "Trade days with which session?"
-                  : missed
-                    ? "Or move it to a day that is left"
-                    : "Where should it go?"}
-            </div>
-
-            {action === "skip" ? (
-              <div className="note">{opt ? opt.effects.map((e) => e.text).join(" ") : "Nothing else moves."}</div>
-            ) : data.options.length === 0 ? (
-              <div className="note">No day works under the current rules.</div>
-            ) : (
-              data.options.map((o, i) => (
-                <button key={o.id} className={`opt${i === pick ? " pick" : ""}`} aria-pressed={i === pick} onClick={() => setPick(i)}>
-                  <span className={`radio${i === pick ? " on" : ""}`} />
-                  <span style={{ flex: 1 }}>
-                    <span className="oh">{o.heading}</span>
-                    {o.effects.map((e, j) => (
-                      <span key={j} className={`eff${e.tone === "warn" ? " warn" : ""}`}>{e.text}</span>
-                    ))}
-                  </span>
-                </button>
-              ))
+            {/* Design rule: a list of choices carries one line per tile. What a choice does is said once, in the tray summary. */}
+            {canMarkDone && (
+              <button className={`opt${doneSel ? " pick" : ""}`} aria-pressed={doneSel} onClick={() => setSel("done")}>
+                <span className={`radio${doneSel ? " on" : ""}`} />
+                <span className="oh">Mark done manually</span>
+              </button>
             )}
 
-            {err && <div className="err" role="alert">{err}</div>}
-            <button className="cta" disabled={busy || (action !== "skip" && !opt)} onClick={apply}>
-              {action === "skip" ? "Skip it" : (opt?.cta ?? "Choose a day")}
-            </button>
-            <button className="ghostb" onClick={onClose}>{missed ? "Leave it" : "Cancel"}</button>
+            {action !== "skip" && !lockedReason && (data.options.length > 0 || data.blocked.length > 0) && (
+              <div className="lbl" style={{ marginTop: 4 }}>
+                {action === "swap" ? "Trade days with which session?" : missed ? "Move to another day" : "Where should it go?"}
+              </div>
+            )}
+
+            {action === "skip" ? null : lockedReason ? (
+              <div className="note">{lockedReason}</div>
+            ) : data.options.length === 0 && data.blocked.length === 0 ? (
+              <div className="note">No day works under the current rules.</div>
+            ) : (
+              <>
+                {data.options.map((o, i) => (
+                  <button key={o.id} className={`opt${i === sel ? " pick" : ""}`} aria-pressed={i === sel} onClick={() => setSel(i)}>
+                    <span className={`radio${i === sel ? " on" : ""}`} />
+                    <span className="oh">{o.heading}</span>
+                  </button>
+                ))}
+                {data.blocked.map((b) => (
+                  <button key={b.heading} className="opt blocked" disabled>
+                    <span className="radio" />
+                    <span className="oh">{b.heading}</span>
+                    <span className="why">{b.reason}</span>
+                  </button>
+                ))}
+              </>
+            )}
+
+            <div className="tray">
+              {summary && <div className={`summary${warn ? " warn" : ""}`} data-testid="sheet-summary">{summary}</div>}
+              {err && <div className="err" role="alert">{err}</div>}
+              <button className="cta" disabled={busy || !ready} onClick={apply}>
+                {doneSel ? "Mark done" : action === "skip" ? "Skip it" : (opt?.cta ?? "Choose an option")}
+              </button>
+              <button className="ghostb" onClick={onClose}>{missed ? "Leave it" : "Cancel"}</button>
+            </div>
           </>
         ) : err ? (
           <>

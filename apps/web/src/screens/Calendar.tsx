@@ -29,6 +29,10 @@ export function shiftDate(date: string, days: number) {
  * each cut off with an ellipsis rather than wrapped. Status is carried by the dot (see dots.ts), never by
  * tile text. Anything longer, such as "Not logged", "Skipped" or "Moved to ...", belongs in the day detail
  * view (DaySheet). Don't add a third line here.
+ *
+ * Extended to lists of choices (SWE-42): a choice tile, such as a day in the move sheet, carries one line
+ * (two at most when a blocked day gives its reason). Never put effect text on a tile. What a choice would
+ * do is explained once, in the single summary above the button for the selected choice (see sheetModel.ts).
  */
 function meta(s: Session, isToday: boolean): string {
   const d = s.minutes ? `${s.minutes} min` : (s.detail ?? "");
