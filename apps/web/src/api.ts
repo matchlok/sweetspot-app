@@ -53,6 +53,13 @@ export const api = {
       body: JSON.stringify({ passphrase }),
     }),
   logout: () => request<void>("/api/auth/logout", { method: "POST" }),
+  /** Public. `website` is a honeypot field that stays empty for real visitors. */
+  joinWaitlist: (email: string, website = "") =>
+    request<void>("/api/waitlist", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, website }),
+    }),
   home: () => (fixtureMode ? Promise.resolve(homeFixture as unknown as HomeView) : request<HomeView>("/api/home")),
   week: (start?: string) =>
     fixtureMode ? Promise.resolve(weekFixture as unknown as WeekView) : request<WeekView>(`/api/week${start ? `?start=${start}` : ""}`),

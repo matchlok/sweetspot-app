@@ -17,3 +17,25 @@ export function memoryLoginStore(): LoginStore {
     },
   };
 }
+
+/** Public waitlist signups. Behind an interface so tests don't need Postgres. */
+export interface WaitlistStore {
+  /** Stores a lowercased email. A repeat is a no-op, so callers can't tell who is already on the list. */
+  add(email: string): Promise<void>;
+  /** New signups in the last `windowMs`, for the rate limit. */
+  recentCount(windowMs: number): Promise<number>;
+}
+
+export function memoryWaitlistStore(): WaitlistStore & { emails: Map<string, number> } {
+  const emails = new Map<string, number>();
+  return {
+    emails,
+    async add(email) {
+      if (!emails.has(email)) emails.set(email, Date.now());
+    },
+    async recentCount(windowMs) {
+      const since = Date.now() - windowMs;
+      return [...emails.values()].filter((at) => at >= since).length;
+    },
+  };
+}

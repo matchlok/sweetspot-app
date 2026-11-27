@@ -1,0 +1,109 @@
+/* Marketing page only. Light tokens are from docs/build-writeup/2026-11-07-ui-mocks-v3/kit/theme.css;
+   dark follows the system. The app screens stay dark and never use these. Mapped onto the app's variable names
+   so the reused classes (.card, .track, .pill, .day, .opt, .summary) pick them up. */
+.landing {
+  --bg: #f2f3f7; --card: #ffffff; --card-line: #e1e3ea; --track: #e8eaf0; --nav: #ffffff;
+  --text: #14161f; --text-2: #3d4152; --muted: #6b6f80;
+  --accent: #3442c4; --endurance: #5b6cf0; --vo2: #e4505f; --sweet: #e3a51c; --lift: #a3a7b4; --tempo: #2f9e77;
+  --today-bg: #ebedfe; --today-line: #c3c9fa; --card2: #fafbfc; --btn-ink: #ffffff; --btn-bg: #4f5fe8;
+  --ok-bg: #e2f5ec; --ok-line: #bde6d3; --ok-fg: #13764f;
+  --warn-bg: #fbf1d6; --warn-line: #ead49a; --warn-fg: #8a5f04;
+  --bad-bg: #fde8ea; --bad-line: #f3c0c6; --bad-fg: #b3243a;
+  --shadow: 0 1px 2px rgba(20,24,40,.05), 0 8px 24px rgba(20,24,40,.06);
+  background: var(--bg); color: var(--text); min-height: 100%;
+  font-family: Inter, system-ui, sans-serif; line-height: 1.5; overflow-x: hidden;
+}
+@media (prefers-color-scheme: dark) {
+  .landing {
+    --bg: #08090c; --card: #13151c; --card-line: #262a36; --track: #1d2029; --nav: #0d0f14;
+    --text: #e7e8ee; --text-2: #c4c6d2; --muted: #8d90a0;
+    --accent: #c9cffc; --endurance: #7c8cf8; --vo2: #ee7480; --sweet: #e0b25c; --lift: #c4c6d2; --tempo: #5fcf9f;
+    --today-bg: #1a1d33; --today-line: #3d4680; --card2: #0f1116; --btn-ink: #0a0b14; --btn-bg: #7c8cf8;
+    --ok-bg: #11231c; --ok-line: #1f4a39; --ok-fg: #8fe0bd;
+    --warn-bg: #2a2410; --warn-line: #5a4a1c; --warn-fg: #f0d48a;
+    --bad-bg: #2a1215; --bad-line: #5a2630; --bad-fg: #f4a4ac;
+    --shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+}
+/* The page background follows the theme while the landing page is showing (overscroll, short pages). */
+body:has(.landing) { background: #f2f3f7; }
+@media (prefers-color-scheme: dark) { body:has(.landing) { background: #08090c; } }
+.landing a { text-decoration: none; }
+.landing .card { box-shadow: var(--shadow); }
+.landing .opt, .landing .summary { background: var(--card2); border-color: var(--card-line); }
+.landing .opt { cursor: default; margin-top: 8px; }
+.landing .opt.pick { background: var(--today-bg); border-color: var(--today-line); }
+.landing .radio.on { background: var(--card); border-color: var(--endurance); }
+.landing .summary { margin-top: 10px; }
+.landing .day { cursor: default; }
+
+.lp-wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+.lp-bar { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--card-line); }
+.lp-bar-in { display: flex; align-items: center; justify-content: space-between; min-height: 56px; }
+.lp-brand { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+.lp-brand-bike { color: var(--endurance); }
+
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border-radius: 12px; font: 600 15px Inter, system-ui, sans-serif; cursor: pointer; border: 1px solid var(--card-line); }
+.lp-btn-main { background: var(--btn-bg); color: var(--btn-ink); border-color: var(--btn-bg); }
+.lp-btn-quiet { background: var(--card); color: var(--text); }
+.lp-btn:focus-visible { outline: 2px solid var(--endurance); outline-offset: 2px; }
+
+.lp-hero { padding-top: 56px; padding-bottom: 40px; text-align: center; }
+.lp-hero h1 { font-size: 36px; line-height: 1.08; letter-spacing: -.03em; font-weight: 700; margin: 0 auto; max-width: 14em; }
+.lp-lede { font-size: 17px; color: var(--text-2); max-width: 36em; margin: 18px auto 0; }
+.lp-cta { display: flex; flex-direction: column; gap: 10px; align-items: stretch; margin: 28px auto 0; max-width: 320px; }
+
+.lp-render { display: flex; flex-direction: column; gap: 10px; min-width: 0; text-align: left; }
+.lp-hero-render { margin-top: 48px; align-items: center; }
+.lp-hero-render .lp-sample { align-self: center; }
+.lp-device { background: var(--bg); border: 1px solid var(--card-line); border-radius: 28px; padding: 18px 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 24px 60px rgba(20,24,40,.14); width: 100%; max-width: 380px; }
+.lp-h-day { font-size: 24px; font-weight: 700; }
+.lp-today { background: var(--today-bg); border-color: var(--today-line); }
+.lp-today-t { font-size: 20px; font-weight: 700; margin-top: 6px; }
+.lp-today-d { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+.lp-sample { align-self: flex-start; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+.lp-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.lp-pdot { width: 8px; height: 8px; border-radius: 4px; background: currentColor; }
+.lp-pill.green { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok-fg); }
+.lp-pill.yellow { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-fg); }
+.lp-pill.red { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad-fg); }
+.lp-why { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--track); }
+.lp-psi { display: flex; gap: 32px; margin: 10px 0 6px; }
+.lp-psi-n { font-size: 36px; font-weight: 700; line-height: 1.1; }
+
+.lp-feat { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 48px; padding-bottom: 48px; border-top: 1px solid var(--card-line); align-items: center; }
+.lp-feat h2, .lp-end h2 { font-size: 28px; line-height: 1.15; letter-spacing: -.02em; font-weight: 700; margin: 0; }
+.lp-copy p { font-size: 16px; color: var(--text-2); margin: 12px 0 0; max-width: 32em; }
+.lp-tag { display: inline-block; margin-bottom: 10px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--today-bg); color: var(--accent); border: 1px solid var(--today-line); }
+.lp-vis { min-width: 0; }
+.lp-end { text-align: center; padding-top: 64px; padding-bottom: 64px; border-top: 1px solid var(--card-line); display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.lp-end-p { font-size: 17px; color: var(--text-2); max-width: 30em; margin: 0; }
+.lp-form { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px; }
+.lp-form-row { display: flex; flex-direction: column; gap: 10px; position: relative; }
+.lp-input { min-height: 48px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--card-line); background: var(--card); color: var(--text); font: 500 16px Inter, system-ui, sans-serif; width: 100%; box-sizing: border-box; box-shadow: var(--shadow); }
+.lp-input::placeholder { color: var(--muted); }
+.lp-input:focus-visible { outline: 2px solid var(--endurance); outline-offset: 2px; }
+.lp-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.lp-form .lp-btn { min-height: 48px; }
+.lp-btn:disabled { opacity: .55; cursor: default; }
+.lp-form-err { font-size: 14px; color: var(--bad-fg); text-align: left; }
+.lp-fine { font-size: 13px; color: var(--muted); }
+.lp-thanks { width: 100%; max-width: 460px; padding: 22px 20px; border-radius: 16px; background: var(--ok-bg); border: 1px solid var(--ok-line); color: var(--ok-fg); }
+.lp-thanks-t { font-size: 20px; font-weight: 700; }
+.lp-thanks-d { font-size: 16px; margin-top: 4px; }
+.lp-foot { padding-top: 24px; padding-bottom: 40px; font-size: 13px; color: var(--muted); text-align: center; }
+
+@media (min-width: 960px) {
+  .lp-hero { padding-top: 96px; }
+  .lp-hero h1 { font-size: 64px; }
+  .lp-lede { font-size: 20px; }
+  .lp-cta { flex-direction: row; max-width: none; justify-content: center; }
+  .lp-cta .lp-btn { padding: 0 28px; min-height: 48px; }
+  .lp-form-row { flex-direction: row; }
+  .lp-form-row .lp-input { flex: 1; }
+  .lp-form-row .lp-btn { white-space: nowrap; }
+  .lp-feat { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 64px; padding-top: 80px; padding-bottom: 80px; }
+  .lp-feat h2, .lp-end h2 { font-size: 38px; }
+  .lp-feat:nth-child(even) .lp-copy { order: 2; }
+}
