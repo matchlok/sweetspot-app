@@ -13,3 +13,4 @@ export * from "./readiness";
 export * from "./strength";
 export * from "./generate";
 export * from "./match";
+export * from "./forecast";

@@ -200,6 +200,11 @@ function stateFor(d: ViewData, weekStart: Day, extra: readonly GoalChange[] = []
   });
 }
 
+/** The program replayed through the week of `date`, for callers that need hit history (the forecast). */
+export function programStateAt(d: ViewData, date: Day = d.today): ProgramState {
+  return stateFor(d, mondayOf(date));
+}
+
 /** Goal configs in force in `weekStart`, after dated changes. */
 function configsAt(d: ViewData, weekStart: Day, extra: readonly GoalChange[] = []): Record<GoalKey, GoalConfig> {
   const out = { ...d.program.goals };
