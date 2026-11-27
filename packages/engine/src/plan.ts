@@ -1,6 +1,6 @@
 import type { GoalKey } from "./targets";
 import { denverToday } from "./dates";
-import type { PlannedSession, SessionKind } from "./calendar";
+import { isOriginStandIn, type PlannedSession, type SessionKind } from "./calendar";
 import type { IntervalsActivity } from "./intervals";
 
 /** Goal a ride session serves. Easy spins and lifts serve no minutes goal. */
@@ -16,8 +16,9 @@ export function goalServedBy(kind: SessionKind): GoalKey | null {
 
 /**
  * Goals the week's plan has a session for. Feeds `programState`'s `planned`
- * option. A skipped session still counts as planned, so skipping it is a miss
- * (rule 1, 2026-11-20), and so is a session that moved out of the week.
+ * option. A skipped session still counts as planned, and so does a session that
+ * moved out of the week. A skip is only "not done yet" (SWE-43): the goal is judged
+ * when the week completes, so a skip costs nothing before then.
  */
 export function plannedGoals(sessions: readonly PlannedSession[]): Set<GoalKey> {
   const out = new Set<GoalKey>();
@@ -124,10 +125,15 @@ export type ResolvedStatus = "planned" | "done" | "not_logged" | "skipped";
  * the goal system's call, not this one.
  */
 export function sessionStatus(s: PlannedSession, logged: LoggedDays, now: Date = new Date()): ResolvedStatus {
-  if (s.status === "skipped") return "skipped";
+  const today = denverToday(now);
+  if (s.status === "skipped") {
+    // The stand-in a moved session leaves behind is a record, always skipped. A real skip only
+    // means "not done": it reads like a not-logged session once its day has passed (SWE-43).
+    if (isOriginStandIn(s.id)) return "skipped";
+    return s.date < today || (s.date === today && denverHour(now) >= NOT_LOGGED_HOUR) ? "not_logged" : "skipped";
+  }
   const isLift = s.kind === "lift_upper" || s.kind === "lift_lower";
   if ((isLift ? logged.liftDates : logged.rideDates).has(s.date)) return "done";
-  const today = denverToday(now);
   if (s.date < today) return "not_logged";
   if (s.date === today && denverHour(now) >= NOT_LOGGED_HOUR) return "not_logged";
   return "planned";

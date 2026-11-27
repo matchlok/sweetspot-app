@@ -108,8 +108,8 @@ export function DaySheet({ sessionId, onClose, onChanged }: { sessionId: string;
               <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
                 {missed
                   ? skipped
-                    ? "Skipped. Not done yet."
-                    : "Planned for this day. Nothing was logged."
+                    ? `${data.session.statusLabel ?? "Not done"}. You skipped it.`
+                    : `${data.session.statusLabel ?? "Not done"}. Nothing was logged.`
                   : (data.session.detail ?? (data.session.minutes ? `About ${data.session.minutes} min` : ""))}
               </div>
               {data.session.movedTo && (

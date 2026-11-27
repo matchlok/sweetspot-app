@@ -64,8 +64,13 @@ describe("sessionStatus", () => {
     expect(sessionStatus(e, none, at("2026-11-11T03:30:00Z"))).toBe("planned"); // 8:30 pm MST
     expect(sessionStatus(e, none, at("2026-11-11T04:30:00Z"))).toBe("not_logged"); // 9:30 pm MST
   });
-  it("keeps the future planned and a skip skipped", () => {
+  it("keeps the future planned", () => {
     expect(sessionStatus(s("a", "2026-11-12", "vo2"), logged, at("2026-11-10T18:00:00Z"))).toBe("planned");
-    expect(sessionStatus(s("a", "2026-11-09", "vo2", "skipped"), logged, at("2026-11-12T18:00:00Z"))).toBe("skipped");
+  });
+  it("reads a skip as not done: skipped until its day passes, then not_logged (SWE-43)", () => {
+    const sk = s("a", "2026-11-12", "vo2", "skipped");
+    expect(sessionStatus(sk, logged, at("2026-11-10T18:00:00Z"))).toBe("skipped"); // day still ahead
+    expect(sessionStatus(sk, logged, at("2026-11-13T18:00:00Z"))).toBe("not_logged"); // day passed
+    expect(sessionStatus({ ...sk, id: "a~origin" }, logged, at("2026-11-13T18:00:00Z"))).toBe("skipped"); // stand-in stays a record
   });
 });

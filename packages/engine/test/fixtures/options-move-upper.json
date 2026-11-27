@@ -6,7 +6,8 @@
     "title": "Lift B — Upper Body + Core",
     "minutes": null,
     "detail": null,
-    "status": "not_logged"
+    "status": "not_logged",
+    "statusLabel": "Not done"
   },
   "sessionId": "w2-upper",
   "action": "move",

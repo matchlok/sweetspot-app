@@ -235,7 +235,8 @@ describe("a skipped session", () => {
     const { app, patches, events, repo } = setup();
     skipLiftB(events);
     const week = await (await call(app, "GET", "/api/week?start=2026-11-09")).json();
-    expect(week.days[0].sessions[0]).toMatchObject({ id: "lift-b-1109", status: "skipped" });
+    // Its day has passed and the week is still going: not done, not yet missed.
+    expect(week.days[0].sessions[0]).toMatchObject({ id: "lift-b-1109", status: "not_logged", statusLabel: "Not done" });
 
     const opts = await options(app, "lift-b-1109", "move");
     const wed = opts.options.find((o: { id: string }) => o.id === "move:2026-11-11");
