@@ -33,6 +33,8 @@ vi.mock("../src/api", () => {
 import { api } from "../src/api";
 import { Calendar } from "../src/screens/Calendar";
 import { DaySheet } from "../src/screens/DaySheet";
+import { DONE_DOT } from "../src/screens/dots";
+import { optionSummary, sheetStatus } from "../src/screens/sheetModel";
 import { Home } from "../src/screens/Home";
 import { Shell } from "../src/Shell";
 
@@ -149,6 +151,62 @@ describe("DaySheet", () => {
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no summary until an option is picked, then one summary above the button", async () => {
+    render(<DaySheet sessionId="w2-vo2" onClose={() => {}} onChanged={() => {}} />);
+    await screen.findByText("Where should it go?");
+    expect(screen.queryByTestId("sheet-summary")).toBeNull();
+    // A day tile names the day only: the effect text isn't on it.
+    const tile = screen.getByRole("button", { name: "Thursday, Nov 12" });
+    expect(tile.textContent).toBe("Thursday, Nov 12");
+    fireEvent.click(tile);
+    expect(screen.getByTestId("sheet-summary").textContent).toBe("VO2 intervals moves to Thursday. Lift and quality ride on one day.");
+    expect(screen.getByRole("button", { name: "Move to Thursday" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Wednesday, Nov 11" }));
+    expect(screen.getAllByTestId("sheet-summary")).toHaveLength(1);
+    expect(screen.getByTestId("sheet-summary").textContent).toBe("VO2 intervals moves to Wednesday.");
+  });
+
+  it("greys out blocked days with their reason", async () => {
+    render(<DaySheet sessionId="w2-vo2" onClose={() => {}} onChanged={() => {}} />);
+    const tile = (await screen.findByText("Saturday, Nov 14")).closest("button")!;
+    expect(tile.disabled).toBe(true);
+    expect(tile.textContent).toContain("Already a ride that day");
+  });
+
+  it("offers Mark done manually with its own summary, and marks done", async () => {
+    m.options!.mockResolvedValue({ ...(optsVo2 as unknown as DayOptionsView), canMarkDone: true, session: { ...(optsVo2 as unknown as DayOptionsView).session, status: "not_logged", kind: "lift_upper", title: "Upper lift" } });
+    m.markDone!.mockResolvedValue({});
+    const onChanged = vi.fn();
+    render(<DaySheet sessionId="w2-vo2" onClose={() => {}} onChanged={onChanged} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Mark done manually" }));
+    expect(screen.getByTestId("sheet-summary").textContent).toBe("Upper lift is marked done by hand and counts for this week.");
+    fireEvent.click(screen.getByRole("button", { name: "Mark done" }));
+    await waitFor(() => expect(m.markDone).toHaveBeenCalledWith("w2-vo2"));
+    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+  });
+});
+
+describe("sheetStatus", () => {
+  it("reads Not done during the week, Missed after it, Done when done", () => {
+    expect(sheetStatus({ status: "skipped", date: "2026-11-10" }, "2026-11-15").label).toBe("Not done");
+    expect(sheetStatus({ status: "not_logged", date: "2026-11-10" }, "2026-11-12").label).toBe("Not done");
+    expect(sheetStatus({ status: "planned", date: "2026-11-10" }, "2026-11-16").label).toBe("Missed");
+    expect(sheetStatus({ status: "done", date: "2026-11-10" }, "2026-11-30")).toEqual({ label: "Done", color: DONE_DOT });
+  });
+});
+
+describe("optionSummary", () => {
+  it("joins a next-week move's effects into one summary", () => {
+    expect(
+      optionSummary({
+        effects: [
+          { text: "Upper lift moves to next Monday.", tone: "plain" },
+          { text: "Upper lift counts as missed this week.", tone: "warn" },
+        ],
+      }),
+    ).toBe("Upper lift moves to next Monday. Upper lift counts as missed this week.");
   });
 });
 

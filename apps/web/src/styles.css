@@ -66,7 +66,7 @@ a.card, button.card { display: block; width: 100%; text-align: left; font: inher
 .m { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .dot { width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; margin-left: 2px; }
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 10; }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; max-height: calc(100% - 48px); overflow-y: auto; background: var(--card); border: 1px solid var(--card-line); border-radius: 24px 24px 0 0; padding: 10px 16px max(24px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -12px 40px rgba(0,0,0,.6); z-index: 11; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; max-height: calc(100% - 48px); overflow-y: auto; background: var(--card); border: 1px solid var(--card-line); border-radius: 24px 24px 0 0; padding: 10px 16px 0; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -12px 40px rgba(0,0,0,.6); z-index: 11; }
 .grab { width: 40px; height: 5px; border-radius: 3px; background: #2f3240; align-self: center; }
 .acts { display: flex; gap: 8px; }
 .act { flex: 1; height: 44px; border-radius: 12px; border: 1px solid #2f3240; background: #0f1116; color: var(--text); font: 600 15px Inter, system-ui, sans-serif; cursor: pointer; }
@@ -76,13 +76,21 @@ a.card, button.card { display: block; width: 100%; text-align: left; font: inher
 .radio { width: 18px; height: 18px; border-radius: 9px; border: 2px solid #4f5262; flex-shrink: 0; margin-top: 1px; }
 .radio.on { border: 5px solid var(--endurance); background: #0a0b14; }
 .oh { display: block; font-size: 15px; font-weight: 600; }
-.eff { display: block; font-size: 13px; color: var(--text-2); margin-top: 4px; line-height: 1.4; }
-.eff.warn { color: #e8bd62; }
 .note { background: #0f1116; border: 1px solid var(--track); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--text-2); line-height: 1.45; }
-.did { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0f1116; border: 1px solid var(--track); border-radius: 14px; padding: 8px 8px 8px 14px; font-size: 14px; color: var(--text-2); }
-.did button { height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #2f3240; background: var(--card); color: var(--text); font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; }
 .cta { height: 48px; border-radius: 14px; background: var(--endurance); color: #0a0b14; font: 700 16px Inter, system-ui, sans-serif; border: 0; cursor: pointer; margin-top: 8px; }
 .cta:disabled { opacity: .5; }
+/* Move sheet: choices are one line each; what they do is said once, in the tray summary above the button. */
+.sh-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.sh-title { font-size: 22px; font-weight: 700; min-width: 0; }
+.sh-status { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--text-2); flex-shrink: 0; }
+.sh-status .dot { margin-left: 0; width: 12px; height: 12px; border-radius: 6px; }
+.opt { align-items: center; }
+.opt .oh { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.opt.blocked { opacity: .5; cursor: default; }
+.opt.blocked .why { font-size: 13px; color: var(--text-2); max-width: 45%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tray { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; background: var(--card); padding: 8px 0 max(24px, env(safe-area-inset-bottom)); }
+.summary { background: #0f1116; border: 1px solid var(--track); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--text); line-height: 1.45; }
+.summary.warn { border-color: #5a4a22; }
 .gl { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 48px; padding: 7px 0; border: 0; border-top: 1px solid #1d2029; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .step { display: flex; align-items: center; gap: 10px; }
 .sb { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #2f3240; background: #0f1116; color: var(--text); font: inherit; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
