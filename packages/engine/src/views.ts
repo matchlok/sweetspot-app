@@ -49,6 +49,11 @@ export interface Session {
   detail: string | null;
   status: SessionStatus;
   doneSource?: "intervals" | "manual";
+  /**
+   * What to call a session that is not done (SWE-43). A skip is only "not done" until its week is over, then
+   * "Missed", the same as a not-logged one. Absent for done, planned and moved-out stand-in sessions.
+   */
+  statusLabel?: "Not done" | "Missed";
   /** The ride that counted for this session. `substituted` when it was not the planned category. */
   matchedRide?: { activityId: string; detected: string; substituted: boolean };
   /** Moved in from an earlier week: the date it was planned for. */
@@ -255,6 +260,7 @@ function reshuffleMissed(sessions: Session[], today: Day, weekStart: Day): strin
     s.shifted = { from: s.date, reason: "reshuffle" };
     s.date = day;
     s.status = "planned";
+    delete s.statusLabel;
   }
   return unplaced;
 }
@@ -296,6 +302,7 @@ function resolveWeek(d: ViewData, weekStart: Day): ResolvedWeek {
     }
     const s: Session = { id: p.id, date: p.date, kind: p.kind, title: p.title, minutes: p.minutes, detail: null, status };
     if (doneSource) s.doneSource = doneSource;
+    if ((status === "skipped" || status === "not_logged") && !isOriginStandIn(p.id)) s.statusLabel = d.today > addDays(weekStart, 6) ? "Missed" : "Not done";
     if (m?.ride) s.matchedRide = { activityId: m.ride.id, detected: m.detected ?? "unknown", substituted: m.substituted };
     if (p.movedFrom) s.movedFrom = p.movedFrom;
     if (p.movedTo) s.movedTo = p.movedTo;

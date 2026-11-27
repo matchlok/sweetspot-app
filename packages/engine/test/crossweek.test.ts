@@ -142,7 +142,8 @@ describe("option to move into next week", () => {
     for (const [id, kind] of [["w2-ss", "sweet_spot"], ["w2-lower", "lift_lower"]] as const) {
       const planned = sessionOptionsView(late, id, "move");
       const skipped = sessionOptionsView(skipAt(kind), id, "move");
-      expect(skipped.session.status).toBe("skipped");
+      expect(skipped.session.status).toBe("not_logged");
+      expect(skipped.session.statusLabel).toBe("Missed");
       const ids = (o: typeof planned) => o.options.map((x) => x.id);
       expect(ids(skipped).length, id).toBeGreaterThan(0);
       expect(ids(skipped).every((i) => i >= "move:2026-11-16"), id).toBe(true);
