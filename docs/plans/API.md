@@ -147,6 +147,52 @@ Every write appends an entry to the decision log (see Storage) with the inputs, 
 | `PUT /api/lifts` | `{ upper, lower }` | Lift sessions per week, 0 to 7 each | `ProgramView` |
 | `POST /api/sync` | none | Fetches new activities from intervals.icu now (pull to refresh) | `{ lastSyncedAt, newActivities: number }` |
 
+### Program: draft and commit (SWE-11, 2026-11-27)
+
+Onboarding builds a block from an availability and a purpose. The deterministic generator makes the card (no LLM). Both routes take the same body; commit adds `draftVersion`.
+
+```ts
+interface ProgramRequest {
+  availability: { minutes: number[] };   // 7 whole numbers, 0 to 300, Monday first
+  purpose: { kind: "race" | "faster" | "comeback" | "hold"; raceDate?: Day };   // raceDate required for "race"
+}
+```
+
+`POST /api/program/draft` computes and writes nothing (no Neon, no calendar, no decision row). The server derives the rest: `asOf` is today in Denver, and `liftsPerWeek` is the strength activities stored over the last 8 full weeks divided by 8, or `"unknown"` when there are none. The block starts the Monday after `asOf`.
+
+```ts
+interface ProgramDraft {
+  draftVersion: string;                  // hash of block start, history, availability, purpose and card
+  history: { asOf: Day; liftsPerWeek: number | "unknown" };
+  card: ProgramCard;                     // engine/generate.ts, with each progress goal's start set to the target in force now
+  preview: {
+    weeks: { start: Day; isRecovery: boolean; days: { date: Day; sessions: { kind: SessionKind; title: string; minutes: number }[] }[] }[];   // block weeks 1 and 2
+    strip: { start: Day; isRecovery: boolean }[];                                                                                              // every block week
+  };
+  forecast: {                            // per progress goal; engine/forecast.ts
+    key: GoalKey; start: number; stepMin: number;
+    ifAllHit: { date: Day; target: number };
+    atRecentRate: { hit: number; judged: number; target: number } | null;   // null under 3 judged weeks in the last 8
+  }[];
+  calendar: { from: Day; to: Day; clears: number; writes: number };   // clears = events tagged sweetspotProgram in those two weeks
+}
+```
+
+`POST /api/program/commit` regenerates the card on the server (a client card is never trusted) and compares `draftVersion`. In order: archive the active program and delete its planned sessions dated on or after the block start; create the program with every session of every block week (`draftVersion` and `forecast` sit inside its card JSON); write block weeks 1 and 2 to the calendar; write `goal_changes` (all four goals, effective at block week 1) and `lift_targets` (from the lifts the generator placed); log one `program_commit` decision. A retry with the same `draftVersion` while that program is active creates no second program: it only re-runs the calendar and the idempotent goal writes. Returns:
+
+```ts
+{ programId: number; written: { oldest: Day; newest: Day; deleted: number; created: number }[]; week: WeekView }   // week = block week 1
+```
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `invalid` | bad minutes, unknown kind, race without a date, race date before the block start, missing `draftVersion` |
+| 422 | `blocked` | comeback or hold (until SWE-17), or the generator's "availability can't hold ..." message |
+| 409 | `conflict` | `draftVersion` is stale (an input changed, or the day rolled over) |
+| 502 | `upstream` | the calendar write failed. The program stays active in Neon, the decision row is `failed`, and the message is "Program saved; calendar not fully written. Retry." |
+
+The `program_commit` decision has `inputs { asOf, history, availability, purpose, draftVersion }`, `ruleResults { planViolations }` over weeks 1 and 2 together, `choice { programId, blockWeeks, goals, weeklyTemplate, assumptions, forecast }` and `calendarChanges { weeks: { oldest, newest, deleted, created }[], archivedProgramId }`. 409 and 422 attempts are logged as `blocked`; drafts and 400s are not logged. The Sunday cron (`writeWeekTwoAhead`) reads planned sessions through the repo's active-program filter, so an archived program's sessions are never written.
+
 "What changed?" (`POST /api/replan`, Claude) is out of scope for the shell and gets its own section when it's built (it waits on a yes for API spend).
 
 **Cross-week moves (2026-11-21).** `GET /api/sessions/:id/options?action=move` also lists days in the following week for a `planned` session. Such an option has `absorbs: [{ sessionId }]` when it replaces next week's session of the same kind. `apply` moves the session and then cancels each absorbed one (last, so a failed cancel reverts the move). The reader derives the rest: the origin week gets a skipped stand-in (`movedTo`) and records a miss; the destination week shows the moved session (`movedFrom`) and drops its own of that kind. Google keeps `originalStartTime` on a moved instance, which is what the reader uses.

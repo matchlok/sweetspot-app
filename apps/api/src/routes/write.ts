@@ -2,12 +2,15 @@ import { Hono, type Context } from "hono";
 import {
   GOAL_KEYS,
   MAX_LIFT_TARGET,
+  addDays,
+  weekdayMon0,
   ORIGIN_TAG,
   denverToday,
   isOriginStandIn,
   goalView,
   homeView,
   mondayOf,
+  planViolations,
   programView,
   sessionOptionsView,
   weekView,
@@ -17,9 +20,12 @@ import {
   type OptionAction,
   type PlannedSession,
   type ViewData,
+  type WeekSession,
 } from "@sweetspot/engine";
+import { writeWeek, type WriteWeekResult } from "../calendarWriter";
 import { LIFT_TAG, loadViewData, type DataDeps } from "../data";
 import { fail } from "../errors";
+import { DraftError, buildDraft, loadHistory, parseDraftInput } from "../programDraft";
 import type { DecisionEntry, DecisionStatus } from "../repo";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -273,6 +279,157 @@ export function writeRoutes(data: DataDeps) {
     await data.repo.saveLiftTargets({ effectiveWeek, upper, lower });
     await logSimple("set_lifts", { effectiveWeek }, { upper, lower });
     return c.json(programView(await loadViewData(data)));
+  });
+
+  // ---- Program: draft and commit ----
+
+  /** The plan's own rule gate over weeks 1 and 2 together, so Sunday into Monday is checked. */
+  const blockRules = (weeks: { sessions: { id: string; date: string; kind: WeekSession["kind"]; title: string; minutes: number }[] }[]) =>
+    planViolations(weeks.flatMap((w) => w.sessions.map((s): WeekSession => ({ ...s, status: "planned" }))));
+
+  /** Computes and writes nothing: no Neon, no calendar, no decision row. */
+  r.post("/program/draft", async (c) => {
+    try {
+      const input = parseDraftInput(await readBody(c));
+      const history = await loadHistory(data, today());
+      return c.json(await buildDraft(data, input, history));
+    } catch (e) {
+      if (e instanceof DraftError) return fail(c, e.status, e.code, e.message);
+      throw e;
+    }
+  });
+
+  r.post("/program/commit", async (c) => {
+    const body = await readBody(c);
+    let input;
+    try {
+      input = parseDraftInput(body);
+    } catch (e) {
+      if (e instanceof DraftError) return fail(c, e.status, e.code, e.message);
+      throw e;
+    }
+    if (typeof body?.draftVersion !== "string" || body.draftVersion === "") return fail(c, 400, "invalid", "draftVersion is required.");
+    const draftVersion = body.draftVersion;
+
+    const asOf = today();
+    const history = await loadHistory(data, asOf);
+    const decisionId = await data.repo.reserveDecisionId();
+    const inputs = { asOf, history, availability: input.availability, purpose: input.purpose, draftVersion };
+    const refuse = (reason: string) => record({ id: decisionId, trigger: "program_commit", inputs, choice: { reason }, status: "blocked" });
+
+    // Regenerate from the server's own data; the client's card is never trusted.
+    let draft;
+    try {
+      draft = await buildDraft(data, input, history);
+    } catch (e) {
+      if (!(e instanceof DraftError)) throw e;
+      if (e.code === "blocked") await refuse(e.message);
+      return fail(c, e.status, e.code, e.message);
+    }
+    if (draft.draftVersion !== draftVersion) {
+      await refuse("stale draftVersion");
+      return fail(c, 409, "conflict", "The program changed since this draft was made. Draft it again.");
+    }
+
+    const { card } = draft;
+    const blockStart = card.program.startWeek;
+    const weeks = card.weeks.slice(0, 2).map((w) => ({ oldest: w.start, newest: addDays(w.start, 6) }));
+    const failedEntry = (error: string, extra: Record<string, unknown> = {}): DecisionEntry => ({
+      id: decisionId,
+      trigger: "program_commit",
+      inputs,
+      choice: { error },
+      calendarChanges: extra,
+      status: "failed",
+    });
+    if (!data.sources.createEvent || !data.sources.deleteEvent) {
+      await record(failedEntry("Calendar writer is not configured"));
+      return fail(c, 502, "upstream", "The calendar writer is not configured. Nothing changed.");
+    }
+
+    // (a) archive the old program and drop its planned sessions from the block start on; (b) create the new one.
+    // A retry of a draft whose program is already active skips both.
+    let programId: number;
+    let archivedProgramId: number | null = null;
+    try {
+      const active = await data.repo.activeProgram();
+      const retry = active !== null && (active.card as { draftVersion?: unknown } | null)?.draftVersion === draftVersion;
+      if (active && retry) {
+        programId = active.id;
+      } else {
+        if (active) {
+          const stale = await data.repo.plannedSessions(blockStart, "9999-12-31");
+          await data.repo.archiveProgram(active.id);
+          for (const s of stale) await data.repo.deletePlannedSession(s.id);
+          archivedProgramId = active.id;
+        }
+        const made = await data.repo.createProgram(
+          {
+            purpose: input.purpose.kind,
+            raceDate: input.purpose.raceDate ?? null,
+            blockWeeks: card.blockWeeks,
+            availability: input.availability,
+            card: { ...card, draftVersion, forecast: draft.forecast },
+          },
+          card.weeks.flatMap((w) => w.sessions.map((s) => ({ date: s.date, kind: s.kind, minutes: s.minutes, title: s.title }))),
+        );
+        programId = made.program.id;
+      }
+    } catch (e) {
+      await record(failedEntry(e instanceof Error ? e.message : "saving the program failed", { archivedProgramId }));
+      return fail(c, 502, "upstream", "The program could not be saved. Retry.");
+    }
+
+    // (c) write block weeks 1 and 2 to the calendar. A failure doesn't stop (d): the program is saved either way.
+    const written: WriteWeekResult[] = [];
+    let calendarError: string | null = null;
+    try {
+      for (const w of weeks) written.push(await writeWeek(data, w, await data.repo.plannedSessions(w.oldest, w.newest)));
+    } catch (e) {
+      calendarError = e instanceof Error ? e.message : "calendar write failed";
+    }
+
+    // (d) goal changes at block week 1 (every goal, so modes carry) and lift targets from what the generator placed.
+    let goalsError: string | null = null;
+    try {
+      const have = await data.repo.goalChanges();
+      for (const key of GOAL_KEYS) {
+        const g = card.program.goals[key];
+        const last = have.filter((x) => x.goal === key && x.effectiveWeek === blockStart).at(-1);
+        if (last && last.mode === g.mode && last.targetMin === g.start && last.stepMin === g.stepMin) continue; // a retry
+        await data.repo.saveGoalChange({ goal: key, effectiveWeek: blockStart, mode: g.mode, targetMin: g.start, stepMin: g.stepMin });
+      }
+      const week1 = card.weeks[0]!.sessions;
+      await data.repo.saveLiftTargets({
+        effectiveWeek: blockStart,
+        upper: week1.filter((s) => s.kind === "lift_upper").length,
+        lower: week1.filter((s) => s.kind === "lift_lower").length,
+      });
+    } catch (e) {
+      goalsError = e instanceof Error ? e.message : "saving goals failed";
+    }
+
+    // (e) the decision log.
+    const template = (card.weeks.find((w) => !w.isRecovery) ?? card.weeks[0]!).sessions.map((s) => ({ weekday: weekdayMon0(s.date), kind: s.kind, minutes: s.minutes }));
+    const error = calendarError ?? goalsError;
+    await record({
+      id: decisionId,
+      trigger: "program_commit",
+      inputs,
+      ruleResults: { planViolations: blockRules(card.weeks.slice(0, 2)) },
+      choice: { programId, blockWeeks: card.blockWeeks, goals: card.program.goals, weeklyTemplate: template, assumptions: card.assumptions, forecast: draft.forecast },
+      calendarChanges: {
+        weeks: written.map(({ oldest, newest, deleted, created }) => ({ oldest, newest, deleted, created })),
+        archivedProgramId,
+        ...(error ? { error } : {}),
+      },
+      status: error ? "failed" : "applied",
+    });
+    if (calendarError) return fail(c, 502, "upstream", "Program saved; calendar not fully written. Retry.");
+    if (goalsError) return fail(c, 502, "upstream", "Program saved; goals not fully saved. Retry.");
+
+    const fresh = await loadViewData(data, undefined, blockStart);
+    return c.json({ programId, written, week: weekView(fresh, blockStart) });
   });
 
   return r;
