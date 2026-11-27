@@ -109,7 +109,11 @@ export interface Repo {
   decisionsFor(trigger: string): Promise<{ inputs: unknown; choice: unknown }[]>;
   /** Creates a program and its planned sessions together. Returns both as stored. */
   createProgram(p: NewProgram, sessions?: NewPlannedSession[]): Promise<{ program: StoredProgramRow; sessions: PlannedSession[] }>;
-  /** Sessions with `oldest <= date <= newest` (inclusive), by date then id. */
+  /** The program in force, or null when none was committed. At most one is active. */
+  activeProgram(): Promise<StoredProgramRow | null>;
+  /** Marks a program archived. Its sessions stay stored but `plannedSessions` stops returning them. */
+  archiveProgram(id: number): Promise<void>;
+  /** Sessions of the active program with `oldest <= date <= newest` (inclusive), by date then id. Archived programs' sessions are never returned. */
   plannedSessions(oldest: string, newest: string): Promise<PlannedSession[]>;
   /** Returns the updated row, or null if the id doesn't exist. */
   updatePlannedSession(id: number, patch: PlannedSessionPatch): Promise<PlannedSession | null>;
@@ -136,6 +140,7 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
   let nextId = 1;
   let sync: SyncState = { lastSyncedAt: null, lastError: null };
   const planned = new Map<number, PlannedSession>();
+  const programRows = new Map<number, StoredProgramRow>();
   let nextProgramId = 1;
   let nextSessionId = 1;
   let strava: Awaited<ReturnType<Repo["stravaToken"]>> = null;
@@ -195,6 +200,7 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
     },
     async createProgram(p, sessions = []) {
       const program: StoredProgramRow = { ...p, id: nextProgramId++, status: "active" };
+      programRows.set(program.id, program);
       const made = sessions.map((s) => {
         const row: PlannedSession = { id: nextSessionId++, programId: program.id, date: s.date, kind: s.kind, minutes: s.minutes, title: s.title ?? null, calendarEventId: null, status: "planned" };
         planned.set(row.id, row);
@@ -202,9 +208,18 @@ export function memoryRepo(seed: Partial<{ program: StoredProgram; goalChanges: 
       });
       return { program, sessions: made };
     },
+    async activeProgram() {
+      const live = [...programRows.values()].filter((r) => r.status === "active");
+      const row = live[live.length - 1];
+      return row ? { ...row } : null;
+    },
+    async archiveProgram(id) {
+      const row = programRows.get(id);
+      if (row) programRows.set(id, { ...row, status: "archived" });
+    },
     async plannedSessions(oldest, newest) {
       return [...planned.values()]
-        .filter((s) => s.date >= oldest && s.date <= newest)
+        .filter((s) => s.date >= oldest && s.date <= newest && programRows.get(s.programId)?.status === "active")
         .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
         .map((s) => ({ ...s }));
     },

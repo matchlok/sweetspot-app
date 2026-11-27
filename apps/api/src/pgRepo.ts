@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { activities, decisions, goalChanges, liftTargets, manualDone, plannedSessions, programs, programSettings, sourceTokens, syncState, type Db } from "@sweetspot/db";
 import type { IntervalsActivity } from "@sweetspot/engine";
 import type { PlannedSession, Repo } from "./repo";
@@ -127,13 +127,21 @@ export function pgRepo(db: Db): Repo {
       }
       return { program, sessions: made };
     },
+    async activeProgram() {
+      const [r] = await db.select().from(programs).where(eq(programs.status, "active")).orderBy(desc(programs.id)).limit(1);
+      return r ? { id: r.id, purpose: r.purpose, raceDate: r.raceDate, blockWeeks: r.blockWeeks, availability: r.availability, card: r.card, status: r.status } : null;
+    },
+    async archiveProgram(id) {
+      await db.update(programs).set({ status: "archived" }).where(eq(programs.id, id));
+    },
     async plannedSessions(oldest, newest) {
       const rows = await db
-        .select()
+        .select({ s: plannedSessions })
         .from(plannedSessions)
-        .where(and(gte(plannedSessions.date, oldest), lte(plannedSessions.date, newest)))
+        .innerJoin(programs, eq(plannedSessions.programId, programs.id))
+        .where(and(gte(plannedSessions.date, oldest), lte(plannedSessions.date, newest), eq(programs.status, "active")))
         .orderBy(plannedSessions.date, plannedSessions.id);
-      return rows.map(toPlanned);
+      return rows.map((r) => toPlanned(r.s));
     },
     async updatePlannedSession(id, patch) {
       // Drop undefined keys: Drizzle ignores them, so a patch of only undefined values has nothing to set.

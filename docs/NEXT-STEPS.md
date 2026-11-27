@@ -23,7 +23,7 @@ Build order, one branch per step, no commits until Narjit reviews. Status lives 
 | Generator | SWE-1 |
 | Calendar writer and Sunday cron | SWE-3 |
 | Read path flip | SWE-10 |
-| Program routes | SWE-11 |
+| Program routes (built 2026-11-27, in PR) | SWE-11 |
 | Onboarding screens 1 to 9, end-to-end test | SWE-13 |
 | Coach (replaces `/api/replan`) | SWE-14 |
 
