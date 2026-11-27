@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "./api";
 import { Shell } from "./Shell";
+import { Landing } from "./screens/Landing";
 import { Login } from "./screens/Login";
 
 type Auth = { state: "loading" } | { state: "in" } | { state: "out" } | { state: "error"; message: string };
@@ -8,6 +9,8 @@ type Auth = { state: "loading" } | { state: "in" } | { state: "out" } | { state:
 export function App() {
   const [auth, setAuth] = useState<Auth>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
+  // Logged-out visitors see the landing page first; Sign in switches to the login form.
+  const [signingIn, setSigningIn] = useState(false);
   useEffect(() => {
     setAuth({ state: "loading" });
     api.me().then(
@@ -30,6 +33,9 @@ export function App() {
       </div>
     );
   }
-  if (auth.state === "out") return <Login onDone={() => setAuth({ state: "in" })} />;
+  if (auth.state === "out") {
+    if (!signingIn) return <Landing onSignIn={() => setSigningIn(true)} />;
+    return <Login onDone={() => { setSigningIn(false); setAuth({ state: "in" }); }} />;
+  }
   return <Shell onLogout={() => api.logout().finally(() => setAuth({ state: "out" }))} />;
 }

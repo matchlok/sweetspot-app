@@ -3,7 +3,7 @@ import { connect } from "@sweetspot/db";
 import { createApp } from "./app";
 import { readEnv } from "./env";
 import { googleConfigFromEnv } from "./google";
-import { pgLoginStore } from "./pgStore";
+import { pgLoginStore, pgWaitlistStore } from "./pgStore";
 import { pgRepo } from "./pgRepo";
 import { routingFromEnv } from "./routing";
 import { intervalsFromEnv, liveSources } from "./sources";
@@ -16,6 +16,7 @@ const repo = pgRepo(db);
 const app = createApp({
   env: readEnv(),
   logins: pgLoginStore(db),
+  waitlist: pgWaitlistStore(db),
   data: { repo, routing: routingFromEnv(), sources: liveSources(googleConfigFromEnv(), intervalsFromEnv(), stravaConfigFromEnv(repo)) },
 });
 

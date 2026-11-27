@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, jsonb, pgTable, real, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, pgTable, real, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Tables from docs/plans/API.md (Storage). Dates are `date` in America/Denver
@@ -131,3 +131,14 @@ export const loginAttempts = pgTable(
   (t) => [index("login_attempts_at_idx").on(t.at)],
 );
 
+/** Public waitlist signups from the landing page. Email is stored lowercased; `source` says where it came from. */
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: serial("id").primaryKey(),
+    email: text("email").notNull(),
+    source: text("source").notNull().default("landing"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("waitlist_email_idx").on(t.email), index("waitlist_created_idx").on(t.createdAt)],
+);
